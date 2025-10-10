@@ -1,10 +1,81 @@
 <!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Insert title here</title>
-</head>
-<body>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
 
-</body>
+<div th:fragment="pageNavigation">
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-theme py-2">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <img th:src="@{/images/logo.png}" alt="Logo" style="height: 60px;">
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="mainNavbar">
+                <div class="search-bar mx-auto my-2 my-lg-0">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="Tìm kiếm sản phẩm...">
+                        <button class="btn btn-light" type="button"><i class="fa fa-search text-muted"></i></button>
+                    </div>
+                </div>
+
+                <ul class="navbar-nav ms-auto align-items-center">
+    <li class="nav-item">
+        <a href="#" class="nav-link text-white d-flex align-items-center">
+            <i class="fa-solid fa-location-dot fa-2x"></i>
+            <div class="ms-2">
+                <span class="text small d-block">Giao tận nơi</span>
+                <span class="fw-bold d-block">Chọn</span>
+            </div>
+        </a>
+    </li>
+    <li class="nav-item" th:if="${#authorization.expression('!isAuthenticated()')}">
+        <a href="/auth/login" class="nav-link text-white d-flex align-items-center">
+            <i class="fa-solid fa-user fa-2x"></i>
+            <div class="ms-2">
+                <span class="text small d-block">Tài khoản</span>
+                <span class="fw-bold d-block">Đăng nhập</span>
+            </div>
+        </a>
+    </li>
+    <li class="nav-item" th:if="${#authorization.expression('isAuthenticated()')}">
+        <a href="/account/profile" class="nav-link text-white d-flex align-items-center">
+            <i class="fa-solid fa-user fa-2x"></i>
+            <div class="ms-2">
+                <span class="text small d-block">Tài khoản</span>
+                <span class="fw-bold d-block">Hồ sơ</span>
+            </div>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="/cart" class="nav-link text-white d-flex align-items-center">
+            <i class="fa-solid fa-cart-shopping fa-2x"></i>
+            <span class="ms-2 fw-bold">Giỏ hàng</span>
+        </a>
+    </li>
+</ul>
+            </div>
+        </div>
+    </nav>
+
+    <nav class="main-nav py-2">
+        <div class="container d-flex justify-content-start"> <ul class="nav">
+                <li class="nav-item me-4 d-flex align-items-center">
+                    <i class="fa-solid fa-rotate-left me-2"></i>
+                    <a class="nav-link fw-bold p-0" href="#">CHÍNH SÁCH ĐỔI TRẢ</a>
+                </li>
+                <li class="nav-item me-4 d-flex align-items-center">
+                    <i class="fa-solid fa-phone me-2"></i>
+                    <a class="nav-link fw-bold p-0" href="#">LIÊN HỆ</a>
+                </li>
+                <li class="nav-item d-flex align-items-center">
+                    <i class="fa-solid fa-newspaper me-2"></i>
+                    <a class="nav-link fw-bold p-0" href="#">TIN TỨC</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+</div>
+
 </html>

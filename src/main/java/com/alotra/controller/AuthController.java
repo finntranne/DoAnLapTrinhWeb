@@ -68,15 +68,15 @@ public class AuthController {
         // create user object
         User user = new User();
         user.setUsername(signUpDto.getUsername());
-        user.setFullname(signUpDto.getFullname());
+        user.setFullName(signUpDto.getFullname());
         user.setEmail(signUpDto.getEmail());
-        user.setVerified(false);
-        user.setPassword(passwordEncoder.encode(signUpDto.getPassword()));
+        user.setIsVerified(false);
+        user.setPasswordHash(passwordEncoder.encode(signUpDto.getPassword()));
         user.setCreatedAt(LocalDateTime.now());
 
-        Role roles = roleRepository.findByRolename("USER").get();
+        Role roles = roleRepository.findByRoleName("USER").get();
         Role detachedRole = new Role();
-        detachedRole.setRoleid(roles.getRoleid());
+        detachedRole.setRoleId(roles.getRoleId());
         user.setRoles(Collections.singleton(roles));
 
         userRepository.save(user);

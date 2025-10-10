@@ -14,9 +14,9 @@ import com.alotra.entity.user.Role;
 @Repository
 public interface RoleRepository extends JpaRepository<Role, Integer> {
 
-    @Query("SELECT u FROM Role u WHERE u.rolename = :rolename")
+    @Query("SELECT u FROM Role u WHERE u.roleName = :roleName")
     public Role getUserByRolename(@Param("rolename") String rolename);
 
-    Optional<Role> findByRolename(String rolename);
+    Optional<Role> findByRoleName(String roleName);
 }
 

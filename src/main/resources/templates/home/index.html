@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/main :: layout(~{::title}, ~{::section})}">
+
+<head>
+    <title>Trang Chủ - Highlands Coffee</title>
+</head>
+
+<body>
+    <section>
+        <div class="row">
+            <div class="col-lg-3 col-md-4">
+                <div th:replace="~{fragments/sidebar :: pageSidebar}"></div>
+            </div>
+            <div class="col-lg-9 col-md-8">
+                <div th:replace="~{fragments/carousel :: pageCarousel}"></div>
+            </div>
+        </div>
+
+        <div class="my-5">
+    <h2 class="text-center mb-4">Sản Phẩm Bán Chạy</h2>
+    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-4" th:if="${categories != null and not #lists.isEmpty(categories)}">
+        <div th:each="category : ${categories}" th:with="products=${category.products}">
+            <div th:each="product : ${products}" class="col">
+                <a th:href="@{'/products/' + ${product.productId}}" class="product-card h-100">
+                    <img th:if="${not #lists.isEmpty(product.productImages)}" 
+                         th:src="${product.productImages[0].imageUrl}" 
+                         class="card-img-top" 
+                         th:alt="${product.productName}">
+                    <img th:unless="${not #lists.isEmpty(product.productImages)}" 
+                         th:src="@{/images/placeholder.png}" 
+                         class="card-img-top" 
+                         th:alt="${product.productName}">
+
+                    <div class="card-body">
+                        <p class="product-brand mb-1">Highlands Coffee</p>
+                        <h5 class="product-title" th:text="${product.productName}">Tên sản phẩm</h5>
+                        <p class="product-price" th:if="${product.productVariants != null and not #lists.isEmpty(product.productVariants)}" 
+                           th:text="${#numbers.formatDecimal(product.productVariants[0].price, 0, 'POINT', 0, 'COMMA')} + 'đ'">Liên hệ</p>
+                        <p class="product-price" th:unless="${product.productVariants != null and not #lists.isEmpty(product.productVariants)}">Liên hệ</p>
+                    </div>
+
+                    <button class="btn-add-to-cart">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="text-center" th:if="${categories == null or #lists.isEmpty(categories)}">
+        <p>Không có sản phẩm bán chạy nào để hiển thị.</p>
+    </div>
+</div>
+
+        <div class="my-5" th:if="${#authorization.expression('isAuthenticated()')} and ${viewedProducts != null and not #lists.isEmpty(viewedProducts)}">
+            <h2 class="text-center mb-4">Gợi Ý Dành Cho Bạn</h2>
+            
+            <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-4">
+                <div class="col" th:each="product : ${viewedProducts}">
+                    <a th:href="@{'/products/' + ${product.productId}}" class="product-card h-100">
+                        <img th:if="${not #lists.isEmpty(product.productImages)}" th:src="${product.productImages[0].imageUrl}" class="card-img-top" th:alt="${product.productName}">
+                        <img th:unless="${not #lists.isEmpty(product.productImages)}" th:src="@{/images/placeholder.png}" class="card-img-top" th:alt="${product.productName}">
+
+                        <div class="card-body">
+                            <p class="product-brand mb-1">Highlands Coffee</p>
+                            <h5 class="product-title" th:text="${product.productName}">Tên sản phẩm</h5>
+                            <p class="product-price" th:if="${not #lists.isEmpty(product.productVariants)}" th:text="${#numbers.formatDecimal(product.productVariants[0].price, 0, 'POINT', 0, 'COMMA')} + 'đ'">Liên hệ</p>
+                        </div>
+                        
+                        <button class="btn-add-to-cart">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

@@ -1,10 +1,87 @@
 <!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Insert title here</title>
-</head>
-<body>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
 
-</body>
+<head th:fragment="pageHeader">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <style>
+    :root {
+        --primary-color: #73A580; /* Màu xanh matcha chủ đạo */
+    }
+    body {
+        background-color: #f8f9fa;
+    }
+    /* === NAVIGATION STYLES === */
+    .navbar-theme {
+        background-color: var(--primary-color);
+    }
+    .navbar-theme .navbar-brand img {
+        transition: opacity 0.3s;
+    }
+    .navbar-theme .navbar-brand:hover img {
+        opacity: 0.8;
+    }
+    .navbar-theme .nav-link {
+        transition: color 0.3s;
+    }
+    .navbar-theme .nav-link:hover {
+        color: #ddd !important;
+    }
+    .search-bar {
+        flex-grow: 1;
+        max-width: 600px; /* <-- Tăng giá trị ở đây từ 500px lên 600px */
+    }
+    .search-bar input {
+        border-radius: 5px 0 0 5px; border: none;
+    }
+    .search-bar button {
+        border-radius: 0 5px 5px 0; border: none; background-color: #e9ecef;
+    }
+    .icon-text-group .text {
+        display: block; font-size: 0.8rem; line-height: 1;
+    }
+    .main-nav {
+        background-color: var(--primary-color);
+    }
+    .main-nav .nav-link {
+        color: white;
+        transition: color 0.3s;
+    }
+    .main-nav .nav-link:hover {
+        color: #ddd;
+    }
+    /* === SIDEBAR STYLES === */
+    .sidebar { background-color: white; padding: 0; border: 1px solid #eee; }
+    .sidebar .sidebar-header { background-color: var(--primary-color); color: white; padding: 1rem; font-weight: bold; display: flex; align-items: center; }
+    .sidebar .sidebar-header .fa-bars { margin-right: 10px; }
+    .sidebar .list-group-item { border: none; border-bottom: 1px solid #f0f0f0; padding: 0.9rem 1.2rem; }
+    .sidebar .icon-coffee { color: #6F4E37; } .sidebar .icon-tea { color: #E0C7A3; }
+    .sidebar .icon-freeze { color: #AAD5E3; } .sidebar .icon-phindi { color: #A5A5A5; }
+    .sidebar .icon-banhmi { color: #F2C14E; } .sidebar .icon-banhngot { color: #D2A679; }
+    .sidebar .icon-khac { color: #8B8989; } .sidebar .icon-binh { color: #333333; }
+    .sidebar .icon-ly { color: #73A580; } .sidebar .icon-donggoi { color: #C75233; }
+    .sidebar .icon-the { color: #C94245; }
+    
+    /* === PRODUCT CARD STYLES === */
+    .product-card { text-decoration: none; color: inherit; display: block; background-color: #fff; border: 1px solid #f0f0f0; transition: all 0.3s ease-in-out; position: relative; overflow: hidden; }
+    .product-card:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.1); transform: translateY(-5px); }
+    .product-card .card-img-top { border-radius: 0; }
+    .product-card .card-body { text-align: center; padding: 1.25rem; }
+    .product-brand { font-size: 0.8rem; color: #a5a5a5; text-transform: uppercase; letter-spacing: 1px; }
+    .product-title { font-weight: bold; color: #212529; margin-bottom: 0.5rem; }
+    .product-price { font-size: 1.2rem; font-weight: bold; color: #212529; }
+    .btn-add-to-cart { position: absolute; bottom: 20px; right: 20px; width: 40px; height: 40px; border-radius: 50%; background-color: var(--primary-color); color: white; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; line-height: 1; border: none; transform: translateY(150%); transition: transform 0.3s ease; }
+    .product-card:hover .btn-add-to-cart { transform: translateY(0); }
+
+    /* === FOOTER STYLES === */
+    .footer-links a { text-decoration: none; color: inherit; transition: color 0.2s ease-in-out; }
+    .footer-links a:hover { color: var(--primary-color); text-decoration: underline; }
+    .social-icon { transition: color 0.2s ease-in-out; }
+    .social-icon:hover { color: var(--primary-color) !important; }
+</style>
+</head>
+
 </html>

@@ -8,27 +8,27 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
-import com.alotra.entity.product.ProductVariant;
+import com.alotra.entity.product.Topping;
 
 @Entity
-@Table(name = "CartItems")
+@Table(name = "CartItem_Toppings")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CartItem {
+public class CartItemTopping {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "CartItemID")
-    private Integer cartItemId;
+    @EmbeddedId
+    private CartItemToppingId id;
 
     @ManyToOne
-    @JoinColumn(name = "CartID", nullable = false)
-    private Cart cart;
+    @MapsId("cartItemId")
+    @JoinColumn(name = "CartItemID")
+    private CartItem cartItem;
 
     @ManyToOne
-    @JoinColumn(name = "VariantID", nullable = false)
-    private ProductVariant variant;
+    @MapsId("toppingId")
+    @JoinColumn(name = "ToppingID")
+    private Topping topping;
 
     @Column(name = "Quantity", nullable = false)
     private Integer quantity;
@@ -38,7 +38,13 @@ public class CartItem {
 
     @Column(name = "LineTotal", nullable = false)
     private BigDecimal lineTotal;
+}
 
-    @Column(name = "Notes")
-    private String notes;
+@Embeddable
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+class CartItemToppingId {
+    private Integer cartItemId;
+    private Integer toppingId;
 }

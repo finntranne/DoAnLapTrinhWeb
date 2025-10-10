@@ -1,4 +1,4 @@
-package com.alotra.entity.cart;
+package com.alotra.entity.order;
 
 
 import jakarta.persistence.*;
@@ -11,20 +11,20 @@ import java.math.BigDecimal;
 import com.alotra.entity.product.ProductVariant;
 
 @Entity
-@Table(name = "CartItems")
+@Table(name = "OrderDetails")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CartItem {
+public class OrderDetail {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "CartItemID")
-    private Integer cartItemId;
+    @Column(name = "OrderDetailID")
+    private Integer orderDetailId;
 
     @ManyToOne
-    @JoinColumn(name = "CartID", nullable = false)
-    private Cart cart;
+    @JoinColumn(name = "OrderID", nullable = false)
+    private Order order;
 
     @ManyToOne
     @JoinColumn(name = "VariantID", nullable = false)
@@ -36,9 +36,9 @@ public class CartItem {
     @Column(name = "UnitPrice", nullable = false)
     private BigDecimal unitPrice;
 
+    @Column(name = "LineDiscount", nullable = false)
+    private BigDecimal lineDiscount;
+
     @Column(name = "LineTotal", nullable = false)
     private BigDecimal lineTotal;
-
-    @Column(name = "Notes")
-    private String notes;
 }

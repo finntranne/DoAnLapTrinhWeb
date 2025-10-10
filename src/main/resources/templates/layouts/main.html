@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:fragment="layout(title, content)">
+<head>
+    <th:block th:replace="~{fragments/header :: pageHeader}"></th:block>
+    <title th:replace="${title}">Tiêu đề mặc định</title>
+</head>
+<body>
+
+    <div th:replace="~{fragments/navigation :: pageNavigation}"></div>
+
+    <main class="container my-4">
+        <div th:replace="${content}">
+            <p>Nội dung mặc định sẽ được thay thế.</p>
+        </div>
+    </main>
+
+    <div th:replace="~{fragments/footer :: pageFooter}"></div>
+
+</body>
+</html>

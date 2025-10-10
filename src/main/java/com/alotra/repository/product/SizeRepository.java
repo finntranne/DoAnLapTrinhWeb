@@ -1,10 +1,9 @@
 package com.alotra.repository.product;
 
-
-import com.alotra.entity.product.Product;
+import com.alotra.entity.product.Size;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface ProductRepository extends JpaRepository<Product, Integer> {
+public interface SizeRepository extends JpaRepository<Size, Integer> {
 }

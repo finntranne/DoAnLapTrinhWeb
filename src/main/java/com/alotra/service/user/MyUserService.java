@@ -26,14 +26,14 @@ public class MyUserService implements UserDetails {
         Set<Role> roles = user.getRoles();
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
         for (Role role : roles) {
-            authorities.add(new SimpleGrantedAuthority(role.getRolename()));
+            authorities.add(new SimpleGrantedAuthority(role.getRoleName()));
         }
         return authorities;
     }
 
     @Override
     public String getPassword() {
-        return user.getPassword();
+        return user.getPasswordHash();
     }
 
     @Override
@@ -58,7 +58,7 @@ public class MyUserService implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return user.isVerified();
+        return user.getIsVerified();
     }
     
 }

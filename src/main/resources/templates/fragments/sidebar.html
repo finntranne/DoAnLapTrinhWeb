@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="pageSidebar">
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <i class="fa-solid fa-bars"></i>
+            <span>DANH MỤC SẢN PHẨM</span>
+        </div>
+
+        <!-- Sửa lại dòng này -->
+        <div class="list-group list-group-flush" th:if="${categories != null and not #lists.isEmpty(categories)}">
+            <a th:each="category : ${categories}" href="#"
+               class="list-group-item list-group-item-action d-flex align-items-center">
+                <i class="fa-solid fa-mug-hot fa-lg me-3 icon-coffee"></i>
+                <span th:text="${category.categoryName}">Tên danh mục</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
