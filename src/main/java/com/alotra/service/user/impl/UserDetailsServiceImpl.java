@@ -1,4 +1,4 @@
-package com.alotra.service.user;
+package com.alotra.service.user.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -8,9 +8,10 @@ import org.springframework.stereotype.Service;
 
 import com.alotra.entity.user.User;
 import com.alotra.repository.user.UserRepository;
+import com.alotra.service.user.MyUserService;
 
 @Service
-public class UserServiceImpl implements UserDetailsService {
+public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Autowired
     private UserRepository userRepository;
