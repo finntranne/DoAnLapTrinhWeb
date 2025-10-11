@@ -27,8 +27,8 @@ public class Email {
 	public static boolean sendEmail(User user) {
 		boolean test = false;
 		String toEmail = user.getEmail();
-		String fromEmail = "td735429@gmail.com";
-		String password = "oaql agko zgta wyvi";
+		String fromEmail = "nguyentrilam0304@gmail.com";
+		String password = "itsp ryoi agwh qyuq";
 		
 		try {
 			Properties pr = configEmail(new Properties());

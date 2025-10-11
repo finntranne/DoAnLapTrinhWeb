@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="stylesheet"
+	href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+<link rel="stylesheet" th:href="@{/css/style.css}">
+<title>Trang Đăng nhập</title>
+</head>
+
+<body>
+	<div class="container" id="container">
+		<div class="form-container sign-up">
+			<form id="signupForm" th:action="@{/api/auth/signup}" method="post">
+				<h1>Tạo Tài Khoản</h1>
+				<input type="text" name="fullname" placeholder="Họ và tên" required />
+				<input type="text" name="username" placeholder="Tên đăng nhập"
+					required /> <input type="email" name="email" placeholder="Email"
+					required /> <input type="password" name="password"
+					placeholder="Mật khẩu" required />
+				<button type="submit">Đăng Ký</button>
+			</form>
+		</div>
+
+
+		<div class="form-container sign-in">
+			<form method="post" th:action="@{/login}">
+				<h1>Đăng nhập</h1>
+				<input type="text" name="username"
+					placeholder="Email hoặc Tên đăng nhập" required /> <input
+					type="password" name="password" placeholder="Mật khẩu" required />
+				<a id="forgotPasswordLink" href="/auth/forgot-password">Quên mật
+					khẩu?</a>
+				<button type="submit">Đăng Nhập</button>
+			</form>
+		</div>
+
+
+		<div class="otp-form-wrapper" id="otpContainer" style="display: none;">
+			<form id="otpForm">
+				<h1>Xác thực OTP</h1>
+				<div
+					style="width: 450px; margin: 0 auto; text-align: left; padding: 20px; box-sizing: border-box;">
+					<p>Vui lòng nhập mã OTP gồm 6 chữ số mà chúng tôi vừa gửi tới
+						địa chỉ email của bạn để xác thực tài khoản.</p>
+				</div>
+				<input type="hidden" name="email" id="otpEmail" value="">
+				<div class="otp-container">
+					<input type="text" maxlength="1" class="otp-input" /> <input
+						type="text" maxlength="1" class="otp-input" /> <input type="text"
+						maxlength="1" class="otp-input" /> <input type="text"
+						maxlength="1" class="otp-input" /> <input type="text"
+						maxlength="1" class="otp-input" /> <input type="text"
+						maxlength="1" class="otp-input" />
+				</div>
+				<button type="submit">Xác nhận</button>
+				<button type="button" id="resend-otp" class="resend-btn" disabled>Gửi
+					lại OTP (60s)</button>
+			</form>
+		</div>
+
+		<!-- Form nhập email quên mật khẩu -->
+		<div class="form-container forgot-password"
+			id="forgotPasswordContainer">
+			<form id="forgotPasswordForm">
+				<h1>Quên Mật Khẩu</h1>
+				<input type="email" name="email" placeholder="Email" required />
+				<button type="submit">Gửi OTP</button>
+				<p id="forgotPasswordMessage" style="color: red;"></p>
+			</form>
+		</div>
+
+		<!-- Form OTP cho quên mật khẩu -->
+		<div class="otp-form-wrapper" id="forgotOtpContainer"
+			style="display: none;">
+			<h1>Xác thực OTP</h1>
+			<input type="hidden" id="forgotOtpEmail" value="">
+			<div class="otp-container">
+				<input type="text" maxlength="1" class="otp-input" /> <input
+					type="text" maxlength="1" class="otp-input" /> <input type="text"
+					maxlength="1" class="otp-input" /> <input type="text"
+					maxlength="1" class="otp-input" /> <input type="text"
+					maxlength="1" class="otp-input" /> <input type="text"
+					maxlength="1" class="otp-input" />
+			</div>
+			<button type="submit" id="verifyForgotOtpBtn">Xác nhận OTP</button>
+			<button type="button" id="resendForgotOtpBtn" disabled>Gửi
+				lại OTP (60s)</button>
+			<p id="forgotOtpMessage" style="color: red;"></p>
+		</div>
+
+
+
+		<!-- Form đặt lại mật khẩu -->
+		<div class="form-container reset-password" id="resetPasswordContainer"
+			style="display: none;">
+			<form id="resetPasswordForm">
+				<h1>Đặt Lại Mật Khẩu</h1>
+				<input type="password" name="newPassword" placeholder="Mật khẩu mới"
+					required /> <input type="password" name="confirmPassword"
+					placeholder="Xác nhận mật khẩu mới" required />
+				<button type="submit">Xác nhận</button>
+				<p id="resetPasswordMessage" style="color: red;"></p>
+			</form>
+		</div>
+
+
+
+
+		<div class="toggle-container" , id="toggle">
+			<div class="toggle">
+				<div class="toggle-panel toggle-left">
+					<h1>Chào mừng trở lại!</h1>
+					<img th:src="@{/images/logo.png}" alt="Logo" width="200"
+						height="200" class="rounded-circle me-2">
+					<p>Nhập thông tin cá nhân của bạn để sử dụng tất cả các tính
+						năng của trang web</p>
+					<button class="hidden" id="login">Đăng Nhập</button>
+				</div>
+
+
+				<div class="toggle-panel toggle-right">
+					<h1>Xin chào, bạn mới!</h1>
+					<img th:src="@{/images/logo.png}" alt="Logo" width="200"
+						height="200" class="rounded-circle me-2">
+					<p>Đăng ký với thông tin cá nhân của bạn để sử dụng tất cả các
+						tính năng của trang web</p>
+					<button class="hidden" id="register">Sign Up</button>
+				</div>
+
+			</div>
+		</div>
+
+
+	</div>
+
+
+	<script th:src="@{/js/script.js}"></script>
+</body>
+</html>

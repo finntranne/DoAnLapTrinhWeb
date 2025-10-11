@@ -5,11 +5,16 @@ import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
-public class MvcConfig implements WebMvcConfigurer{
+public class MvcConfig implements WebMvcConfigurer {
 
-	@Override
-	public void addViewControllers(ViewControllerRegistry registry) {
-		registry.addViewController("/403").setViewName("403");
-		registry.addViewController("/login").setViewName("login");
-	}
+    @Override
+    public void addViewControllers(ViewControllerRegistry registry) {
+        // Auth templates
+        registry.addViewController("/login").setViewName("auth/login");
+        registry.addViewController("/auth/403").setViewName("auth/403");
+        registry.addViewController("/auth/forgot-password").setViewName("auth/forgot-password");
+        
+        // Dashboard
+        registry.addViewController("/dashboard").setViewName("dashboard");
+    }
 }

@@ -1,70 +1,84 @@
 package com.alotra.entity.user;
 
-import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
-
-
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
+import java.util.Set;
 
-@AllArgsConstructor
-@NoArgsConstructor
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "Users")
 public class User {
-
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY) 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "UserID")
-	private int user_id;
-	
-	@Column(name = "UserName",  unique = true)
-	private String username;
-	
-	@Column(name = "Email",  unique = true)
-	private String email;
-	
-	@Column(name = "Password" )
-	private String password;
-	
-	@Column(name = "FullName", columnDefinition = "nvarchar(200)")
-	private String fullname;
-	
-	@Column(name = "Avatar")
-	private String avatar;
-	
-	@ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @JoinTable(
-        name = "Users_Roles",
-        joinColumns = @JoinColumn(name = "UserID"),
-        inverseJoinColumns = @JoinColumn(name = "RoleID")
-    )
-    private Set<Role> roles = new HashSet<>();
-	
-	@Column(name = "Status")
-	private int status;
-	
+    private Integer id;
 
-	@Column(name = "CreatedAt")
-	private LocalDateTime createdAt;
-	
-	@Column(name = "IsVerified")
-	private boolean isVerified;
-	
-	@Column(name = "CodeOTP")
-	private String codeOTP;
+    @Column(name = "Username", nullable = false, unique = true, length = 50)
+    private String username;
+
+    @Column(name = "PasswordHash", nullable = false, length = 255)
+    private String password;
+
+    @Column(name = "Email", nullable = false, unique = true, length = 255)
+    private String email;
+
+    @Column(name = "PhoneNumber", unique = true, length = 20)
+    private String phoneNumber;
+
+    @Column(name = "FullName", length = 255)
+    private String fullname;
+
+    @Column(name = "Status", nullable = false)
+    private Byte status = 1; // 0=Inactive, 1=Active (TINYINT)
+
+    @Column(name = "AvatarURL", length = 500)
+    private String avatarURL;
+
+    @Column(name = "CreatedAt", nullable = false, columnDefinition = "DATETIME2")
+    private LocalDateTime createdAt;
+
+    @Column(name = "UpdatedAt", nullable = false, columnDefinition = "DATETIME2")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "OtpCode", length = 10)
+    private String codeOTP;
+
+    @Column(name = "OtpExpiryTime", columnDefinition = "DATETIME2")
+    private LocalDateTime otpExpiryTime;
+
+    @Column(name = "OtpPurpose", length = 20)
+    private String otpPurpose; // REGISTER, RESET_PASSWORD
+
+    @Column(name = "Verified", columnDefinition = "BIT DEFAULT 0")
+    private Boolean verified = false;
+
+    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @JoinTable(
+        name = "UserRoles",
+        joinColumns = @JoinColumn(name = "UserID", referencedColumnName = "UserID"),
+        inverseJoinColumns = @JoinColumn(name = "RoleID", referencedColumnName = "RoleID")
+    )
+    private Set<Role> roles;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+        if (status == null) {
+            status = 1;
+        }
+        if (verified == null) {
+            verified = false;
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }
