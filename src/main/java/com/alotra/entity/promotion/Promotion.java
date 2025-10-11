@@ -4,9 +4,12 @@ package com.alotra.entity.promotion;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 @Entity
 @Table(name = "Promotions")
@@ -34,4 +37,9 @@ public class Promotion {
 
     @Column(name = "Status", nullable = false)
     private Byte status; // 0: Inactive, 1: Active
+    
+    @OneToMany(mappedBy = "promotion", fetch = FetchType.LAZY)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private Set<PromotionProduct> promotionProducts;
 }

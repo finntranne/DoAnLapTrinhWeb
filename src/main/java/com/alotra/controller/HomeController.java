@@ -1,8 +1,8 @@
 package com.alotra.controller;
 
 import com.alotra.service.product.CategoryService;
-// Không cần ProductService ở đây nữa nếu bạn hiển thị theo category
-// import com.alotra.service.product.ProductService; 
+import com.alotra.service.product.ProductService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,8 +15,8 @@ import java.util.List;
 public class HomeController {
 
     // Bỏ ProductService vì chúng ta đã lấy Product thông qua Category
-    // @Autowired
-    // private ProductService productService;
+    @Autowired
+    private ProductService productService;
 
     @Autowired
     private CategoryService categoryService;
@@ -36,8 +36,7 @@ public class HomeController {
         // 1. Lấy danh sách categories (đã bao gồm products bên trong) từ service
         model.addAttribute("categories", categoryService.findAll());
 
-        // 2. Dòng này không cần thiết nữa vì ta đã lặp qua category.products
-        // model.addAttribute("topProducts", productService.getTopProducts());
+        model.addAttribute("topProducts", productService.getTopProducts());
 
         // 3. Giữ lại dữ liệu mẫu cho banner
         List<Banner> banners = new ArrayList<>();

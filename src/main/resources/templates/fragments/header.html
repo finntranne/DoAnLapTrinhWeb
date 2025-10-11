@@ -73,7 +73,7 @@
     .product-brand { font-size: 0.8rem; color: #a5a5a5; text-transform: uppercase; letter-spacing: 1px; }
     .product-title { font-weight: bold; color: #212529; margin-bottom: 0.5rem; }
     .product-price { font-size: 1.2rem; font-weight: bold; color: #212529; }
-    .btn-add-to-cart { position: absolute; bottom: 20px; right: 20px; width: 40px; height: 40px; border-radius: 50%; background-color: var(--primary-color); color: white; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; line-height: 1; border: none; transform: translateY(150%); transition: transform 0.3s ease; }
+    .btn-add-to-cart { position: absolute; bottom: 80px; right: 10px; width: 30px; height: 30px; border-radius: 50%; background-color: var(--primary-color); color: white; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; line-height: 1; border: none; transform: translateY(150%); transition: transform 0.3s ease; }
     .product-card:hover .btn-add-to-cart { transform: translateY(0); }
 
     /* === FOOTER STYLES === */
@@ -81,6 +81,67 @@
     .footer-links a:hover { color: var(--primary-color); text-decoration: underline; }
     .social-icon { transition: color 0.2s ease-in-out; }
     .social-icon:hover { color: var(--primary-color) !important; }
+    
+    
+    /* === CSS MỚI CHO GIAO DIỆN SẢN PHẨM NÂNG CAO === */
+
+.product-card .card-body {
+    padding-bottom: 50px; /* Tạo không gian cho thanh "đã bán" */
+}
+
+/* Huy hiệu giảm giá */
+.discount-badge {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background-color: var(--primary-color);
+    color: white;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+    z-index: 10;
+}
+
+/* Giá gốc bị gạch ngang */
+.original-price {
+    text-decoration: line-through;
+    color: #a5a5a5;
+    font-weight: normal;
+    font-size: 1rem;
+    margin-left: 8px;
+}
+
+/* Thanh số lượng đã bán */
+.sold-progress-bar {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    height: 20px;
+    background-color: #E4EBD9;
+    overflow: hidden;
+    border-radius: 10px;
+}
+.sold-progress {
+    background-color: var(--primary-color);
+    height: 100%;
+    border-radius: 0 20px 20px 0;
+}
+.sold-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: black;
+    font-size: 0.8rem;
+    font-weight: bold;
+    white-space: nowrap;
+}
 </style>
 </head>
 

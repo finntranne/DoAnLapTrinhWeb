@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.util.Set;
 
+import com.alotra.entity.promotion.PromotionProduct;
+
 @Entity
 @Table(name = "Products") // Sửa lại tên bảng
 @Data
@@ -40,4 +42,9 @@ public class Product {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private Set<ProductImage> productImages;
+    
+    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private Set<PromotionProduct> promotionProducts;
 }

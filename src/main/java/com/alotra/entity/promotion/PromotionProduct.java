@@ -1,12 +1,8 @@
 package com.alotra.entity.promotion;
 
-
 import com.alotra.entity.product.Product;
-
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Table(name = "PromotionProducts")
@@ -15,28 +11,22 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class PromotionProduct {
 
-    @EmbeddedId
-    private PromotionProductId id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id; // Thêm một ID tự tăng cho bảng nối
 
-    @ManyToOne
-    @MapsId("promotionId")
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "PromotionID")
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private Promotion promotion;
 
-    @ManyToOne
-    @MapsId("productId")
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ProductID")
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private Product product;
 
     @Column(name = "DiscountPercentage", nullable = false)
     private Integer discountPercentage;
-}
-
-@Embeddable
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-class PromotionProductId {
-    private Integer promotionId;
-    private Integer productId;
 }

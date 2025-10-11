@@ -16,39 +16,47 @@
                 <div th:replace="~{fragments/carousel :: pageCarousel}"></div>
             </div>
         </div>
-
-        <div class="my-5">
+<div class="my-5">
     <h2 class="text-center mb-4">Sản Phẩm Bán Chạy</h2>
-    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-4" th:if="${categories != null and not #lists.isEmpty(categories)}">
-        <div th:each="category : ${categories}" th:with="products=${category.products}">
-            <div th:each="product : ${products}" class="col">
-                <a th:href="@{'/products/' + ${product.productId}}" class="product-card h-100">
-                    <img th:if="${not #lists.isEmpty(product.productImages)}" 
-                         th:src="${product.productImages[0].imageUrl}" 
-                         class="card-img-top" 
-                         th:alt="${product.productName}">
-                    <img th:unless="${not #lists.isEmpty(product.productImages)}" 
-                         th:src="@{/images/placeholder.png}" 
-                         class="card-img-top" 
-                         th:alt="${product.productName}">
+    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-4" th:if="${topProducts != null and not #lists.isEmpty(topProducts)}">
+        
+        <div class="col" th:each="sale : ${topProducts}">
+            <div class="product-card h-100">
+                <a th:href="@{'/products/' + ${sale.product.productId}}" class="product-card-link">
+                    <div th:if="${sale.discountPercentage != null and sale.discountPercentage > 0}" class="discount-badge" th:text="'-' + ${sale.discountPercentage} + '%'"></div>
+                    
+                    <img th:if="${not #lists.isEmpty(sale.product.productImages)}" th:src="${sale.product.productImages[0].imageUrl}" class="card-img-top" th:alt="${sale.product.productName}">
+                    <img th:unless="${not #lists.isEmpty(sale.product.productImages)}" th:src="@{/images/placeholder.png}" class="card-img-top" th:alt="${sale.product.productName}">
+                </a>
 
-                    <div class="card-body">
-                        <p class="product-brand mb-1">Highlands Coffee</p>
-                        <h5 class="product-title" th:text="${product.productName}">Tên sản phẩm</h5>
-                        <p class="product-price" th:if="${product.productVariants != null and not #lists.isEmpty(product.productVariants)}" 
-                           th:text="${#numbers.formatDecimal(product.productVariants[0].price, 0, 'POINT', 0, 'COMMA')} + 'đ'">Liên hệ</p>
-                        <p class="product-price" th:unless="${product.productVariants != null and not #lists.isEmpty(product.productVariants)}">Liên hệ</p>
+                <div class="card-body">
+                    <p class="product-brand mb-1">ALOTRA</p>
+                    <h5 class="product-title" th:text="${sale.product.productName}">Tên sản phẩm</h5>
+                    
+                    <div class="product-price" th:if="${not #lists.isEmpty(sale.product.productVariants)}">
+                        <th:block th:with="originalPrice=${sale.product.productVariants[0].price}">
+                            <div th:if="${sale.discountPercentage != null and sale.discountPercentage > 0}">
+                                <span th:text="${#numbers.formatDecimal(originalPrice * (100 - sale.discountPercentage) / 100, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                                <span class="original-price" th:text="${#numbers.formatDecimal(originalPrice, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                            </div>
+                            <div th:unless="${sale.discountPercentage != null and sale.discountPercentage > 0}">
+                                <span th:text="${#numbers.formatDecimal(originalPrice, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                            </div>
+                        </th:block>
                     </div>
+                </div>
 
+                <div class="product-card-footer">
+                    <div class="sold-progress-bar">
+                        <div class="sold-progress" th:style="'width: ' + (${sale.totalSold} > 500 ? 100 : ${sale.totalSold} * 100 / 500) + '%'"></div>
+                        <span class="sold-text" th:text="${sale.totalSold} + ' đã bán'"></span>
+                    </div>
                     <button class="btn-add-to-cart">
                         <i class="fa-solid fa-plus"></i>
                     </button>
-                </a>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="text-center" th:if="${categories == null or #lists.isEmpty(categories)}">
-        <p>Không có sản phẩm bán chạy nào để hiển thị.</p>
     </div>
 </div>
 

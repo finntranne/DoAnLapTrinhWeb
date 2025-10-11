@@ -1,9 +1,7 @@
 package com.alotra.service.product;
 
-
-import com.alotra.entity.product.Product;
+import com.alotra.model.ProductSaleDTO;
 import com.alotra.repository.product.ProductRepository;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,8 +13,7 @@ public class ProductService {
     @Autowired
     private ProductRepository productRepository;
 
-    public List<Product> getTopProducts() {
-        // Tạm thời lấy tất cả sản phẩm, sau này có thể thêm logic lấy sản phẩm bán chạy
-        return productRepository.findAll();
+    public List<ProductSaleDTO> getTopProducts() { // Sửa kiểu trả về
+        return productRepository.findBestSellingProducts();
     }
 }

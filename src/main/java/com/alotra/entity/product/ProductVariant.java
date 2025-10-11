@@ -1,33 +1,41 @@
 package com.alotra.entity.product;
 
+import com.alotra.entity.order.OrderDetail; // Thêm import này
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
+import java.util.Set; // Thêm import này
 
 @Entity
-@Table(name = "ProductVariants") // Sửa lại tên bảng
+@Table(name = "ProductVariants")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProductVariant {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "VariantID") // Sửa lại tên cột
+    @Column(name = "VariantID")
     private Integer variantId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ProductID", nullable = false) // Sửa lại tên cột join
+    @JoinColumn(name = "ProductID", nullable = false)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private Product product;
 
     @ManyToOne
-    @JoinColumn(name = "SizeID", nullable = false) // Sửa lại tên cột join
+    @JoinColumn(name = "SizeID", nullable = false)
     private Size size;
 
-    @Column(name = "Price", nullable = false) // Sửa lại tên cột
+    @Column(name = "Price", nullable = false)
     private BigDecimal price;
 
-    @Column(name = "Stock", nullable = false) // Sửa lại tên cột
+    @Column(name = "Stock", nullable = false)
     private int stock;
+
+    // === THÊM MỐI QUAN HỆ NÀY VÀO ===
+    @OneToMany(mappedBy = "variant")
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private Set<OrderDetail> orderDetails;
 }
