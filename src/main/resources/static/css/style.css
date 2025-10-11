@@ -208,3 +208,122 @@ body{
 .container.active .toggle-right{
     transform: translateX(200%);
 }
+.otp-form-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 40px;
+  border-radius: 30px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
+  z-index: 10;
+  transition: all 0.6s ease-in-out;
+}
+
+.otp-form-wrapper h1 {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.otp-form-wrapper button {
+  background-color: #2da0a8;
+  color: #fff;
+  font-size: 14px; 
+  padding: 12px 60px; 
+  width: 430px; 
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-top: 20px;
+  cursor: pointer;
+  box-sizing: border-box; 
+}
+
+.otp-container {
+  display: flex;
+  gap: 8px; 
+  justify-content: center;
+  padding: 10px; 
+  border: 2px solid #2da0a8;
+  border-radius: 12px;
+  background-color: #f9f9f9;
+  max-width: 450px; 
+}
+
+.otp-input {
+  width: 60px; /* Tăng từ 50px để to hơn */
+  height: 60px; /* Tăng từ 50px để cân đối */
+  min-width: 60px; /* Ngăn co giãn */
+  max-width: 60px; /* Ngăn kéo dài */
+  text-align: center;
+  font-size: 36px !important; /* Tăng từ 36px để chữ to hơn */
+  font-family: Arial, sans-serif;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  text-transform: uppercase;
+  padding: 5px; /* Tăng từ 2px để cân đối */
+  box-sizing: border-box;
+}
+
+.otp-input:focus {
+  outline: none;
+  border-color: #2da0a8;
+}
+
+
+#forgotPasswordLink {
+    display: inline-block;
+    margin: 10px 0;
+    color: #007bff;
+    cursor: pointer;
+    text-decoration: underline;
+}
+#forgotPasswordLink:hover {
+    color: #0056b3;
+}
+
+
+.forgot-password {
+    display: none;  /* ẩn ban đầu, JS sẽ hiển thị */
+}
+
+#forgotPasswordContainer {
+    position: absolute;       
+    top: 0;                  
+    left: 0;                 
+    width: 100%;              
+    z-index: 5;               
+    background-color: #fff;
+    padding: 20px;
+    box-sizing: border-box;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    display: none;            /* ẩn ban đầu, JS sẽ hiển thị */
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+#resetPasswordContainer {
+    position: absolute;       
+    top: 0;                  
+    left: 0;                 
+    width: 100%;              
+    z-index: 5;               
+    background-color: #fff;
+    padding: 20px;
+    box-sizing: border-box;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    display: none;            /* ẩn ban đầu, JS sẽ hiển thị */
+    flex-direction: column;
+    align-items: flex-start;
+}

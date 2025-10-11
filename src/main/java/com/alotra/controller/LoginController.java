@@ -10,11 +10,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 
 @Controller
 public class LoginController {
-   
-
+  
     @GetMapping("/login")
     public String showLoginPage() {
-        // Trả về trang đăng nhập (templates/login.html)
         return "login";
     }
     

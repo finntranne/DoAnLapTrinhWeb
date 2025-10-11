@@ -80,6 +80,7 @@ public class WebSecurityConfig {
                 .requestMatchers("/delete/**").hasAuthority("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/**").permitAll()
                 .requestMatchers("/api/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/**").permitAll()
                 .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
                 .anyRequest().authenticated()
             )

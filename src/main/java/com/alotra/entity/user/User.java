@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.springframework.data.annotation.CreatedDate;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -42,7 +41,7 @@ public class User {
 	@Column(name = "Password" )
 	private String password;
 	
-	@Column(name = "FullName", columnDefinition = "nvarchar(200)", unique = true)
+	@Column(name = "FullName", columnDefinition = "nvarchar(200)")
 	private String fullname;
 	
 	@Column(name = "Avatar")
@@ -65,4 +64,7 @@ public class User {
 	
 	@Column(name = "IsVerified")
 	private boolean isVerified;
+	
+	@Column(name = "CodeOTP")
+	private String codeOTP;
 }
