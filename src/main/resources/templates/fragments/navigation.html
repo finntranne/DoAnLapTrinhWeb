@@ -30,8 +30,9 @@
             </div>
         </a>
     </li>
+
     <li class="nav-item" th:if="${#authorization.expression('!isAuthenticated()')}">
-        <a href="/auth/login" class="nav-link text-white d-flex align-items-center">
+        <a href="/login" class="nav-link text-white d-flex align-items-center">
             <i class="fa-solid fa-user fa-2x"></i>
             <div class="ms-2">
                 <span class="text small d-block">Tài khoản</span>
@@ -39,15 +40,29 @@
             </div>
         </a>
     </li>
-    <li class="nav-item" th:if="${#authorization.expression('isAuthenticated()')}">
-        <a href="/account/profile" class="nav-link text-white d-flex align-items-center">
-            <i class="fa-solid fa-user fa-2x"></i>
+
+    <li class="nav-item dropdown" th:if="${#authorization.expression('isAuthenticated()')}">
+        <a class="nav-link text-white d-flex align-items-center dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fa-solid fa-user-check fa-2x"></i>
             <div class="ms-2">
-                <span class="text small d-block">Tài khoản</span>
-                <span class="fw-bold d-block">Hồ sơ</span>
+                <span class="text small d-block">Xin chào,</span>
+                <span class="fw-bold d-block" th:text="${#authentication.name}"></span>
             </div>
         </a>
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="/profile">
+                <i class="fa-solid fa-address-card me-2"></i>Hồ sơ của tôi
+            </a></li>
+            <li><a class="dropdown-item" href="/orders">
+                <i class="fa-solid fa-receipt me-2"></i>Lịch sử mua hàng
+            </a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="/logout">
+                <i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất
+            </a></li>
+        </ul>
     </li>
+    
     <li class="nav-item">
         <a href="/cart" class="nav-link text-white d-flex align-items-center">
             <i class="fa-solid fa-cart-shopping fa-2x"></i>

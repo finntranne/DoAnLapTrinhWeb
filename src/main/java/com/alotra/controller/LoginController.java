@@ -10,18 +10,16 @@ import org.springframework.web.bind.annotation.PostMapping;
 
 @Controller
 public class LoginController {
-   
-
+  
     @GetMapping("/login")
     public String showLoginPage() {
-        // Trả về trang đăng nhập (templates/login.html)
         return "login";
     }
     
     @PostMapping("/login_success_handler")
     public String loginSuccessHandler(){
         System.out.println("logging user login success...");
-        return "index";
+        return "home/index";
     }
 
     @PostMapping("/login_failure_handler")

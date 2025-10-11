@@ -1,11 +1,16 @@
 package com.alotra.config;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.authentication.configuration.GlobalAuthenticationConfigurerAdapter;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -14,22 +19,23 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 import com.alotra.service.user.CustomUserDetailsService;
+import com.alotra.service.user.UserServiceImpl;
+
+
+
+
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // Giữ nguyên, rất tốt cho việc phân quyền ở cấp độ phương thức
+@EnableMethodSecurity
 public class WebSecurityConfig {
 
-    // Sử dụng @Autowired UserDetailsService mà Spring đã quản lý
     @Autowired
-    private CustomUserDetailsService customUserDetailsService;
+    private CustomUserDetailsService userDetailsService;
 
-    // Bean này không cần thiết nếu bạn đã có @Autowired ở trên,
-    // nhưng nếu bạn muốn định nghĩa rõ ràng, hãy làm như sau:
     @Bean
     public UserDetailsService userDetailsService() {
-        // QUAN TRỌNG: Trả về instance đã được inject, không "new" ở đây
-        return customUserDetailsService;
+        return new UserServiceImpl();  // hoặc return userDetailsService;
     }
 
     @Bean
@@ -40,61 +46,66 @@ public class WebSecurityConfig {
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        // Sử dụng UserDetailsService đã được Spring quản lý
         authProvider.setUserDetailsService(userDetailsService());
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
 
-    // KHÔNG CẦN PHƯƠNG THỨC NÀY NỮA (configure(AuthenticationManagerBuilder auth))
-    // Vì DaoAuthenticationProvider bean đã làm nhiệm vụ tương tự.
-
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.userDetailsService(userDetailsService())
+            .passwordEncoder(passwordEncoder());
+    }
+    
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
-        // Rút gọn lại, đây là cách chuẩn trong Spring Boot 3
+        final List<GlobalAuthenticationConfigurerAdapter> configurers = new ArrayList<>();
+        configurers.add(new GlobalAuthenticationConfigurerAdapter() {
+            @Override
+            public void configure(AuthenticationManagerBuilder auth) throws Exception {
+                // auth.doSomething()
+            }
+        });
         return authConfig.getAuthenticationManager();
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable()) // Tạm thời tắt CSRF để test, nên bật trong môi trường production
+            .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authorize -> authorize
                 // --- CHO PHÉP TRUY CẬP CÔNG KHAI ---
+                // Tất cả mọi người (cả khách) đều có thể truy cập các đường dẫn này
                 .requestMatchers(
-                		"/", "/home/**", "/test",      // <-- SỬA Ở ĐÂY: từ "/home" thành "/home/**"
-                        "/auth/**", "/login", "/register",
-                        "/products/**",
-                        "/css/**", "/js/**", "/images/**"
+                    "/", "/home/**", "/test",      
+                    "/auth/**", "/login", "/register", 
+                    "/products/**",             
+                    "/api/**", // Cho phép tất cả các API
+                    "/css/**", "/js/**", "/images/**" 
                 ).permitAll()
                 
-                // --- PHÂN QUYỀN DỰA TRÊN VAI TRÒ (ROLE) ---
-                // Ví dụ: Các trang quản trị yêu cầu quyền ADMIN
-                .requestMatchers("/admin/**", "/new", "/edit/**", "/delete/**").hasAuthority("ADMIN")
+                // --- PHÂN QUYỀN CHO CÁC VAI TRÒ CỤ THỂ ---
+                // Chỉ ADMIN mới có thể truy cập các trang quản trị
+                .requestMatchers("/admin/**").hasAuthority("ADMIN")
                 
-                // --- API (Nếu có) ---
-                // Mở API cho tất cả mọi người (hoặc cấu hình lại tùy theo nhu cầu)
-                .requestMatchers("/api/**").permitAll()
+                // Chỉ USER (hoặc CUSTOMER) mới có thể vào trang cá nhân, giỏ hàng...
+                .requestMatchers("/profile/**", "/cart/**", "/orders/**").hasAuthority("USER")
 
                 // --- TẤT CẢ CÁC REQUEST CÒN LẠI ---
-                // Yêu cầu phải được xác thực
+                // Bất kỳ yêu cầu nào chưa được định nghĩa ở trên đều yêu cầu phải đăng nhập
                 .anyRequest().authenticated()
-            )
-            .formLogin(form -> form
-                .loginPage("/login")
-                .loginProcessingUrl("/login") // URL xử lý đăng nhập
-                .defaultSuccessUrl("/", true) // Chuyển hướng về trang chủ sau khi đăng nhập thành công
-                .permitAll()
             )
             .logout(logout -> logout
                 .logoutUrl("/logout")
-                .logoutSuccessUrl("/login?logout") // Chuyển hướng về trang login với thông báo
+                .logoutSuccessUrl("/login?logout")
                 .permitAll()
             )
             .exceptionHandling(exception -> exception
-                .accessDeniedPage("/403") // Trang lỗi khi không có quyền
+                .accessDeniedPage("/403")
             );
 
         return http.build();
     }
+
+	
+
 }

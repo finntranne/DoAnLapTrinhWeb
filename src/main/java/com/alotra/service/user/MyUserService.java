@@ -33,7 +33,7 @@ public class MyUserService implements UserDetails {
 
     @Override
     public String getPassword() {
-        return user.getPasswordHash();
+        return user.getPassword();
     }
 
     @Override
@@ -58,7 +58,7 @@ public class MyUserService implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return user.getIsVerified();
+        return user.isVerified();
     }
     
 }
