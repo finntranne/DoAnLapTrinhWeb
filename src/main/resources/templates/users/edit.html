@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout.html}">
+<head>
+    <title>Chỉnh sửa người dùng</title>
+</head>
+
+<body>
+<main class="app-main">
+    <div layout:fragment="content">
+        <div class="container mt-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="bi bi-pencil-square me-2"></i> Chỉnh sửa người dùng
+                    </h4>
+                </div>
+
+                <form th:action="@{'/admin/users/edit/' + ${user.user_id}}"
+                      method="post"
+                      enctype="multipart/form-data"
+                      th:object="${user}">
+                    <div class="card-body">
+
+                        <div class="text-center mb-4">
+                            <div style="width:120px; height:120px; overflow:hidden; border-radius:15px; margin:auto;">
+                                <img id="avatarPreview"
+                                     th:src="${user.avatar != null && !#strings.isEmpty(user.avatar)} ? ${user.avatar} : '/assets/img/default_user_avatar.png'"
+                                     alt="Avatar"
+                                     style="width:100%; height:100%; object-fit:cover; border:1px solid #ddd;">
+                            </div>
+                            <div class="mt-2">
+                                <label for="avatarFile" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-upload"></i> Chọn ảnh mới
+                                </label>
+                                <input type="file" id="avatarFile" name="avatarFile" hidden onchange="previewAvatar(this)">
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Tên đăng nhập</label>
+                                <input type="text" class="form-control" th:field="*{username}" readonly>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Họ và tên</label>
+                                <input type="text" class="form-control" th:field="*{fullname}" placeholder="Nhập họ và tên">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" th:field="*{email}" placeholder="Nhập email">
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label">Trạng thái</label>
+                                <select class="form-select" th:field="*{status}">
+                                    <option th:value="1">Hoạt động</option>
+                                    <option th:value="0">Tạm khóa</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label">Xác minh</label>
+                                <select class="form-select" th:field="*{isVerified}">
+                                    <option th:value="true">Đã xác minh</option>
+                                    <option th:value="false">Chưa xác minh</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Vai trò</label>
+                                <div class="d-flex flex-wrap gap-3 mt-1">
+                                    <div class="form-check" th:each="role : ${allRoles}">
+                                        <input class="form-check-input" type="checkbox" name="roleIds"
+                                               th:value="${role.roleid}"
+                                               th:id="'role-' + ${role.roleid}"
+                                               th:checked="${#lists.contains(user.roles.![roleid], role.roleid)}">
+                                        <label class="form-check-label" th:for="'role-' + ${role.roleid}"
+                                               th:text="${role.rolename}"></label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-footer d-flex justify-content-between align-items-center">
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#resetPasswordModal">
+                            <i class="bi bi-key-fill"></i> Đặt lại mật khẩu
+                        </button>
+                        <div>
+                            <a th:href="@{/admin/users}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Quay lại
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-save"></i> Lưu thay đổi
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-labelledby="resetPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resetPasswordModalLabel">Đặt lại mật khẩu cho <span class="fw-bold" th:text="${user.username}"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form th:action="@{/admin/users/reset-password}" method="post" id="resetPasswordForm">
+                <div class="modal-body">
+                    <input type="hidden" name="userId" th:value="${user.user_id}" />
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label">Mật khẩu mới</label>
+                        <input type="password" class="form-control" id="newPassword" name="newPassword" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label">Xác nhận mật khẩu mới</label>
+                        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                    </div>
+                    <div id="passwordError" class="text-danger d-none">Mật khẩu xác nhận không khớp.</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary">Lưu mật khẩu mới</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div layout:fragment="scripts">
+    <script>
+        // JS preview avatar
+        function previewAvatar(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('avatarPreview').src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // JS for password confirmation in modal
+        const resetPasswordForm = document.getElementById('resetPasswordForm');
+        const newPassword = document.getElementById('newPassword');
+        const confirmPassword = document.getElementById('confirmPassword');
+        const passwordError = document.getElementById('passwordError');
+
+        resetPasswordForm.addEventListener('submit', function(event) {
+            if (newPassword.value !== confirmPassword.value) {
+                event.preventDefault(); // Ngăn form submit
+                passwordError.classList.remove('d-none'); // Hiển thị thông báo lỗi
+            } else {
+                passwordError.classList.add('d-none'); // Ẩn thông báo lỗi
+            }
+        });
+    </script>
+</div>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout.html}">
+
+<head>
+    <title>Quản lý danh mục</title>
+</head>
+
+<body>
+<main class="app-main">
+    <div layout:fragment="content">
+        <div class="container mt-4">
+            
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="fw-bold mb-0">Danh sách danh mục</h3>
+                <a th:href="@{/admin/categories/add}" class="btn btn-success rounded-pill">
+                    <i class="bi bi-plus-circle-fill me-1"></i> Thêm danh mục
+                </a>
+            </div>
+
+            <form th:action="@{/admin/categories/search}" method="get" class="d-flex mb-4">
+                <input type="text" name="keyword" th:value="${keyword}" class="form-control me-2"
+                       placeholder="Tìm kiếm theo tên danh mục...">
+                <button type="submit" class="btn btn-outline-primary rounded-pill">
+                    <i class="bi bi-search"></i> Tìm kiếm
+                </button>
+            </form>
+
+            <div class="table-responsive shadow-sm rounded">
+                <table class="table table-striped align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th scope="col">STT</th>
+                            <th scope="col">ID</th>
+                            <th scope="col">Tên danh mục</th>
+                            <th scope="col">Trạng thái</th>
+                            <th scope="col">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="category, iterStat : ${categories}">
+                            <td th:text="${iterStat.index + 1}"></td>
+                            <td th:text="${category.categoryId}"></td>
+                            
+                            <td>
+							  <span th:text="${category.categoryName}"
+							      data-bs-toggle="tooltip"
+							      data-bs-placement="right"
+							      th:attr="title=${category.description}"
+							      class="fw-semibold"
+							      data-bs-custom-class="tooltip-modern">
+							</span>
+							
+							</td>
+
+                            <td>
+							    <span th:classappend="${category.status == 1} ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-secondary-subtle text-secondary border border-secondary-subtle'"
+							          class="badge d-inline-flex align-items-center gap-1 px-3 py-2 rounded-pill fw-semibold">
+							        <i th:class="${category.status == 1} ? 'bi bi-check-circle-fill' : 'bi bi-pause-circle-fill'"></i>
+							        <span th:text="${category.status == 1 ? 'Hoạt động' : 'Tạm khoá'}"></span>
+							    </span>
+							</td>
+
+
+                            <td>
+                                <div class="d-flex gap-2 justify-content-start">
+                                    <a th:href="@{'/admin/categories/edit/' + ${category.categoryId}}"
+                                       class="btn btn-outline-warning btn-sm rounded-pill">
+                                        <i class="bi bi-pencil-square"></i> Sửa
+                                    </a>
+                                    <a th:href="@{'/admin/categories/delete/' + ${category.categoryId}(page=${currentPage})}"
+                                       class="btn btn-outline-danger btn-sm rounded-pill"
+                                       onclick="return confirm('Bạn có chắc chắn muốn xóa danh mục này không?');">
+                                       <i class="bi bi-trash3"></i> Xóa
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <nav th:if="${totalPages > 1}" class="mt-4">
+			  <ul class="pagination justify-content-center flex-wrap">
+			
+			    <!-- Nút Previous -->
+			    <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled'">
+			      <a class="page-link rounded-pill shadow-sm border-0"
+			         th:href="@{'/admin/categories?page=' + ${currentPage - 1}}">
+			        <i class="bi bi-chevron-double-left"></i>
+			      </a>
+			    </li>
+			
+			    <!-- Trang đầu -->
+			    <li class="page-item" th:if="${currentPage > 3}">
+			      <a class="page-link rounded-pill shadow-sm border-0"
+			         th:href="@{'/admin/categories?page=1'}">1</a>
+			    </li>
+			
+			    <!-- Dấu ... trước -->
+			    <li class="page-item disabled" th:if="${currentPage > 4}">
+			      <span class="page-link border-0 bg-transparent">...</span>
+			    </li>
+			
+			    <!-- Các trang giữa -->
+			    <li class="page-item mx-1"
+			        th:each="page : ${#numbers.sequence(currentPage - 1, currentPage + 1)}"
+			        th:if="${page >= 1 and page <= totalPages}"
+			        th:classappend="${page == currentPage} ? 'active'">
+			      <a class="page-link rounded-pill shadow-sm border-0 fw-semibold"
+			         th:href="@{'/admin/categories?page=' + ${page}}"
+			         th:text="${page}"></a>
+			    </li>
+			
+			    <!-- Dấu ... sau -->
+			    <li class="page-item disabled" th:if="${currentPage < totalPages - 3}">
+			      <span class="page-link border-0 bg-transparent">...</span>
+			    </li>
+			
+			    <!-- Trang cuối -->
+			    <li class="page-item" th:if="${currentPage < totalPages - 2}">
+			      <a class="page-link rounded-pill shadow-sm border-0"
+			         th:href="@{'/admin/categories?page=' + ${totalPages}}"
+			         th:text="${totalPages}"></a>
+			    </li>
+			
+			    <!-- Nút Next -->
+			    <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled'">
+			      <a class="page-link rounded-pill shadow-sm border-0"
+			         th:href="@{'/admin/categories?page=' + ${currentPage + 1}}">
+			        <i class="bi bi-chevron-double-right"></i>
+			      </a>
+			    </li>
+			
+			  </ul>
+			</nav>
+
+        </div>
+    </div>
+</main>
+</body>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el));
+  });
+</script>
+
+</html>
+
+
+
+
+

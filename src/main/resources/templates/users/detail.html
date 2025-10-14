@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout.html}">
+
+<head>
+    <title>Chi tiết người dùng</title>
+</head>
+
+<body>
+<main class="app-main">
+    <div layout:fragment="content">
+        <div class="container mt-4">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                
+                <!-- Header -->
+                <div class="card-header bg-gradient-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-semibold"><i class="bi bi-person-lines-fill me-2"></i>Thông tin người dùng</h5>
+                    <a th:href="@{/admin/users}" class="btn btn-light btn-sm rounded-pill">
+                        <i class="bi bi-arrow-left"></i> Quay lại
+                    </a>
+                </div>
+
+                <!-- Nội dung -->
+                <div class="card-body p-4">
+                    <div class="row g-4">
+                        
+                        <!-- Avatar + tên -->
+                        <div class="col-md-4 text-center border-end">
+                            <div class="p-3">
+                                <div class="mx-auto" style="width:140px; height:140px; border-radius:15px; overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,0.1);">
+                                    <img th:src="${user.avatar != null && !#strings.isEmpty(user.avatar)} ? 
+                                        @{${user.avatar}} : @{/assets/img/user1-128x128.jpg}"
+                                        alt="Avatar" style="object-fit:cover; width:100%; height:100%;">
+                                </div>
+                                <h4 class="mt-3 mb-0 fw-semibold" th:text="${user.fullname}">Nguyễn Văn A</h4>
+                                <p class="text-muted">@<span th:text="${user.username}">username</span></p>
+
+                                <div class="mt-2">
+                                    <span th:each="r : ${user.roles}"
+                                          th:text="${r.rolename}"
+                                          th:classappend="
+                                              ${r.rolename == 'ADMIN'} ? 'badge bg-danger me-1' :
+                                              (${r.rolename == 'USER'} ? 'badge bg-primary me-1' :
+                                              (${r.rolename == 'VENDOR'} ? 'badge bg-warning text-dark me-1' :
+                                              'badge bg-secondary me-1'))">
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Thông tin chi tiết -->
+                        <div class="col-md-8">
+                            <div class="table-responsive">
+                                <table class="table table-borderless align-middle">
+                                    <tbody>
+                                    <tr>
+                                        <th class="text-muted" style="width:160px;">Mã người dùng</th>
+                                        <td th:text="${user.user_id}" class="fw-semibold"></td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-muted">Tên đăng nhập</th>
+                                        <td th:text="${user.username}"></td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-muted">Họ và tên</th>
+                                        <td th:text="${user.fullname}"></td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-muted">Email</th>
+                                        <td th:text="${user.email}"></td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-muted">Trạng thái</th>
+                                        <td>
+                                            <span th:text="${user.status == 1 ? 'Hoạt động' : 'Tạm khóa'}"
+                                                  th:classappend="${user.status == 1} ? 'badge bg-success' : 'badge bg-secondary'"></span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-muted">Xác minh</th>
+                                        <td>
+                                            <span th:if="${user.isVerified}" class="text-success fw-semibold">
+                                                <i class="bi bi-check-circle-fill me-1"></i>Đã xác minh
+                                            </span>
+                                            <span th:unless="${user.isVerified}" class="text-warning fw-semibold">
+                                                <i class="bi bi-exclamation-circle-fill me-1"></i>Chưa xác minh
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-muted">Ngày tạo</th>
+                                        <td th:text="${#temporals.format(user.createdAt, 'dd/MM/yyyy   HH:mm')}"></td>
+                                    </tr>
+                                   
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Nút hành động -->
+                    <div class="d-flex justify-content-end border-top pt-3 mt-4">
+                        <a th:href="@{'/admin/users/edit/' + ${user.user_id}}" class="btn btn-primary me-2 rounded-pill">
+                            <i class="bi bi-pencil-square"></i> Chỉnh sửa
+                        </a>
+                        <a th:href="@{'/admin/users/delete/' + ${user.user_id}}"
+                           class="btn btn-danger rounded-pill"
+                           onclick="return confirm('Bạn có chắc muốn xóa người dùng này không?');">
+                            <i class="bi bi-trash3"></i> Xóa
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

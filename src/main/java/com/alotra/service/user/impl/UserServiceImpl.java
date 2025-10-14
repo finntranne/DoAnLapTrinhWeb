@@ -18,10 +18,6 @@ public class UserServiceImpl implements IUserService{
 	@Autowired
     private UserRepository userRepository;
 
-	@Override
-	public List<User> findAll() {
-		return userRepository.findAll();
-	}
 
 	@Override
 	public Optional<User> findById(Integer id) {
@@ -75,6 +71,11 @@ public class UserServiceImpl implements IUserService{
 	public User updateUser(Integer id, User user) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public Page<User> findAll(Pageable pageable) {
+		return userRepository.findAll(pageable);
 	}
 
 }

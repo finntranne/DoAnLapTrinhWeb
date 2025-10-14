@@ -86,7 +86,7 @@ public class AuthController {
         user.setUsername(signUpDto.getUsername());
         user.setFullname(signUpDto.getFullname());
         user.setEmail(signUpDto.getEmail());
-        user.setVerified(false);
+        user.setIsVerified(false);
         user.setPassword(passwordEncoder.encode(signUpDto.getPassword()));
         user.setCreatedAt(LocalDateTime.now());
         
@@ -130,7 +130,7 @@ public class AuthController {
         }
 
         // Xác thực thành công
-        user.setVerified(true);
+        user.setIsVerified(true);
         user.setCodeOTP(null); 
         userRepository.save(user);
 

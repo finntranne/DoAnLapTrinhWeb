@@ -58,7 +58,7 @@ public class MyUserService implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return user.isVerified();
+        return user.getIsVerified();
     }
     
 }

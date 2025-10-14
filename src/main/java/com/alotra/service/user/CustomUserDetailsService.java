@@ -15,8 +15,6 @@ import com.alotra.entity.user.Role;
 import com.alotra.entity.user.User;
 import com.alotra.repository.user.UserRepository;
 
-
-
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 

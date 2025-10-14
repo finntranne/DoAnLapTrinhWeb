@@ -100,7 +100,7 @@ public class WebSecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(
-                    "/", "/dashboard", "/api/**", "/css/**", "/js/**", "/images/**", "/assets/**"
+                    "/", "/dashboard", "/api/**", "/css/**", "/js/**", "/images/**", "/assets/**", "/admin/**"
                 ).permitAll()
                 .anyRequest().authenticated()
             )

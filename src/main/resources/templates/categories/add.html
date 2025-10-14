@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout.html}">
+<head>
+    <title>Thêm danh mục</title>
+</head>
+
+<body>
+<main class="app-main">
+    <div layout:fragment="content">
+        <div class="container mt-4">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-success text-white rounded-top-4">
+                    <h5 class="mb-0"><i class="bi bi-folder-plus"></i> Thêm danh mục mới</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form th:action="@{/admin/categories/save}" th:object="${category}" method="post">
+                       
+
+                        <!-- Tên danh mục -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Tên danh mục</label>
+                            <input type="text" class="form-control" th:field="*{categoryName}" placeholder="Nhập tên danh mục" required>
+                        </div>
+
+                        <!-- Mô tả -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Mô tả</label>
+                            <textarea class="form-control" th:field="*{description}" rows="3" placeholder="Nhập mô tả (nếu có)"></textarea>
+                        </div>
+
+                        <!-- Trạng thái -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Trạng thái</label>
+                            <select class="form-select" th:field="*{status}">
+                                <option value="1">Hoạt động</option>
+                                <option value="0">Tạm khóa</option>
+                            </select>
+                        </div>
+
+                        <!-- Nút -->
+                        <div class="d-flex justify-content-end">
+                            <a th:href="@{/admin/categories}" class="btn btn-secondary me-2">
+                                <i class="bi bi-arrow-left-circle"></i> Quay lại
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-save"></i> Lưu danh mục
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

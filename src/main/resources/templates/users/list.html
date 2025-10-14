@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout.html}">
+
+<head>
+    <title>Quản lý người dùng</title>
+</head>
+
+<body>
+<main class="app-main">
+    <div layout:fragment="content">
+        <div class="container mt-4">
+            
+            <!-- Header + Nút thêm -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="fw-bold mb-0">Danh sách người dùng</h3>
+                <a th:href="@{'/admin/users/add'}" class="btn btn-success rounded-pill">
+                    <i class="bi bi-person-plus-fill me-1"></i> Thêm người dùng
+                </a>
+            </div>
+
+            <!-- Form tìm kiếm -->
+            <form th:action="@{/admin/users/search}" method="get" class="d-flex mb-4">
+                <input type="text" name="keyword" th:value="${keyword}" class="form-control me-2"
+                       placeholder="Tìm kiếm theo tên hoặc email...">
+                <button type="submit" class="btn btn-outline-primary rounded-pill">
+                    <i class="bi bi-search"></i> Tìm kiếm
+                </button>
+            </form>
+
+            <!-- Bảng danh sách -->
+            <div class="table-responsive shadow-sm rounded">
+                <table class="table table-striped align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                        	<th scope="col">STT</th>
+                            <th scope="col">ID</th>
+                            <th scope="col">Ảnh đại diện</th>
+                            <th scope="col">Tên đăng nhập</th>
+                            <th scope="col">Email</th>
+                            <th scope="col">Vai trò</th>
+                            <th scope="col">Trạng thái</th>
+                            <th scope="col">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="user, iterStat : ${users}">
+                        	<td th:text="${iterStat.index + 1}"></td>
+                            <td th:text="${user.user_id}"></td>
+                            <td>
+								<div style="width:50px; height:50px; overflow:hidden; border-radius:10px;">
+								    <img th:src="${user.avatar != null && !#strings.isEmpty(user.avatar)} ? ${user.avatar} : '/assets/img/default_user_avatar.png'"
+								         alt="Avatar"
+								         style="width:100%; height:100%; object-fit:cover;">
+								  </div>
+
+							</td>
+
+                            <td th:text="${user.username}" class="fw-semibold"></td>
+                            <td th:text="${user.email}"></td>
+
+                            <!-- Vai trò -->
+                           <td>
+  <div class="d-flex flex-wrap gap-2">
+    <span th:each="r : ${user.roles}"
+          class="badge d-inline-flex align-items-center gap-1 px-3 py-2 rounded-pill fw-semibold border"
+          th:classappend="
+              ${r.rolename == 'ADMIN'} ? 'bg-danger-subtle text-danger border-danger-subtle' :
+              (${r.rolename == 'USER'} ? 'bg-primary-subtle text-primary border-primary-subtle' :
+              (${r.rolename == 'VENDOR'} ? 'bg-warning-subtle text-warning border-warning-subtle' :
+              'bg-secondary-subtle text-secondary border-secondary-subtle'))
+          ">
+      <i th:class="${r.rolename == 'ADMIN'} ? 'bi bi-shield-lock-fill' :
+                   (${r.rolename == 'USER'} ? 'bi bi-person-fill' :
+                   (${r.rolename == 'VENDOR'} ? 'bi bi-shop' : 'bi bi-question-circle') )"></i>
+      <span th:text="${r.rolename}"></span>
+    </span>
+  </div>
+</td>
+
+
+                            <!-- Trạng thái -->
+                            <td>
+							    <span th:classappend="${user.status == 1} ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-secondary-subtle text-secondary border border-secondary-subtle'"
+							          class="badge d-inline-flex align-items-center gap-1 px-3 py-2 rounded-pill fw-semibold">
+							        <i th:class="${user.status == 1} ? 'bi bi-check-circle-fill' : 'bi bi-pause-circle-fill'"></i>
+							        <span th:text="${user.status == 1 ? 'Hoạt động' : 'Tạm khoá'}"></span>
+							    </span>
+							</td>
+
+                           
+
+                            <!-- Hành động -->
+                            <td>
+                                <div class="d-flex gap-2 justify-content-start">
+                                    <a th:href="@{'/admin/users/detail/' + ${user.user_id}}"
+                                       class="btn btn-outline-info btn-sm rounded-pill">
+                                        <i class="bi bi-eye"></i> Xem
+                                    </a>
+                                    <a th:href="@{'/admin/users/edit/' + ${user.user_id}}"
+                                       class="btn btn-outline-warning btn-sm rounded-pill">
+                                        <i class="bi bi-pencil-square"></i> Sửa
+                                    </a>
+                                    <a th:href="@{'/admin/users/delete/' + ${user.user_id} + '?page=' + ${currentPage} + ''}"
+									   class="btn btn-outline-danger btn-sm"
+									   onclick="return confirm('Bạn có chắc chắn muốn xóa người dùng này không?');">
+									   <i class="bi bi-trash3"></i> Xóa
+									</a>
+                                    
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <nav th:if="${totalPages > 1}" class="mt-4">
+			  <ul class="pagination justify-content-center flex-wrap">
+			
+			    <!-- Nút Previous -->
+			    <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled'">
+			      <a class="page-link rounded-pill shadow-sm border-0"
+			         th:href="@{'/admin/users?page=' + ${currentPage - 1}}">
+			        <i class="bi bi-chevron-double-left"></i>
+			      </a>
+			    </li>
+			
+			    <!-- Trang đầu -->
+			    <li class="page-item" th:if="${currentPage > 3}">
+			      <a class="page-link rounded-pill shadow-sm border-0"
+			         th:href="@{'/admin/users?page=1'}">1</a>
+			    </li>
+			
+			    <!-- Dấu ... trước -->
+			    <li class="page-item disabled" th:if="${currentPage > 4}">
+			      <span class="page-link border-0 bg-transparent">...</span>
+			    </li>
+			
+			    <!-- Các trang giữa -->
+			    <li class="page-item mx-1"
+			        th:each="page : ${#numbers.sequence(currentPage - 1, currentPage + 1)}"
+			        th:if="${page >= 1 and page <= totalPages}"
+			        th:classappend="${page == currentPage} ? 'active'">
+			      <a class="page-link rounded-pill shadow-sm border-0 fw-semibold"
+			         th:href="@{'/admin/users?page=' + ${page}}"
+			         th:text="${page}"></a>
+			    </li>
+			
+			    <!-- Dấu ... sau -->
+			    <li class="page-item disabled" th:if="${currentPage < totalPages - 3}">
+			      <span class="page-link border-0 bg-transparent">...</span>
+			    </li>
+			
+			    <!-- Trang cuối -->
+			    <li class="page-item" th:if="${currentPage < totalPages - 2}">
+			      <a class="page-link rounded-pill shadow-sm border-0"
+			         th:href="@{'/admin/users?page=' + ${totalPages}}"
+			         th:text="${totalPages}"></a>
+			    </li>
+			
+			    <!-- Nút Next -->
+			    <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled'">
+			      <a class="page-link rounded-pill shadow-sm border-0"
+			         th:href="@{'/admin/users?page=' + ${currentPage + 1}}">
+			        <i class="bi bi-chevron-double-right"></i>
+			      </a>
+			    </li>
+			
+			  </ul>
+			</nav>
+
+
+        </div>
+    </div>
+</main>
+</body>
+</html>
+
+
+
+

@@ -12,12 +12,12 @@ import com.alotra.entity.user.User;
 public interface IUserService {
 
 	// ===== CRUD =====
-    List<User> findAll();
     Optional<User> findById(Integer id);
     User save(User user);
     void deleteById(Integer id);
     boolean existsById(Integer id);
     long count();
+    Page<User> findAll(Pageable pageable);
 
     // ===== SEARCH =====
     List<User> findByUsernameContaining(String username);
