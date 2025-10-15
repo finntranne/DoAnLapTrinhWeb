@@ -14,24 +14,57 @@
 		<div class="form-container sign-up">
 			<form id="signupForm" th:action="@{/api/auth/signup}" method="post">
 				<h1>Tạo Tài Khoản</h1>
-				<input type="text" name="fullname" placeholder="Họ và tên" required />
-				<input type="text" name="username" placeholder="Tên đăng nhập"
-					required /> <input type="email" name="email" placeholder="Email"
-					required /> <input type="password" name="password"
-					placeholder="Mật khẩu" required />
+
+				<div class="input-group">
+					<input type="text" name="fullname" placeholder="Họ và tên" required />
+					<span class="error-message" id="fullname-error"></span>
+				</div>
+
+				<div class="input-group">
+					<input type="text" name="username" placeholder="Tên đăng nhập"
+						required /> <span class="error-message" id="username-error"></span>
+				</div>
+
+				<div class="input-group">
+					<input type="email" name="email" placeholder="Email" required /> <span
+						class="error-message" id="email-error"></span>
+				</div>
+
+				<div class="input-group">
+					<input type="tel" name="phoneNumber"
+						placeholder="Số điện thoại (tùy chọn)"
+						pattern="^(0|\+84)[0-9]{9,10}$" /> <span class="error-message"
+						id="phoneNumber-error"></span>
+				</div>
+
+				<div class="input-group">
+					<input type="password" name="password" placeholder="Mật khẩu"
+						required /> <span class="error-message" id="password-error"></span>
+				</div>
+
 				<button type="submit">Đăng Ký</button>
 			</form>
 		</div>
 
 
 		<div class="form-container sign-in">
-			<form method="post" th:action="@{/login}">
+			<form id="signinForm">
 				<h1>Đăng nhập</h1>
-				<input type="text" name="username"
-					placeholder="Email hoặc Tên đăng nhập" required /> <input
-					type="password" name="password" placeholder="Mật khẩu" required />
-				<a id="forgotPasswordLink" href="/auth/forgot-password">Quên mật
-					khẩu?</a>
+
+				<div class="input-group">
+					<input type="text" name="usernameOrEmail"
+						id="signin-usernameOrEmail" placeholder="Email hoặc Tên đăng nhập"
+						required /> <span class="error-message"
+						id="signin-usernameOrEmail-error"></span>
+				</div>
+
+				<div class="input-group">
+					<input type="password" name="password" id="signin-password"
+						placeholder="Mật khẩu" required /> <span class="error-message"
+						id="signin-password-error"></span>
+				</div>
+
+				<a id="forgotPasswordLink" href="#">Quên mật khẩu?</a>
 				<button type="submit">Đăng Nhập</button>
 			</form>
 		</div>
@@ -46,8 +79,7 @@
 						địa chỉ email của bạn để xác thực tài khoản.</p>
 				</div>
 				<input type="hidden" name="email" id="otpEmail" value="">
-				<div class="otp-container">netstat -ano | findstr :8095
-				
+				<div class="otp-container">
 					<input type="text" maxlength="1" class="otp-input" /> <input
 						type="text" maxlength="1" class="otp-input" /> <input type="text"
 						maxlength="1" class="otp-input" /> <input type="text"
@@ -63,51 +95,70 @@
 
 		<!-- Form nhập email quên mật khẩu -->
 		<div class="form-container forgot-password"
-			id="forgotPasswordContainer">
+			id="forgotPasswordContainer" style="display: none;">
 			<form id="forgotPasswordForm">
 				<h1>Quên Mật Khẩu</h1>
-				<input type="email" name="email" placeholder="Email" required />
+
+				<div class="input-group">
+					<input type="email" name="email" placeholder="Email" required /> <span
+						class="error-message" id="forgot-email-error"></span>
+				</div>
+
 				<button type="submit">Gửi OTP</button>
-				<p id="forgotPasswordMessage" style="color: red;"></p>
+				<button type="button" id="backToLoginBtn" class="secondary-btn">Quay
+					lại đăng nhập</button>
 			</form>
 		</div>
 
 		<!-- Form OTP cho quên mật khẩu -->
 		<div class="otp-form-wrapper" id="forgotOtpContainer"
 			style="display: none;">
-			<h1>Xác thực OTP</h1>
-			<input type="hidden" id="forgotOtpEmail" value="">
-			<div class="otp-container">
-				<input type="text" maxlength="1" class="otp-input" /> <input
-					type="text" maxlength="1" class="otp-input" /> <input type="text"
-					maxlength="1" class="otp-input" /> <input type="text"
-					maxlength="1" class="otp-input" /> <input type="text"
-					maxlength="1" class="otp-input" /> <input type="text"
-					maxlength="1" class="otp-input" />
-			</div>
-			<button type="submit" id="verifyForgotOtpBtn">Xác nhận OTP</button>
-			<button type="button" id="resendForgotOtpBtn" disabled>Gửi
-				lại OTP (60s)</button>
-			<p id="forgotOtpMessage" style="color: red;"></p>
+			<form id="forgotOtpForm">
+				<h1>Xác thực OTP</h1>
+				<p style="margin-bottom: 20px;">Vui lòng nhập mã OTP gồm 6 chữ
+					số</p>
+
+				<input type="hidden" id="forgotOtpEmail" value="">
+
+				<div class="otp-container">
+					<input type="text" maxlength="1" class="otp-input forgot-otp" /> <input
+						type="text" maxlength="1" class="otp-input forgot-otp" /> <input
+						type="text" maxlength="1" class="otp-input forgot-otp" /> <input
+						type="text" maxlength="1" class="otp-input forgot-otp" /> <input
+						type="text" maxlength="1" class="otp-input forgot-otp" /> <input
+						type="text" maxlength="1" class="otp-input forgot-otp" />
+				</div>
+
+				<span class="error-message" id="forgot-otp-error"
+					style="text-align: center;"></span>
+
+				<button type="submit" id="verifyForgotOtpBtn">Xác nhận OTP</button>
+				<button type="button" id="resendForgotOtpBtn" disabled>Gửi
+					lại OTP (60s)</button>
+			</form>
 		</div>
-
-
 
 		<!-- Form đặt lại mật khẩu -->
 		<div class="form-container reset-password" id="resetPasswordContainer"
 			style="display: none;">
 			<form id="resetPasswordForm">
 				<h1>Đặt Lại Mật Khẩu</h1>
-				<input type="password" name="newPassword" placeholder="Mật khẩu mới"
-					required /> <input type="password" name="confirmPassword"
-					placeholder="Xác nhận mật khẩu mới" required />
+
+				<div class="input-group">
+					<input type="password" name="newPassword"
+						placeholder="Mật khẩu mới" required /> <span
+						class="error-message" id="reset-newPassword-error"></span>
+				</div>
+
+				<div class="input-group">
+					<input type="password" name="confirmPassword"
+						placeholder="Xác nhận mật khẩu mới" required /> <span
+						class="error-message" id="reset-confirmPassword-error"></span>
+				</div>
+
 				<button type="submit">Xác nhận</button>
-				<p id="resetPasswordMessage" style="color: red;"></p>
 			</form>
 		</div>
-
-
-
 
 		<div class="toggle-container" , id="toggle">
 			<div class="toggle">

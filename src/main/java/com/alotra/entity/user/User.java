@@ -30,11 +30,8 @@ public class User {
     @Column(name = "PhoneNumber", unique = true, length = 20)
     private String phoneNumber;
 
-    @Column(name = "FullName", length = 255)
-    private String fullname;
-
     @Column(name = "Status", nullable = false)
-    private Byte status = 1; // 0=Inactive, 1=Active (TINYINT)
+    private Byte status = 1;
 
     @Column(name = "AvatarURL", length = 500)
     private String avatarURL;
@@ -52,10 +49,7 @@ public class User {
     private LocalDateTime otpExpiryTime;
 
     @Column(name = "OtpPurpose", length = 20)
-    private String otpPurpose; // REGISTER, RESET_PASSWORD
-
-    @Column(name = "Verified", columnDefinition = "BIT DEFAULT 0")
-    private Boolean verified = false;
+    private String otpPurpose;
 
     @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinTable(
@@ -71,9 +65,6 @@ public class User {
         updatedAt = LocalDateTime.now();
         if (status == null) {
             status = 1;
-        }
-        if (verified == null) {
-            verified = false;
         }
     }
 

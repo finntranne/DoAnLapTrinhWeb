@@ -533,16 +533,17 @@ GO
 
 -- 1. Roles
 INSERT INTO dbo.Roles (RoleID, RoleName) VALUES 
-(1, 'Admin'), (2, 'Customer'), (3, 'Vendor'), (4, 'Shipper'), (5, 'Employee');
+(1, 'ADMIN'), (2, 'CUSTOMER'), (3, 'VENDOR'), (4, 'SHIPPER'), (5, 'EMPLOYEE');
 
--- 2. Users
+-- 2. Users defalut-password: 123456789
 INSERT INTO dbo.Users (Username, PasswordHash, Email, PhoneNumber) VALUES
-('admin', '$2a$12$G.p/iP.f5h1x/A7Q5w8f1uL.IPoTjSF7xT4O0XkI4w2kC7gq3g/O2', 'admin@alotra.com', '0900000001'),
-('vendor1', '$2a$12$G.p/iP.f5h1x/A7Q5w8f1uL.IPoTjSF7xT4O0XkI4w2kC7gq3g/O2', 'vendor1@shop.com', '0900000002'),
-('vendor2', '$2a$12$G.p/iP.f5h1x/A7Q5w8f1uL.IPoTjSF7xT4O0XkI4w2kC7gq3g/O2', 'vendor2@shop.com', '0900000003'),
-('customer1', '$2a$12$G.p/iP.f5h1x/A7Q5w8f1uL.IPoTjSF7xT4O0XkI4w2kC7gq3g/O2', 'minhanh@email.com', '0912345678'),
-('customer2', '$2a$12$G.p/iP.f5h1x/A7Q5w8f1uL.IPoTjSF7xT4O0XkI4w2kC7gq3g/O2', 'baotran@email.com', '0987654321'),
-('shipper1', '$2a$12$G.p/iP.f5h1x/A7Q5w8f1uL.IPoTjSF7xT4O0XkI4w2kC7gq3g/O2', 'shipper1@email.com', '0911111111');
+('admin', '$2a$10$ChCyZNXDPasox8exeAvQiOe9/wW6lcl4Gq9zUl5HvChmaAtVAzMK.', 'admin@alotra.com', '0900000001'),
+('vendor1', '$2a$10$ChCyZNXDPasox8exeAvQiOe9/wW6lcl4Gq9zUl5HvChmaAtVAzMK.', 'vendor1@shop.com', '0900000002'),
+('vendor2', '$2a$10$ChCyZNXDPasox8exeAvQiOe9/wW6lcl4Gq9zUl5HvChmaAtVAzMK.', 'vendor2@shop.com', '0900000003'),
+('customer1', '$2a$10$ChCyZNXDPasox8exeAvQiOe9/wW6lcl4Gq9zUl5HvChmaAtVAzMK.', 'minhanh@email.com', '0912345678'),
+('customer2', '$2a$10$ChCyZNXDPasox8exeAvQiOe9/wW6lcl4Gq9zUl5HvChmaAtVAzMK.', 'baotran@email.com', '0987654321'),
+('shipper1', '$2a$10$ChCyZNXDPasox8exeAvQiOe9/wW6lcl4Gq9zUl5HvChmaAtVAzMK.', 'shipper1@email.com', '0911111111');
+
 
 -- 3. UserRoles
 INSERT INTO dbo.UserRoles (UserID, RoleID) VALUES
