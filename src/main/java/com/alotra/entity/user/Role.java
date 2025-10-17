@@ -5,24 +5,19 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@AllArgsConstructor
-@NoArgsConstructor
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "Roles")
 public class Role {
     @Id
     @Column(name = "RoleID")
-    private Integer roleId;
+    private Integer id;
 
     @Column(name = "RoleName", nullable = false, unique = true, length = 50)
     private String roleName;
 
-    @Override
-    public String toString() {
-        return "Role{" +
-                "roleId=" + roleId +
-                ", roleName='" + roleName + '\'' +
-                '}';
-    }
+    @Column(name = "Description", length = 255)
+    private String description;
 }

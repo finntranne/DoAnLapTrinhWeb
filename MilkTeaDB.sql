@@ -1,8 +1,8 @@
 ﻿/* ================================================================
-   SCRIPT: Complete E-commerce Milk Tea Database - Enhanced Version
+   SCRIPT: Multi-Vendor Milk Tea E-commerce Database - Unified User Structure
    Database: MilkTeaShopDB
-   Purpose: Support Spring Boot + Thymeleaf + Bootstrap + JPA + 
-            SQLServer + JWT + WebSocket + Cloudinary
+   Purpose: Spring Boot + JPA + SQLServer + JWT + Spring Security
+   Features: OTP verification, Multi-role users, Payment integration
    ================================================================ */
 
 -- Check and create database
@@ -33,6 +33,7 @@ IF OBJECT_ID('dbo.CartItems','U') IS NOT NULL DROP TABLE dbo.CartItems;
 IF OBJECT_ID('dbo.Carts','U') IS NOT NULL DROP TABLE dbo.Carts;
 
 IF OBJECT_ID('dbo.Favorites','U') IS NOT NULL DROP TABLE dbo.Favorites;
+IF OBJECT_ID('dbo.ViewedProducts','U') IS NOT NULL DROP TABLE dbo.ViewedProducts;
 IF OBJECT_ID('dbo.PromotionProducts','U') IS NOT NULL DROP TABLE dbo.PromotionProducts;
 IF OBJECT_ID('dbo.Promotions','U') IS NOT NULL DROP TABLE dbo.Promotions;
 
@@ -45,16 +46,17 @@ IF OBJECT_ID('dbo.Sizes','U') IS NOT NULL DROP TABLE dbo.Sizes;
 IF OBJECT_ID('dbo.Products','U') IS NOT NULL DROP TABLE dbo.Products;
 IF OBJECT_ID('dbo.Categories','U') IS NOT NULL DROP TABLE dbo.Categories;
 
+IF OBJECT_ID('dbo.Shops','U') IS NOT NULL DROP TABLE dbo.Shops;
+IF OBJECT_ID('dbo.ShopRevenue','U') IS NOT NULL DROP TABLE dbo.ShopRevenue;
+
 IF OBJECT_ID('dbo.ChatMessages','U') IS NOT NULL DROP TABLE dbo.ChatMessages;
 IF OBJECT_ID('dbo.DeviceTokens','U') IS NOT NULL DROP TABLE dbo.DeviceTokens;
 IF OBJECT_ID('dbo.JWTTokens','U') IS NOT NULL DROP TABLE dbo.JWTTokens;
 IF OBJECT_ID('dbo.Notifications','U') IS NOT NULL DROP TABLE dbo.Notifications;
 
 IF OBJECT_ID('dbo.Addresses','U') IS NOT NULL DROP TABLE dbo.Addresses;
-IF OBJECT_ID('dbo.Employees','U') IS NOT NULL DROP TABLE dbo.Employees;
-IF OBJECT_ID('dbo.Customers','U') IS NOT NULL DROP TABLE dbo.Customers;
-
 IF OBJECT_ID('dbo.SystemConfiguration','U') IS NOT NULL DROP TABLE dbo.SystemConfiguration;
+IF OBJECT_ID('dbo.ShippingProviders','U') IS NOT NULL DROP TABLE dbo.ShippingProviders;
 IF OBJECT_ID('dbo.UserRoles','U') IS NOT NULL DROP TABLE dbo.UserRoles;
 IF OBJECT_ID('dbo.Roles','U') IS NOT NULL DROP TABLE dbo.Roles;
 IF OBJECT_ID('dbo.Users','U') IS NOT NULL DROP TABLE dbo.Users;
@@ -71,197 +73,217 @@ GO
 PRINT N'==== Creating core tables...';
 GO
 
--- 1. User Account System
+-- 1. User Account System (Unified structure)
 CREATE TABLE dbo.Users (
     UserID INT IDENTITY(1,1) PRIMARY KEY,
     Username NVARCHAR(50) NOT NULL UNIQUE,
     PasswordHash NVARCHAR(255) NOT NULL,
     Email NVARCHAR(255) NOT NULL UNIQUE,
     PhoneNumber NVARCHAR(20) NULL UNIQUE,
-    Status TINYINT NOT NULL DEFAULT 1 CHECK (Status IN (0,1)),
+    FullName NVARCHAR(255) NOT NULL,
+    Status TINYINT NOT NULL DEFAULT 0 CHECK (Status IN (0,1,2)), 
+    -- 0: Pending (chưa xác thực OTP), 1: Active, 2: Suspended
     AvatarURL NVARCHAR(500) NULL,
-    LastLogin DATETIME2 NULL,
-    LoginAttempts INT DEFAULT 0,
-    IsLocked BIT DEFAULT 0,
-    LockUntil DATETIME2 NULL,
-    TwoFactorEnabled BIT DEFAULT 0,
-    TwoFactorSecret NVARCHAR(500) NULL,
+    
+    -- OTP fields for registration and password reset
+    OtpCode NVARCHAR(10) NULL,
+    OtpExpiryTime DATETIME2 NULL,
+    OtpPurpose NVARCHAR(20) NULL CHECK (OtpPurpose IN ('REGISTER', 'RESET_PASSWORD', NULL)),
+    
     CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-    UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+    UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    LastLoginAt DATETIME2 NULL
 );
 
 CREATE TABLE dbo.Roles (
     RoleID INT PRIMARY KEY,
-    RoleName NVARCHAR(50) NOT NULL UNIQUE
+    RoleName NVARCHAR(50) NOT NULL UNIQUE,
+    Description NVARCHAR(255) NULL
 );
 
 CREATE TABLE dbo.UserRoles (
     UserID INT NOT NULL,
     RoleID INT NOT NULL,
+    AssignedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
     PRIMARY KEY (UserID, RoleID),
     CONSTRAINT FK_UserRoles_User FOREIGN KEY (UserID) REFERENCES dbo.Users(UserID) ON DELETE CASCADE,
     CONSTRAINT FK_UserRoles_Role FOREIGN KEY (RoleID) REFERENCES dbo.Roles(RoleID)
 );
 
--- 2. Customers and Employees
-CREATE TABLE dbo.Customers (
-    CustomerID INT IDENTITY(1,1) PRIMARY KEY,
-    UserID INT UNIQUE NOT NULL,
-    FullName NVARCHAR(255) NOT NULL,
-    Status TINYINT NOT NULL DEFAULT 1 CHECK (Status IN (0,1)),
-    DateOfBirth DATE NULL,
-    Gender TINYINT NULL,
-    TotalSpent DECIMAL(15,2) DEFAULT 0,
-    LoyaltyPoints INT DEFAULT 0,
-    MembershipLevel NVARCHAR(20),
-    PreferredContactMethod NVARCHAR(20),
-    CONSTRAINT FK_Customer_User FOREIGN KEY (UserID) REFERENCES dbo.Users(UserID) ON DELETE CASCADE
-);
-
-CREATE TABLE dbo.Employees (
-    EmployeeID INT IDENTITY(1,1) PRIMARY KEY,
-    UserID INT UNIQUE NOT NULL,
-    FullName NVARCHAR(255) NOT NULL,
-    Status TINYINT NOT NULL DEFAULT 1 CHECK (Status IN (0,1)),
-    CONSTRAINT FK_Employee_User FOREIGN KEY (UserID) REFERENCES dbo.Users(UserID) ON DELETE CASCADE
-);
-
--- 3. Customer Addresses
+-- 2. Addresses (for shipping)
 CREATE TABLE dbo.Addresses (
     AddressID INT IDENTITY(1,1) PRIMARY KEY,
-    CustomerID INT NOT NULL,
-    AddressName NVARCHAR(100) NOT NULL,
+    UserID INT NOT NULL,
+    AddressName NVARCHAR(100) NOT NULL, -- e.g., "Nhà riêng", "Văn phòng"
     FullAddress NVARCHAR(500) NOT NULL,
     PhoneNumber NVARCHAR(20) NOT NULL,
     RecipientName NVARCHAR(255) NOT NULL,
     IsDefault BIT NOT NULL DEFAULT 0,
-    Status TINYINT NOT NULL DEFAULT 1 CHECK (Status IN (0,1)),
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_Address_User FOREIGN KEY (UserID) REFERENCES dbo.Users(UserID) ON DELETE CASCADE
+);
+
+-- 3. Shops (For Multi-Vendor)
+CREATE TABLE dbo.Shops (
+    ShopID INT IDENTITY(1,1) PRIMARY KEY,
+    UserID INT NOT NULL UNIQUE, -- The user who owns this shop (Vendor)
+    ShopName NVARCHAR(255) NOT NULL UNIQUE,
+    Description NVARCHAR(MAX) NULL,
+    LogoURL NVARCHAR(500) NULL,
+    CoverImageURL NVARCHAR(500) NULL,
+    Address NVARCHAR(500) NOT NULL,
+    PhoneNumber NVARCHAR(20) NOT NULL,
+    Status TINYINT NOT NULL DEFAULT 0 CHECK (Status IN (0,1,2)), 
+    -- 0: Pending Approval, 1: Active, 2: Suspended
+    CommissionRate DECIMAL(5,2) DEFAULT 5.00 CHECK (CommissionRate >= 0 AND CommissionRate <= 100), 
+    -- App commission rate for this shop (%)
     CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
     UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-    CONSTRAINT FK_Address_Customer FOREIGN KEY (CustomerID) REFERENCES dbo.Customers(CustomerID) ON DELETE CASCADE
+    CONSTRAINT FK_Shop_User FOREIGN KEY (UserID) REFERENCES dbo.Users(UserID)
+);
+
+-- Shop Revenue Tracking
+CREATE TABLE dbo.ShopRevenue (
+    RevenueID INT IDENTITY(1,1) PRIMARY KEY,
+    ShopID INT NOT NULL,
+    OrderID INT NOT NULL,
+    OrderAmount DECIMAL(12,2) NOT NULL, -- Total order value
+    CommissionAmount DECIMAL(12,2) NOT NULL, -- Amount deducted by platform
+    NetRevenue DECIMAL(12,2) NOT NULL, -- Amount shop receives
+    RecordedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_ShopRevenue_Shop FOREIGN KEY (ShopID) REFERENCES dbo.Shops(ShopID)
 );
 
 -- 4. Categories and Products
 CREATE TABLE dbo.Categories (
     CategoryID INT IDENTITY(1,1) PRIMARY KEY,
     CategoryName NVARCHAR(255) NOT NULL UNIQUE,
-    Description NVARCHAR(MAX) NULL
+    Description NVARCHAR(MAX) NULL,
+    ImageURL NVARCHAR(500) NULL,
+    Status TINYINT NOT NULL DEFAULT 1 CHECK (Status IN (0,1)) -- 0: Inactive, 1: Active
 );
 
 CREATE TABLE dbo.Products (
     ProductID INT IDENTITY(1,1) PRIMARY KEY,
+    ShopID INT NOT NULL, -- Each product belongs to a shop
     CategoryID INT NOT NULL,
     ProductName NVARCHAR(255) NOT NULL,
     Description NVARCHAR(MAX) NULL,
-    Status TINYINT NOT NULL DEFAULT 1 CHECK (Status IN (0,1)),
-    SKU NVARCHAR(50) UNIQUE NULL,
-    AverageRating DECIMAL(3,2) DEFAULT 0,
-    TotalReviews INT DEFAULT 0,
-    IsHotDeal BIT DEFAULT 0,
-    TrendingScore INT DEFAULT 0,
-    ViewCount INT DEFAULT 0,
+    Status TINYINT NOT NULL DEFAULT 1 CHECK (Status IN (0,1)), -- 0: Inactive, 1: Active
+    AverageRating DECIMAL(3,2) DEFAULT 0 CHECK (AverageRating >= 0 AND AverageRating <= 5),
+    TotalReviews INT DEFAULT 0 CHECK (TotalReviews >= 0),
+    ViewCount INT DEFAULT 0 CHECK (ViewCount >= 0),
+    SoldCount INT DEFAULT 0 CHECK (SoldCount >= 0), -- Track best-selling products
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_Product_Shop FOREIGN KEY (ShopID) REFERENCES dbo.Shops(ShopID),
     CONSTRAINT FK_Product_Category FOREIGN KEY (CategoryID) REFERENCES dbo.Categories(CategoryID)
 );
 
--- 5. Product Images
+-- 5. Product Images, Sizes, Variants, Toppings
 CREATE TABLE dbo.ProductImages (
     ImageID INT IDENTITY(1,1) PRIMARY KEY,
     ProductID INT NOT NULL,
     ImageURL NVARCHAR(500) NOT NULL,
     IsPrimary BIT NOT NULL DEFAULT 0,
-    DisplayOrder INT NOT NULL DEFAULT 0,
-    Status TINYINT NOT NULL DEFAULT 1 CHECK (Status IN (0,1)),
-    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    DisplayOrder INT DEFAULT 0,
     CONSTRAINT FK_ProductImage_Product FOREIGN KEY (ProductID) REFERENCES dbo.Products(ProductID) ON DELETE CASCADE
 );
 
--- 6. Sizes and Product Variants
 CREATE TABLE dbo.Sizes (
     SizeID INT IDENTITY(1,1) PRIMARY KEY,
-    SizeName NVARCHAR(10) NOT NULL UNIQUE,
-    Status TINYINT NOT NULL DEFAULT 1 CHECK (Status IN (0,1))
+    SizeName NVARCHAR(20) NOT NULL UNIQUE,
+    Description NVARCHAR(100) NULL
 );
 
 CREATE TABLE dbo.ProductVariants (
     VariantID INT IDENTITY(1,1) PRIMARY KEY,
     ProductID INT NOT NULL,
     SizeID INT NOT NULL,
-    Price DECIMAL(10,2) NOT NULL CHECK (Price > 0),
+    Price DECIMAL(10,2) NOT NULL CHECK (Price >= 0),
     Stock INT NOT NULL DEFAULT 0 CHECK (Stock >= 0),
-    Status TINYINT NOT NULL DEFAULT 1 CHECK (Status IN (0,1)),
-    DiscountPrice DECIMAL(10,2) NULL,
-    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-    UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    SKU NVARCHAR(50) NULL UNIQUE, -- Stock Keeping Unit
     CONSTRAINT UQ_ProductVariant_Unique UNIQUE (ProductID, SizeID),
     CONSTRAINT FK_Variant_Product FOREIGN KEY (ProductID) REFERENCES dbo.Products(ProductID) ON DELETE CASCADE,
     CONSTRAINT FK_Variant_Size FOREIGN KEY (SizeID) REFERENCES dbo.Sizes(SizeID)
 );
 
--- 7. Toppings
 CREATE TABLE dbo.Toppings (
     ToppingID INT IDENTITY(1,1) PRIMARY KEY,
     ToppingName NVARCHAR(255) NOT NULL UNIQUE,
     AdditionalPrice DECIMAL(10,2) NOT NULL CHECK (AdditionalPrice >= 0),
-    Status TINYINT NOT NULL DEFAULT 1 CHECK (Status IN (0,1))
+    Status TINYINT NOT NULL DEFAULT 1 CHECK (Status IN (0,1)),
+    ImageURL NVARCHAR(500) NULL
 );
 
--- 8. Promotions
+-- 6. Promotions
 CREATE TABLE dbo.Promotions (
     PromotionID INT IDENTITY(1,1) PRIMARY KEY,
+    CreatedByUserID INT NOT NULL, -- Can be Admin or Vendor
+    CreatedByShopID INT NULL, -- NULL if created by Admin, ShopID if by Vendor
     PromotionName NVARCHAR(255) NOT NULL,
     Description NVARCHAR(MAX) NULL,
     PromoCode NVARCHAR(50) UNIQUE NULL,
-    DiscountType NVARCHAR(20),
-    DiscountValue DECIMAL(10,2) NULL,
-    StartDate DATE NOT NULL,
-    EndDate DATE NOT NULL,
-    MinOrderValue DECIMAL(10,2) DEFAULT 0,
-    MaxUsageCount INT NULL,
-    UsageCount INT DEFAULT 0,
-    ApplicableForNewUsers BIT DEFAULT 0,
+    DiscountType NVARCHAR(20) NOT NULL CHECK (DiscountType IN ('Percentage', 'FixedAmount', 'FreeShip')),
+    DiscountValue DECIMAL(10,2) NOT NULL CHECK (DiscountValue >= 0),
+    MaxDiscountAmount DECIMAL(10,2) NULL, -- For percentage discounts
+    StartDate DATETIME2 NOT NULL,
+    EndDate DATETIME2 NOT NULL,
+    MinOrderValue DECIMAL(10,2) DEFAULT 0 CHECK (MinOrderValue >= 0),
+    UsageLimit INT NULL, -- Total usage limit
+    UsedCount INT DEFAULT 0 CHECK (UsedCount >= 0),
     Status TINYINT NOT NULL DEFAULT 1 CHECK (Status IN (0,1)),
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_Promotion_User FOREIGN KEY (CreatedByUserID) REFERENCES dbo.Users(UserID),
+    CONSTRAINT FK_Promotion_Shop FOREIGN KEY (CreatedByShopID) REFERENCES dbo.Shops(ShopID),
     CONSTRAINT CK_Promotion_Dates CHECK (EndDate >= StartDate)
 );
 
 CREATE TABLE dbo.PromotionProducts (
     PromotionID INT NOT NULL,
     ProductID INT NOT NULL,
-    DiscountPercentage INT NOT NULL CHECK (DiscountPercentage BETWEEN 1 AND 100),
     PRIMARY KEY (PromotionID, ProductID),
     CONSTRAINT FK_PromoProduct_Promotion FOREIGN KEY (PromotionID) REFERENCES dbo.Promotions(PromotionID) ON DELETE CASCADE,
     CONSTRAINT FK_PromoProduct_Product FOREIGN KEY (ProductID) REFERENCES dbo.Products(ProductID) ON DELETE CASCADE
 );
 
--- 9. Favorites
+-- 7. Favorites & Viewed History
 CREATE TABLE dbo.Favorites (
     FavoriteID INT IDENTITY(1,1) PRIMARY KEY,
-    CustomerID INT NOT NULL,
+    UserID INT NOT NULL,
     ProductID INT NOT NULL,
     CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-    CONSTRAINT UQ_Favorite_Unique UNIQUE (CustomerID, ProductID),
-    CONSTRAINT FK_Favorite_Customer FOREIGN KEY (CustomerID) REFERENCES dbo.Customers(CustomerID) ON DELETE CASCADE,
+    CONSTRAINT UQ_Favorite_Unique UNIQUE (UserID, ProductID),
+    CONSTRAINT FK_Favorite_User FOREIGN KEY (UserID) REFERENCES dbo.Users(UserID) ON DELETE CASCADE,
     CONSTRAINT FK_Favorite_Product FOREIGN KEY (ProductID) REFERENCES dbo.Products(ProductID) ON DELETE CASCADE
 );
 
--- 10. Shopping Carts
+CREATE TABLE dbo.ViewedProducts (
+    ViewedID INT IDENTITY(1,1) PRIMARY KEY,
+    UserID INT NOT NULL,
+    ProductID INT NOT NULL,
+    ViewCount INT DEFAULT 1,
+    LastViewedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT UQ_Viewed_Unique UNIQUE (UserID, ProductID),
+    CONSTRAINT FK_Viewed_User FOREIGN KEY (UserID) REFERENCES dbo.Users(UserID) ON DELETE CASCADE,
+    CONSTRAINT FK_Viewed_Product FOREIGN KEY (ProductID) REFERENCES dbo.Products(ProductID) ON DELETE CASCADE
+);
+
+-- 8. Shopping Carts
 CREATE TABLE dbo.Carts (
     CartID INT IDENTITY(1,1) PRIMARY KEY,
-    CustomerID INT NOT NULL,
-    Status NVARCHAR(20) NOT NULL DEFAULT 'ACTIVE' CHECK (Status IN ('ACTIVE', 'CHECKED_OUT', 'CANCELLED')),
+    UserID INT NOT NULL UNIQUE,
     CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
     UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-    CONSTRAINT FK_Cart_Customer FOREIGN KEY (CustomerID) REFERENCES dbo.Customers(CustomerID) ON DELETE CASCADE
+    CONSTRAINT FK_Cart_User FOREIGN KEY (UserID) REFERENCES dbo.Users(UserID) ON DELETE CASCADE
 );
-CREATE UNIQUE INDEX UX_Carts_Active_OnePerCustomer ON dbo.Carts(CustomerID) WHERE Status = 'ACTIVE';
 
 CREATE TABLE dbo.CartItems (
     CartItemID INT IDENTITY(1,1) PRIMARY KEY,
     CartID INT NOT NULL,
     VariantID INT NOT NULL,
     Quantity INT NOT NULL CHECK (Quantity > 0),
-    UnitPrice DECIMAL(10,2) NOT NULL CHECK (UnitPrice >= 0),
-    LineTotal DECIMAL(10,2) NOT NULL CHECK (LineTotal >= 0),
-    Notes NVARCHAR(500) NULL,
+    AddedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
     CONSTRAINT FK_CartItem_Cart FOREIGN KEY (CartID) REFERENCES dbo.Carts(CartID) ON DELETE CASCADE,
     CONSTRAINT FK_CartItem_Variant FOREIGN KEY (VariantID) REFERENCES dbo.ProductVariants(VariantID)
 );
@@ -269,74 +291,81 @@ CREATE TABLE dbo.CartItems (
 CREATE TABLE dbo.CartItem_Toppings (
     CartItemID INT NOT NULL,
     ToppingID INT NOT NULL,
-    Quantity INT NOT NULL DEFAULT 1 CHECK (Quantity > 0),
-    UnitPrice DECIMAL(10,2) NOT NULL CHECK (UnitPrice >= 0),
-    LineTotal DECIMAL(10,2) NOT NULL CHECK (LineTotal >= 0),
     PRIMARY KEY (CartItemID, ToppingID),
     CONSTRAINT FK_CartItemTopping_CartItem FOREIGN KEY (CartItemID) REFERENCES dbo.CartItems(CartItemID) ON DELETE CASCADE,
     CONSTRAINT FK_CartItemTopping_Topping FOREIGN KEY (ToppingID) REFERENCES dbo.Toppings(ToppingID)
 );
 
--- 11. Orders
+-- 9. Shipping Providers
+CREATE TABLE dbo.ShippingProviders (
+    ProviderID INT IDENTITY(1,1) PRIMARY KEY,
+    ProviderName NVARCHAR(255) NOT NULL UNIQUE,
+    BaseFee DECIMAL(10,2) NOT NULL DEFAULT 0 CHECK (BaseFee >= 0),
+    Description NVARCHAR(500) NULL,
+    Status TINYINT NOT NULL DEFAULT 1 CHECK (Status IN (0,1))
+);
+
+-- 10. Orders
 CREATE TABLE dbo.Orders (
     OrderID INT IDENTITY(1,1) PRIMARY KEY,
-    CustomerID INT NOT NULL,
-    EmployeeID INT NULL,
+    UserID INT NOT NULL, -- Customer who placed the order
+    ShopID INT NOT NULL, -- Shop that receives the order
     PromotionID INT NULL,
     OrderDate DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
     OrderStatus NVARCHAR(30) NOT NULL DEFAULT 'Pending'
-        CHECK (OrderStatus IN ('Pending', 'Processing', 'Delivering', 'Completed', 'Cancelled')),
-    PaymentStatus NVARCHAR(30) NOT NULL DEFAULT 'Unpaid'
-        CHECK (PaymentStatus IN ('Unpaid', 'Paid')),
-    PaymentMethod NVARCHAR(50) NOT NULL DEFAULT 'Cash'
-        CHECK (PaymentMethod IN ('Cash', 'Momo', 'VNPay', 'ZaloPay', 'BankTransfer')),
+        CHECK (OrderStatus IN ('Pending', 'Confirmed', 'Delivering', 'Completed', 'Cancelled', 'Returned', 'Refunded')),
+    
+    -- Payment Information
+    PaymentMethod NVARCHAR(50) NOT NULL 
+        CHECK (PaymentMethod IN ('COD', 'Momo', 'VNPay', 'ZaloPay', 'BankTransfer')),
+    PaymentStatus NVARCHAR(30) NOT NULL DEFAULT 'Unpaid' 
+        CHECK (PaymentStatus IN ('Unpaid', 'Paid', 'Refunded')),
     PaidAt DATETIME2 NULL,
+    TransactionID NVARCHAR(255) NULL, -- Payment gateway transaction ID
+    
+    -- Shipping Information
+    ShippingProviderID INT NULL,
     ShippingAddress NVARCHAR(500) NOT NULL,
     RecipientName NVARCHAR(255) NOT NULL,
     RecipientPhone NVARCHAR(20) NOT NULL,
-    Subtotal DECIMAL(12,2) NOT NULL DEFAULT 0 CHECK (Subtotal >= 0),
-    DiscountAmount DECIMAL(12,2) NOT NULL DEFAULT 0 CHECK (DiscountAmount >= 0),
+    ShipperID INT NULL, -- User with SHIPPER role
+    
+    -- Order Amounts
+    Subtotal DECIMAL(12,2) NOT NULL CHECK (Subtotal >= 0),
     ShippingFee DECIMAL(12,2) NOT NULL DEFAULT 0 CHECK (ShippingFee >= 0),
-    GrandTotal DECIMAL(12,2) NOT NULL DEFAULT 0 CHECK (GrandTotal >= 0),
+    DiscountAmount DECIMAL(12,2) NOT NULL DEFAULT 0 CHECK (DiscountAmount >= 0),
+    GrandTotal DECIMAL(12,2) NOT NULL CHECK (GrandTotal >= 0),
+    
     Notes NVARCHAR(500) NULL,
-    TrackingCode NVARCHAR(50) UNIQUE NULL,
-    EstimatedDeliveryDate DATE NULL,
-    ActualDeliveryDate DATETIME2 NULL,
-    ShipperID INT NULL,
     CancellationReason NVARCHAR(500) NULL,
-    CancelledAt DATETIME2 NULL,
-    CONSTRAINT CK_Order_PaidAt_Logic CHECK (
-        (PaymentStatus = 'Paid' AND PaidAt IS NOT NULL) OR
-        (PaymentStatus = 'Unpaid' AND PaidAt IS NULL)
-    ),
-    CONSTRAINT FK_Order_Customer FOREIGN KEY (CustomerID) REFERENCES dbo.Customers(CustomerID),
-    CONSTRAINT FK_Order_Employee FOREIGN KEY (EmployeeID) REFERENCES dbo.Employees(EmployeeID),
+    CompletedAt DATETIME2 NULL,
+    
+    CONSTRAINT FK_Order_User FOREIGN KEY (UserID) REFERENCES dbo.Users(UserID),
+    CONSTRAINT FK_Order_Shop FOREIGN KEY (ShopID) REFERENCES dbo.Shops(ShopID),
     CONSTRAINT FK_Order_Promotion FOREIGN KEY (PromotionID) REFERENCES dbo.Promotions(PromotionID),
-    CONSTRAINT FK_Order_Shipper FOREIGN KEY (ShipperID) REFERENCES dbo.Employees(EmployeeID)
+    CONSTRAINT FK_Order_ShippingProvider FOREIGN KEY (ShippingProviderID) REFERENCES dbo.ShippingProviders(ProviderID),
+    CONSTRAINT FK_Order_Shipper FOREIGN KEY (ShipperID) REFERENCES dbo.Users(UserID)
 );
 
--- 12. Order History
 CREATE TABLE dbo.OrderHistory (
     HistoryID INT IDENTITY(1,1) PRIMARY KEY,
     OrderID INT NOT NULL,
-    PreviousStatus NVARCHAR(30) NULL,
+    OldStatus NVARCHAR(30) NULL,
     NewStatus NVARCHAR(30) NOT NULL,
-    ChangedBy INT NULL,
-    UserType NVARCHAR(10) NOT NULL CHECK (UserType IN ('Employee', 'Customer', 'System')),
+    ChangedByUserID INT NULL, -- User who changed the status
     Timestamp DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
     Notes NVARCHAR(500) NULL,
-    CONSTRAINT FK_OrderHistory_Order FOREIGN KEY (OrderID) REFERENCES dbo.Orders(OrderID) ON DELETE CASCADE
+    CONSTRAINT FK_OrderHistory_Order FOREIGN KEY (OrderID) REFERENCES dbo.Orders(OrderID) ON DELETE CASCADE,
+    CONSTRAINT FK_OrderHistory_User FOREIGN KEY (ChangedByUserID) REFERENCES dbo.Users(UserID)
 );
 
--- 13. Order Details
 CREATE TABLE dbo.OrderDetails (
     OrderDetailID INT IDENTITY(1,1) PRIMARY KEY,
     OrderID INT NOT NULL,
     VariantID INT NOT NULL,
     Quantity INT NOT NULL CHECK (Quantity > 0),
-    UnitPrice DECIMAL(10,2) NOT NULL CHECK (UnitPrice >= 0),
-    LineDiscount DECIMAL(10,2) NOT NULL DEFAULT 0 CHECK (LineDiscount >= 0),
-    LineTotal DECIMAL(10,2) NOT NULL CHECK (LineTotal >= 0),
+    UnitPrice DECIMAL(10,2) NOT NULL CHECK (UnitPrice >= 0), -- Price at the time of purchase
+    Subtotal DECIMAL(12,2) NOT NULL CHECK (Subtotal >= 0),
     CONSTRAINT FK_OrderDetail_Order FOREIGN KEY (OrderID) REFERENCES dbo.Orders(OrderID) ON DELETE CASCADE,
     CONSTRAINT FK_OrderDetail_Variant FOREIGN KEY (VariantID) REFERENCES dbo.ProductVariants(VariantID)
 );
@@ -344,179 +373,139 @@ CREATE TABLE dbo.OrderDetails (
 CREATE TABLE dbo.OrderDetail_Toppings (
     OrderDetailID INT NOT NULL,
     ToppingID INT NOT NULL,
-    Quantity INT NOT NULL DEFAULT 1 CHECK (Quantity > 0),
-    UnitPrice DECIMAL(10,2) NOT NULL CHECK (UnitPrice >= 0),
-    LineTotal DECIMAL(10,2) NOT NULL CHECK (LineTotal >= 0),
+    UnitPrice DECIMAL(10,2) NOT NULL CHECK (UnitPrice >= 0), -- Price at the time of purchase
     PRIMARY KEY (OrderDetailID, ToppingID),
     CONSTRAINT FK_OrderDetailTopping_OrderDetail FOREIGN KEY (OrderDetailID) REFERENCES dbo.OrderDetails(OrderDetailID) ON DELETE CASCADE,
     CONSTRAINT FK_OrderDetailTopping_Topping FOREIGN KEY (ToppingID) REFERENCES dbo.Toppings(ToppingID)
 );
 
--- 14. Reviews
+-- 11. Reviews & Comments
 CREATE TABLE dbo.Reviews (
     ReviewID INT IDENTITY(1,1) PRIMARY KEY,
-    CustomerID INT NOT NULL,
-    OrderDetailID INT NOT NULL,
+    UserID INT NOT NULL,
+    ProductID INT NOT NULL,
+    OrderDetailID INT NOT NULL UNIQUE, -- A review must be linked to a specific purchased item
     Rating INT NOT NULL CHECK (Rating BETWEEN 1 AND 5),
     Comment NVARCHAR(MAX) NULL,
+    MediaURLs NVARCHAR(MAX) NULL, -- Store JSON array of image/video URLs
     ReviewDate DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-    CONSTRAINT UQ_Review_OnePerLine UNIQUE (CustomerID, OrderDetailID),
-    CONSTRAINT FK_Review_Customer FOREIGN KEY (CustomerID) REFERENCES dbo.Customers(CustomerID),
-    CONSTRAINT FK_Review_OrderDetail FOREIGN KEY (OrderDetailID) REFERENCES dbo.OrderDetails(OrderDetailID)
+    IsVerifiedPurchase BIT NOT NULL DEFAULT 1,
+    CONSTRAINT FK_Review_User FOREIGN KEY (UserID) REFERENCES dbo.Users(UserID),
+    CONSTRAINT FK_Review_Product FOREIGN KEY (ProductID) REFERENCES dbo.Products(ProductID),
+    CONSTRAINT FK_Review_OrderDetail FOREIGN KEY (OrderDetailID) REFERENCES dbo.OrderDetails(OrderDetailID),
+    CONSTRAINT CK_Review_Comment CHECK (Comment IS NULL OR LEN(Comment) >= 50) -- Minimum 50 characters
 );
 
--- 15. Cloudinary Assets
+-- 12. System & Integration Tables
 CREATE TABLE dbo.CloudinaryAssets (
     AssetID INT IDENTITY(1,1) PRIMARY KEY,
     PublicID NVARCHAR(255) NOT NULL UNIQUE,
     CloudinaryURL NVARCHAR(500) NOT NULL,
-    EntityType NVARCHAR(50) NOT NULL,
-    EntityID INT NOT NULL,
-    UploadedBy INT NULL,
+    ResourceType NVARCHAR(20) NOT NULL CHECK (ResourceType IN ('image', 'video', 'raw')),
+    UploadedByUserID INT NULL,
     UploadedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-    CONSTRAINT FK_CloudinaryAssets_User FOREIGN KEY (UploadedBy) REFERENCES dbo.Users(UserID)
+    CONSTRAINT FK_CloudinaryAssets_User FOREIGN KEY (UploadedByUserID) REFERENCES dbo.Users(UserID)
 );
 
--- 16. Notifications
 CREATE TABLE dbo.Notifications (
     NotificationID INT IDENTITY(1,1) PRIMARY KEY,
     UserID INT NOT NULL,
     Title NVARCHAR(255) NOT NULL,
     Message NVARCHAR(MAX) NOT NULL,
-    Type NVARCHAR(50) NOT NULL,
-    RelatedOrderID INT NULL,
+    Type NVARCHAR(50) NOT NULL, -- 'OrderStatus', 'NewPromotion', 'System', etc.
+    RelatedEntityID INT NULL, -- e.g., OrderID, ProductID
     IsRead BIT NOT NULL DEFAULT 0,
     CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-    ReadAt DATETIME2 NULL,
-    CONSTRAINT FK_Notification_User FOREIGN KEY (UserID) REFERENCES dbo.Users(UserID) ON DELETE CASCADE,
-    CONSTRAINT FK_Notification_Order FOREIGN KEY (RelatedOrderID) REFERENCES dbo.Orders(OrderID) ON DELETE SET NULL
+    CONSTRAINT FK_Notification_User FOREIGN KEY (UserID) REFERENCES dbo.Users(UserID) ON DELETE CASCADE
 );
 
--- 17. Chat Messages
 CREATE TABLE dbo.ChatMessages (
     MessageID INT IDENTITY(1,1) PRIMARY KEY,
     SenderID INT NOT NULL,
     ReceiverID INT NOT NULL,
     Message NVARCHAR(MAX) NOT NULL,
-    ChatImageURL NVARCHAR(500) NULL,
-    MessageType NVARCHAR(20) NOT NULL,
     IsRead BIT NOT NULL DEFAULT 0,
     CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
     CONSTRAINT FK_ChatMessage_Sender FOREIGN KEY (SenderID) REFERENCES dbo.Users(UserID),
     CONSTRAINT FK_ChatMessage_Receiver FOREIGN KEY (ReceiverID) REFERENCES dbo.Users(UserID)
 );
 
--- 18. Device Tokens
-CREATE TABLE dbo.DeviceTokens (
-    TokenID INT IDENTITY(1,1) PRIMARY KEY,
-    UserID INT NOT NULL,
-    DeviceToken NVARCHAR(500) NOT NULL,
-    DeviceType NVARCHAR(20),
-    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-    LastUsedAt DATETIME2 NULL,
-    CONSTRAINT FK_DeviceToken_User FOREIGN KEY (UserID) REFERENCES dbo.Users(UserID) ON DELETE CASCADE
-);
-
--- 19. JWT Tokens
 CREATE TABLE dbo.JWTTokens (
     TokenID INT IDENTITY(1,1) PRIMARY KEY,
     UserID INT NOT NULL,
-    AccessToken NVARCHAR(MAX) NOT NULL,
-    RefreshToken NVARCHAR(MAX) NULL,
-    TokenType NVARCHAR(50),
-    IssuedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    Token NVARCHAR(MAX) NOT NULL,
+    TokenType NVARCHAR(20) NOT NULL CHECK (TokenType IN ('ACCESS', 'REFRESH')),
     ExpiresAt DATETIME2 NOT NULL,
     IsRevoked BIT NOT NULL DEFAULT 0,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
     CONSTRAINT FK_JWTToken_User FOREIGN KEY (UserID) REFERENCES dbo.Users(UserID) ON DELETE CASCADE
 );
 
--- 20. System Configuration
+CREATE TABLE dbo.DeviceTokens (
+    DeviceTokenID INT IDENTITY(1,1) PRIMARY KEY,
+    UserID INT NOT NULL,
+    DeviceToken NVARCHAR(500) NOT NULL,
+    DeviceType NVARCHAR(20) CHECK (DeviceType IN ('Android', 'iOS', 'Web')),
+    IsActive BIT NOT NULL DEFAULT 1,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_DeviceToken_User FOREIGN KEY (UserID) REFERENCES dbo.Users(UserID) ON DELETE CASCADE
+);
+
 CREATE TABLE dbo.SystemConfiguration (
-    ConfigID INT IDENTITY(1,1) PRIMARY KEY,
-    ConfigKey NVARCHAR(255) NOT NULL UNIQUE,
+    ConfigKey NVARCHAR(255) PRIMARY KEY,
     ConfigValue NVARCHAR(MAX) NOT NULL,
     Description NVARCHAR(500) NULL,
     UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
 );
 
 GO
-
-PRINT N'✓ All 20 tables created successfully.';
+PRINT N'✓ All tables created successfully.';
 GO
 
 -- ================================================================
--- PART 3: CREATE PERFORMANCE INDEXES
+-- PART 3: CREATE INDEXES FOR PERFORMANCE
 -- ================================================================
 
-PRINT N'==== Creating performance indexes...';
+PRINT N'==== Creating indexes...';
 GO
 
--- User related indexes
+-- User indexes
 CREATE INDEX IX_Users_Email ON dbo.Users(Email);
-CREATE INDEX IX_Users_PhoneNumber ON dbo.Users(PhoneNumber) WHERE PhoneNumber IS NOT NULL;
 CREATE INDEX IX_Users_Username ON dbo.Users(Username);
-
--- Customer & Employee indexes
-CREATE INDEX IX_Customers_UserID ON dbo.Customers(UserID);
-CREATE INDEX IX_Addresses_CustomerID ON dbo.Addresses(CustomerID);
+CREATE INDEX IX_Users_Status ON dbo.Users(Status);
 
 -- Product indexes
-CREATE INDEX IX_Products_CategoryID_Status ON dbo.Products(CategoryID, Status);
-CREATE INDEX IX_Products_SKU ON dbo.Products(SKU);
-CREATE INDEX IX_ProductVariants_ProductID_Status ON dbo.ProductVariants(ProductID, Status);
-CREATE INDEX IX_ProductVariants_Stock ON dbo.ProductVariants(Stock);
-CREATE INDEX IX_ProductImages_ProductID ON dbo.ProductImages(ProductID);
+CREATE INDEX IX_Products_ShopID ON dbo.Products(ShopID);
+CREATE INDEX IX_Products_CategoryID ON dbo.Products(CategoryID);
+CREATE INDEX IX_Products_Status ON dbo.Products(Status);
+CREATE INDEX IX_Products_SoldCount ON dbo.Products(SoldCount DESC);
+CREATE INDEX IX_Products_AverageRating ON dbo.Products(AverageRating DESC);
+CREATE INDEX IX_Products_CreatedAt ON dbo.Products(CreatedAt DESC);
 
 -- Order indexes
-CREATE INDEX IX_Orders_CustomerID_OrderDate ON dbo.Orders(CustomerID, OrderDate DESC);
-CREATE INDEX IX_Orders_OrderStatus_OrderDate ON dbo.Orders(OrderStatus, OrderDate DESC);
-CREATE INDEX IX_Orders_TrackingCode ON dbo.Orders(TrackingCode);
+CREATE INDEX IX_Orders_UserID ON dbo.Orders(UserID);
+CREATE INDEX IX_Orders_ShopID ON dbo.Orders(ShopID);
+CREATE INDEX IX_Orders_OrderStatus ON dbo.Orders(OrderStatus);
+CREATE INDEX IX_Orders_OrderDate ON dbo.Orders(OrderDate DESC);
 CREATE INDEX IX_Orders_ShipperID ON dbo.Orders(ShipperID);
-CREATE INDEX IX_Orders_PaymentStatus ON dbo.Orders(PaymentStatus);
-
--- Order details & history
-CREATE INDEX IX_OrderHistory_OrderID_Timestamp ON dbo.OrderHistory(OrderID, Timestamp DESC);
-CREATE INDEX IX_OrderDetails_OrderID ON dbo.OrderDetails(OrderID);
-CREATE INDEX IX_OrderDetails_VariantID ON dbo.OrderDetails(VariantID);
 
 -- Review indexes
-CREATE INDEX IX_Reviews_OrderDetailID ON dbo.Reviews(OrderDetailID);
-CREATE INDEX IX_Reviews_CustomerID ON dbo.Reviews(CustomerID);
-CREATE INDEX IX_Reviews_Rating ON dbo.Reviews(Rating);
+CREATE INDEX IX_Reviews_ProductID ON dbo.Reviews(ProductID);
+CREATE INDEX IX_Reviews_UserID ON dbo.Reviews(UserID);
 
 -- Cart indexes
-CREATE INDEX IX_Carts_CustomerID_Status ON dbo.Carts(CustomerID, Status);
-CREATE INDEX IX_CartItems_CartID ON dbo.CartItems(CartID);
-CREATE INDEX IX_CartItems_VariantID ON dbo.CartItems(VariantID);
+CREATE INDEX IX_Carts_UserID ON dbo.Carts(UserID);
 
--- Promotion indexes
-CREATE INDEX IX_PromotionProducts_ProductID ON dbo.PromotionProducts(ProductID);
-CREATE INDEX IX_Promotions_Status_Dates ON dbo.Promotions(Status, StartDate, EndDate);
-CREATE INDEX IX_Promotions_PromoCode ON dbo.Promotions(PromoCode);
-
--- Favorites indexes
-CREATE INDEX IX_Favorites_CustomerID ON dbo.Favorites(CustomerID);
+-- Favorite indexes
+CREATE INDEX IX_Favorites_UserID ON dbo.Favorites(UserID);
 CREATE INDEX IX_Favorites_ProductID ON dbo.Favorites(ProductID);
 
--- WebSocket & Real-time indexes
-CREATE INDEX IX_ChatMessages_ReceiverID_IsRead ON dbo.ChatMessages(ReceiverID, IsRead);
-CREATE INDEX IX_ChatMessages_CreatedAt ON dbo.ChatMessages(CreatedAt DESC);
-CREATE INDEX IX_ChatMessages_SenderID ON dbo.ChatMessages(SenderID);
-
-CREATE INDEX IX_Notifications_UserID_IsRead ON dbo.Notifications(UserID, IsRead);
-CREATE INDEX IX_Notifications_CreatedAt ON dbo.Notifications(CreatedAt DESC);
-
--- Cloudinary & JWT indexes
-CREATE INDEX IX_CloudinaryAssets_EntityType ON dbo.CloudinaryAssets(EntityType, EntityID);
-CREATE INDEX IX_JWTTokens_UserID_ExpiresAt ON dbo.JWTTokens(UserID, ExpiresAt);
-CREATE INDEX IX_JWTTokens_IsRevoked ON dbo.JWTTokens(IsRevoked);
-
--- Device token indexes
-CREATE INDEX IX_DeviceTokens_UserID ON dbo.DeviceTokens(UserID);
+-- ViewedProducts indexes
+CREATE INDEX IX_ViewedProducts_UserID ON dbo.ViewedProducts(UserID);
+CREATE INDEX IX_ViewedProducts_LastViewedAt ON dbo.ViewedProducts(LastViewedAt DESC);
 
 GO
-
-PRINT N'✓ All performance indexes created successfully.';
+PRINT N'✓ All indexes created successfully.';
 GO
 
 -- ================================================================
@@ -526,181 +515,245 @@ GO
 PRINT N'==== Creating triggers...';
 GO
 
--- Trigger 1: Log order status changes
-CREATE TRIGGER dbo.trg_LogOrderStatusChange
-ON dbo.Orders
-AFTER INSERT, UPDATE
-AS
-BEGIN
-    SET NOCOUNT ON;
-    
-    -- On INSERT (new order creation)
-    INSERT INTO dbo.OrderHistory (OrderID, PreviousStatus, NewStatus, UserType, Notes)
-    SELECT 
-        i.OrderID,
-        NULL,
-        i.OrderStatus,
-        'System',
-        'Order created'
-    FROM inserted i
-    WHERE NOT EXISTS (SELECT 1 FROM deleted WHERE OrderID = i.OrderID);
-    
-    -- On UPDATE (only log if status changes)
-    INSERT INTO dbo.OrderHistory (OrderID, PreviousStatus, NewStatus, ChangedBy, UserType, Notes)
-    SELECT 
-        i.OrderID,
-        d.OrderStatus,
-        i.OrderStatus,
-        i.EmployeeID,
-        CASE WHEN i.EmployeeID IS NOT NULL THEN 'Employee' ELSE 'System' END,
-        'Order status updated'
-    FROM inserted i
-    INNER JOIN deleted d ON i.OrderID = d.OrderID
-    WHERE i.OrderStatus <> d.OrderStatus;
-END;
-GO
-
--- Trigger 2: Update the 'UpdatedAt' timestamp
-CREATE TRIGGER dbo.trg_SetUpdatedAt_Addresses
-ON dbo.Addresses
-AFTER UPDATE
-AS
-BEGIN
-    SET NOCOUNT ON;
-    IF UPDATE(UpdatedAt) RETURN;
-    UPDATE dbo.Addresses
-    SET UpdatedAt = SYSUTCDATETIME()
-    FROM inserted i
-    WHERE dbo.Addresses.AddressID = i.AddressID;
-END;
-GO
-
--- Trigger 3: Update stock after order is placed
-CREATE TRIGGER trg_UpdateStockAfterOrder
-ON dbo.OrderDetails
-AFTER INSERT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    
-    UPDATE pv
-    SET pv.Stock = pv.Stock - i.Quantity
-    FROM dbo.ProductVariants pv
-    INNER JOIN inserted i ON pv.VariantID = i.VariantID;
-END;
-GO
-
--- Trigger 4: Update product trending score
-CREATE TRIGGER trg_UpdateProductTrending
-ON dbo.OrderDetails
-AFTER INSERT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    UPDATE dbo.Products
-    SET TrendingScore = TrendingScore + 1
-    FROM inserted i
-    INNER JOIN dbo.ProductVariants pv ON i.VariantID = pv.VariantID
-    WHERE dbo.Products.ProductID = pv.ProductID;
-END;
-GO
-
--- Trigger 5: Create notification on order status update
-CREATE TRIGGER trg_CreateNotificationOnOrderUpdate
-ON dbo.OrderHistory
-AFTER INSERT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    INSERT INTO dbo.Notifications (UserID, Title, Message, Type, RelatedOrderID, CreatedAt)
-    SELECT 
-        c.UserID,
-        N'Cập nhật đơn hàng',
-        N'Đơn hàng #' + CAST(i.OrderID AS NVARCHAR(20)) + N' có trạng thái: ' + i.NewStatus,
-        'OrderStatus',
-        i.OrderID,
-        SYSUTCDATETIME()
-    FROM inserted i
-    INNER JOIN dbo.Orders o ON i.OrderID = o.OrderID
-    INNER JOIN dbo.Customers c ON o.CustomerID = c.CustomerID
-    WHERE i.NewStatus <> i.PreviousStatus;
-END;
-GO
-
--- Trigger 6: Update product variant timestamps
-CREATE TRIGGER trg_UpdateProductVariantsTimestamp
-ON dbo.ProductVariants
-AFTER UPDATE
-AS
-BEGIN
-    SET NOCOUNT ON;
-    IF UPDATE(UpdatedAt) RETURN;
-    UPDATE dbo.ProductVariants
-    SET UpdatedAt = SYSUTCDATETIME()
-    FROM inserted i
-    WHERE dbo.ProductVariants.VariantID = i.VariantID;
-END;
-GO
-
--- Trigger 7: Update user timestamps
-CREATE TRIGGER trg_UpdateUserTimestamp
+-- Trigger to update Users.UpdatedAt
+CREATE TRIGGER trg_Users_UpdatedAt
 ON dbo.Users
 AFTER UPDATE
 AS
 BEGIN
     SET NOCOUNT ON;
-    IF UPDATE(UpdatedAt) RETURN;
     UPDATE dbo.Users
     SET UpdatedAt = SYSUTCDATETIME()
-    FROM inserted i
-    WHERE dbo.Users.UserID = i.UserID;
+    FROM dbo.Users u
+    INNER JOIN inserted i ON u.UserID = i.UserID;
 END;
 GO
 
--- Trigger 8: Update cart timestamp
-CREATE TRIGGER trg_UpdateCartTimestamp
+-- Trigger to update Shops.UpdatedAt
+CREATE TRIGGER trg_Shops_UpdatedAt
+ON dbo.Shops
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+    UPDATE dbo.Shops
+    SET UpdatedAt = SYSUTCDATETIME()
+    FROM dbo.Shops s
+    INNER JOIN inserted i ON s.ShopID = i.ShopID;
+END;
+GO
+
+-- Trigger to update Products.UpdatedAt
+CREATE TRIGGER trg_Products_UpdatedAt
+ON dbo.Products
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+    UPDATE dbo.Products
+    SET UpdatedAt = SYSUTCDATETIME()
+    FROM dbo.Products p
+    INNER JOIN inserted i ON p.ProductID = i.ProductID;
+END;
+GO
+
+-- Trigger to update Carts.UpdatedAt
+CREATE TRIGGER trg_Carts_UpdatedAt
 ON dbo.Carts
 AFTER UPDATE
 AS
 BEGIN
     SET NOCOUNT ON;
-    IF UPDATE(UpdatedAt) RETURN;
     UPDATE dbo.Carts
     SET UpdatedAt = SYSUTCDATETIME()
-    FROM inserted i
-    WHERE dbo.Carts.CartID = i.CartID;
+    FROM dbo.Carts c
+    INNER JOIN inserted i ON c.CartID = i.CartID;
 END;
 GO
 
--- Trigger 9: Update customer loyalty points on order completion
-CREATE TRIGGER trg_UpdateLoyaltyPoints
+-- Trigger to update Cart.UpdatedAt when CartItems change
+CREATE TRIGGER trg_CartItems_UpdateCart
+ON dbo.CartItems
+AFTER INSERT, UPDATE, DELETE
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    UPDATE dbo.Carts
+    SET UpdatedAt = SYSUTCDATETIME()
+    WHERE CartID IN (
+        SELECT DISTINCT CartID FROM inserted
+        UNION
+        SELECT DISTINCT CartID FROM deleted
+    );
+END;
+GO
+
+-- Trigger to update product's sold count when an order is completed
+CREATE TRIGGER trg_UpdateSoldCountOnOrderCompletion
 ON dbo.Orders
 AFTER UPDATE
 AS
 BEGIN
     SET NOCOUNT ON;
-    UPDATE c
-    SET c.LoyaltyPoints = c.LoyaltyPoints + CAST(i.GrandTotal / 1000 AS INT),
-        c.TotalSpent = c.TotalSpent + i.GrandTotal
-    FROM dbo.Customers c
-    INNER JOIN inserted i ON c.CustomerID = i.CustomerID
-    INNER JOIN deleted d ON i.OrderID = d.OrderID
-    WHERE i.OrderStatus = 'Completed' AND d.OrderStatus <> 'Completed';
+    
+    IF UPDATE(OrderStatus)
+    BEGIN
+        -- Increase sold count when order is completed
+        UPDATE p
+        SET p.SoldCount = p.SoldCount + od.Quantity
+        FROM dbo.Products p
+        JOIN dbo.ProductVariants pv ON p.ProductID = pv.ProductID
+        JOIN dbo.OrderDetails od ON pv.VariantID = od.VariantID
+        JOIN inserted i ON od.OrderID = i.OrderID
+        JOIN deleted d ON i.OrderID = d.OrderID
+        WHERE i.OrderStatus = 'Completed' AND d.OrderStatus <> 'Completed';
+        
+        -- Decrease sold count when order is cancelled/returned after being completed
+        UPDATE p
+        SET p.SoldCount = p.SoldCount - od.Quantity
+        FROM dbo.Products p
+        JOIN dbo.ProductVariants pv ON p.ProductID = pv.ProductID
+        JOIN dbo.OrderDetails od ON pv.VariantID = od.VariantID
+        JOIN inserted i ON od.OrderID = i.OrderID
+        JOIN deleted d ON i.OrderID = d.OrderID
+        WHERE d.OrderStatus = 'Completed' 
+        AND i.OrderStatus IN ('Cancelled', 'Returned', 'Refunded')
+        AND p.SoldCount > 0;
+    END;
 END;
 GO
 
--- Trigger 10: Update promotion usage count
-CREATE TRIGGER trg_UpdatePromotionUsageCount
+-- Trigger to update average rating and total reviews on a product
+CREATE TRIGGER trg_UpdateProductRating
+ON dbo.Reviews
+AFTER INSERT, DELETE, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Get ProductIDs from inserted and deleted tables
+    DECLARE @ProductIDs TABLE (ID INT);
+    INSERT INTO @ProductIDs SELECT ProductID FROM inserted;
+    INSERT INTO @ProductIDs SELECT ProductID FROM deleted;
+
+    -- Update statistics for affected products
+    UPDATE p
+    SET
+        p.AverageRating = ISNULL((SELECT AVG(CAST(r.Rating AS DECIMAL(3,2))) FROM dbo.Reviews r WHERE r.ProductID = p.ProductID), 0),
+        p.TotalReviews = ISNULL((SELECT COUNT(*) FROM dbo.Reviews r WHERE r.ProductID = p.ProductID), 0)
+    FROM dbo.Products p
+    WHERE p.ProductID IN (SELECT DISTINCT ID FROM @ProductIDs);
+END;
+GO
+
+-- Trigger to record order status changes in history
+CREATE TRIGGER trg_RecordOrderStatusChange
+ON dbo.Orders
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    IF UPDATE(OrderStatus)
+    BEGIN
+        INSERT INTO dbo.OrderHistory (OrderID, OldStatus, NewStatus, ChangedByUserID, Notes)
+        SELECT 
+            i.OrderID,
+            d.OrderStatus,
+            i.OrderStatus,
+            NULL, -- Will be set by application
+            CASE 
+                WHEN i.OrderStatus = 'Cancelled' THEN i.CancellationReason
+                ELSE NULL
+            END
+        FROM inserted i
+        JOIN deleted d ON i.OrderID = d.OrderID
+        WHERE i.OrderStatus <> d.OrderStatus;
+    END;
+END;
+GO
+
+-- Trigger to update product view count
+CREATE TRIGGER trg_UpdateProductViewCount
+ON dbo.ViewedProducts
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    UPDATE p
+    SET p.ViewCount = (
+        SELECT COUNT(DISTINCT vp.UserID)
+        FROM dbo.ViewedProducts vp
+        WHERE vp.ProductID = p.ProductID
+    )
+    FROM dbo.Products p
+    WHERE p.ProductID IN (SELECT DISTINCT ProductID FROM inserted);
+END;
+GO
+
+-- Trigger to record shop revenue when order is completed
+CREATE TRIGGER trg_RecordShopRevenue
+ON dbo.Orders
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    IF UPDATE(OrderStatus)
+    BEGIN
+        INSERT INTO dbo.ShopRevenue (ShopID, OrderID, OrderAmount, CommissionAmount, NetRevenue)
+        SELECT 
+            i.ShopID,
+            i.OrderID,
+            i.GrandTotal,
+            i.GrandTotal * s.CommissionRate / 100,
+            i.GrandTotal * (100 - s.CommissionRate) / 100
+        FROM inserted i
+        JOIN deleted d ON i.OrderID = d.OrderID
+        JOIN dbo.Shops s ON i.ShopID = s.ShopID
+        WHERE i.OrderStatus = 'Completed' 
+        AND d.OrderStatus <> 'Completed';
+    END;
+END;
+GO
+
+-- Trigger to update promotion used count
+CREATE TRIGGER trg_UpdatePromotionUsedCount
 ON dbo.Orders
 AFTER INSERT
 AS
 BEGIN
     SET NOCOUNT ON;
+    
     UPDATE p
-    SET p.UsageCount = p.UsageCount + 1
+    SET p.UsedCount = p.UsedCount + 1
     FROM dbo.Promotions p
     INNER JOIN inserted i ON p.PromotionID = i.PromotionID
     WHERE i.PromotionID IS NOT NULL;
+END;
+GO
+
+-- Trigger to ensure only one default address per user
+CREATE TRIGGER trg_EnsureOneDefaultAddress
+ON dbo.Addresses
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    IF UPDATE(IsDefault) OR EXISTS(SELECT 1 FROM inserted WHERE IsDefault = 1)
+    BEGIN
+        -- When an address is set as default, unset all other defaults for that user
+        UPDATE a
+        SET a.IsDefault = 0
+        FROM dbo.Addresses a
+        INNER JOIN inserted i ON a.UserID = i.UserID
+        WHERE a.AddressID <> i.AddressID 
+        AND i.IsDefault = 1
+        AND a.IsDefault = 1;
+    END;
 END;
 GO
 
@@ -708,697 +761,482 @@ PRINT N'✓ All triggers created successfully.';
 GO
 
 -- ================================================================
--- PART 5: CREATE STORED PROCEDURES
--- ================================================================
-
-PRINT N'==== Creating stored procedures...';
-GO
-
--- SP 1: Register a new customer account
-CREATE PROCEDURE dbo.sp_RegisterUser
-    @Username NVARCHAR(50),
-    @PasswordHash NVARCHAR(255),
-    @Email NVARCHAR(255),
-    @FullName NVARCHAR(255),
-    @PhoneNumber NVARCHAR(20) = NULL,
-    @UserID INT OUTPUT,
-    @CustomerID INT OUTPUT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    BEGIN TRANSACTION;
-    BEGIN TRY
-        IF EXISTS (SELECT 1 FROM dbo.Users WHERE Username = @Username)
-            THROW 50001, 'Username already exists.', 1;
-        IF EXISTS (SELECT 1 FROM dbo.Users WHERE Email = @Email)
-            THROW 50002, 'Email is already in use.', 1;
-            
-        INSERT INTO dbo.Users (Username, PasswordHash, Email, PhoneNumber)
-        VALUES (@Username, @PasswordHash, @Email, @PhoneNumber);
-        SET @UserID = SCOPE_IDENTITY();
-        
-        INSERT INTO dbo.UserRoles (UserID, RoleID) VALUES (@UserID, 2);
-        
-        INSERT INTO dbo.Customers (UserID, FullName)
-        VALUES (@UserID, @FullName);
-        SET @CustomerID = SCOPE_IDENTITY();
-        
-        COMMIT TRANSACTION;
-    END TRY
-    BEGIN CATCH
-        ROLLBACK TRANSACTION;
-        THROW;
-    END CATCH
-END;
-GO
-
--- SP 2: Set default address for customer
-CREATE PROCEDURE dbo.sp_SetDefaultAddress
-    @AddressID INT,
-    @CustomerID INT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    BEGIN TRANSACTION;
-    BEGIN TRY
-        IF NOT EXISTS (SELECT 1 FROM dbo.Addresses WHERE AddressID = @AddressID AND CustomerID = @CustomerID AND Status = 1)
-            THROW 50003, 'Address not found or does not belong to this customer.', 1;
-        
-        UPDATE dbo.Addresses SET IsDefault = 0 WHERE CustomerID = @CustomerID;
-        UPDATE dbo.Addresses SET IsDefault = 1 WHERE AddressID = @AddressID;
-        
-        COMMIT TRANSACTION;
-    END TRY
-    BEGIN CATCH
-        ROLLBACK TRANSACTION;
-        THROW;
-    END CATCH
-END;
-GO
-
--- SP 3: Add item to active cart
-CREATE PROCEDURE dbo.sp_AddToCart
-    @CustomerID INT,
-    @VariantID INT,
-    @Quantity INT,
-    @Notes NVARCHAR(500) = NULL
-AS
-BEGIN
-    SET NOCOUNT ON;
-    DECLARE @CartID INT, @UnitPrice DECIMAL(10,2), @Stock INT;
-
-    BEGIN TRANSACTION;
-    BEGIN TRY
-        -- Get active cart or create new one
-        SELECT @CartID = CartID FROM dbo.Carts WHERE CustomerID = @CustomerID AND Status = 'ACTIVE';
-        IF @CartID IS NULL
-        BEGIN
-            INSERT INTO dbo.Carts (CustomerID) VALUES (@CustomerID);
-            SET @CartID = SCOPE_IDENTITY();
-        END
-
-        -- Check stock and get price
-        SELECT @UnitPrice = Price, @Stock = Stock FROM dbo.ProductVariants WHERE VariantID = @VariantID AND Status = 1;
-        IF @UnitPrice IS NULL
-            THROW 50004, 'Product variant is not available.', 1;
-        IF @Stock < @Quantity
-            THROW 50005, 'Insufficient stock available.', 1;
-
-        -- Add or update cart item
-        IF EXISTS (SELECT 1 FROM dbo.CartItems WHERE CartID = @CartID AND VariantID = @VariantID)
-        BEGIN
-            UPDATE dbo.CartItems
-            SET Quantity = Quantity + @Quantity,
-                LineTotal = (Quantity + @Quantity) * UnitPrice
-            WHERE CartID = @CartID AND VariantID = @VariantID;
-        END
-        ELSE
-        BEGIN
-            INSERT INTO dbo.CartItems (CartID, VariantID, Quantity, UnitPrice, LineTotal, Notes)
-            VALUES (@CartID, @VariantID, @Quantity, @UnitPrice, @Quantity * @UnitPrice, @Notes);
-        END
-        
-        COMMIT TRANSACTION;
-    END TRY
-    BEGIN CATCH
-        ROLLBACK TRANSACTION;
-        THROW;
-    END CATCH;
-END;
-GO
-
--- SP 4: Create order from active cart
-CREATE PROCEDURE dbo.sp_CreateOrderFromCart
-    @CustomerID INT,
-    @AddressID INT,
-    @PaymentMethod NVARCHAR(50),
-    @ShippingFee DECIMAL(12,2),
-    @Notes NVARCHAR(500) = NULL,
-    @OrderID INT OUTPUT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    DECLARE @CartID INT, @Subtotal DECIMAL(12,2), @GrandTotal DECIMAL(12,2);
-    DECLARE @ShippingAddress NVARCHAR(500), @RecipientName NVARCHAR(255), @RecipientPhone NVARCHAR(20);
-
-    BEGIN TRANSACTION;
-    BEGIN TRY
-        -- Validate Cart and Address
-        SELECT @CartID = CartID FROM dbo.Carts WHERE CustomerID = @CustomerID AND Status = 'ACTIVE';
-        IF @CartID IS NULL OR NOT EXISTS (SELECT 1 FROM dbo.CartItems WHERE CartID = @CartID)
-            THROW 50006, 'Active cart is empty.', 1;
-
-        SELECT @ShippingAddress = FullAddress, @RecipientName = RecipientName, @RecipientPhone = PhoneNumber
-        FROM dbo.Addresses WHERE AddressID = @AddressID AND CustomerID = @CustomerID;
-        IF @ShippingAddress IS NULL
-            THROW 50007, 'Invalid shipping address.', 1;
-
-        -- Calculate totals
-        SELECT @Subtotal = SUM(LineTotal) FROM dbo.CartItems WHERE CartID = @CartID;
-        SET @GrandTotal = @Subtotal + @ShippingFee;
-
-        -- Create Order
-        INSERT INTO dbo.Orders (CustomerID, PaymentMethod, ShippingAddress, RecipientName, RecipientPhone, Subtotal, ShippingFee, GrandTotal, Notes)
-        VALUES (@CustomerID, @PaymentMethod, @ShippingAddress, @RecipientName, @RecipientPhone, @Subtotal, @ShippingFee, @GrandTotal, @Notes);
-        SET @OrderID = SCOPE_IDENTITY();
-
-        -- Copy CartItems to OrderDetails
-        INSERT INTO dbo.OrderDetails (OrderID, VariantID, Quantity, UnitPrice, LineTotal)
-        SELECT @OrderID, VariantID, Quantity, UnitPrice, LineTotal
-        FROM dbo.CartItems WHERE CartID = @CartID;
-
-        -- Update Cart status
-        UPDATE dbo.Carts SET Status = 'CHECKED_OUT' WHERE CartID = @CartID;
-
-        COMMIT TRANSACTION;
-    END TRY
-    BEGIN CATCH
-        ROLLBACK TRANSACTION;
-        THROW;
-    END CATCH;
-END;
-GO
-
--- SP 5: Get order summary by CustomerID
-CREATE PROCEDURE dbo.sp_GetOrderSummary
-    @CustomerID INT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    SELECT
-        o.OrderID,
-        o.OrderDate,
-        o.OrderStatus,
-        o.PaymentStatus,
-        o.GrandTotal,
-        (SELECT COUNT(*) FROM dbo.OrderDetails od WHERE od.OrderID = o.OrderID) AS ItemCount,
-        o.ShippingAddress,
-        o.RecipientName
-    FROM dbo.Orders o
-    WHERE o.CustomerID = @CustomerID
-    ORDER BY o.OrderDate DESC;
-END;
-GO
-
--- SP 6: Update order status
-CREATE PROCEDURE dbo.sp_UpdateOrderStatus
-    @OrderID INT,
-    @NewStatus NVARCHAR(30),
-    @EmployeeID INT = NULL,
-    @Notes NVARCHAR(500) = NULL
-AS
-BEGIN
-    SET NOCOUNT ON;
-    BEGIN TRANSACTION;
-    BEGIN TRY
-        IF NOT EXISTS (SELECT 1 FROM dbo.Orders WHERE OrderID = @OrderID)
-            THROW 50008, 'Order not found.', 1;
-            
-        UPDATE dbo.Orders 
-        SET OrderStatus = @NewStatus,
-            EmployeeID = ISNULL(@EmployeeID, EmployeeID)
-        WHERE OrderID = @OrderID;
-        
-        COMMIT TRANSACTION;
-    END TRY
-    BEGIN CATCH
-        ROLLBACK TRANSACTION;
-        THROW;
-    END CATCH
-END;
-GO
-
--- SP 7: Add review
-CREATE PROCEDURE dbo.sp_AddReview
-    @CustomerID INT,
-    @OrderDetailID INT,
-    @Rating INT,
-    @Comment NVARCHAR(MAX) = NULL
-AS
-BEGIN
-    SET NOCOUNT ON;
-    BEGIN TRY
-        IF @Rating < 1 OR @Rating > 5
-            THROW 50009, 'Rating must be between 1 and 5.', 1;
-            
-        INSERT INTO dbo.Reviews (CustomerID, OrderDetailID, Rating, Comment)
-        VALUES (@CustomerID, @OrderDetailID, @Rating, @Comment);
-    END TRY
-    BEGIN CATCH
-        THROW;
-    END CATCH
-END;
-GO
-
--- SP 8: Get product statistics
-CREATE PROCEDURE dbo.sp_GetProductStatistics
-    @ProductID INT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    SELECT
-        p.ProductID,
-        p.ProductName,
-        c.CategoryName,
-        COUNT(DISTINCT v.VariantID) AS VariantCount,
-        ISNULL(MIN(v.Price), 0) AS LowestPrice,
-        ISNULL(MAX(v.Price), 0) AS HighestPrice,
-        SUM(ISNULL(v.Stock, 0)) AS TotalStock,
-        COUNT(DISTINCT r.ReviewID) AS ReviewCount,
-        ISNULL(AVG(CAST(r.Rating AS FLOAT)), 0) AS AverageRating
-    FROM dbo.Products p
-    INNER JOIN dbo.Categories c ON p.CategoryID = c.CategoryID
-    LEFT JOIN dbo.ProductVariants v ON p.ProductID = v.ProductID AND v.Status = 1
-    LEFT JOIN dbo.OrderDetails od ON v.VariantID = od.VariantID
-    LEFT JOIN dbo.Reviews r ON od.OrderDetailID = r.OrderDetailID
-    WHERE p.ProductID = @ProductID
-    GROUP BY p.ProductID, p.ProductName, c.CategoryName;
-END;
-GO
-
-PRINT N'✓ All stored procedures created successfully.';
-GO
-
--- ================================================================
--- PART 6: CREATE VIEWS
+-- PART 5: CREATE VIEWS
 -- ================================================================
 
 PRINT N'==== Creating views...';
 GO
 
--- View 1: Detailed order information
+-- View for guest homepage (products from shops with > 10 total sales)
+CREATE VIEW dbo.v_GuestHomepageProducts
+AS
+SELECT 
+    p.ProductID,
+    p.ProductName,
+    p.Description,
+    p.AverageRating,
+    p.TotalReviews,
+    p.SoldCount,
+    v.Price AS DefaultPrice,
+    img.ImageURL AS PrimaryImageURL,
+    s.ShopID,
+    s.ShopName,
+    s.LogoURL AS ShopLogoURL,
+    c.CategoryName
+FROM dbo.Products p
+JOIN dbo.Shops s ON p.ShopID = s.ShopID
+JOIN dbo.Categories c ON p.CategoryID = c.CategoryID
+-- Find the price of the default variant (size M or smallest)
+OUTER APPLY (
+    SELECT TOP 1 pv.Price
+    FROM dbo.ProductVariants pv
+    JOIN dbo.Sizes sz ON pv.SizeID = sz.SizeID
+    WHERE pv.ProductID = p.ProductID
+    ORDER BY CASE WHEN sz.SizeName = 'M' THEN 1 ELSE 2 END, pv.Price
+) v
+-- Find the primary image
+OUTER APPLY (
+    SELECT TOP 1 pi.ImageURL
+    FROM dbo.ProductImages pi
+    WHERE pi.ProductID = p.ProductID AND pi.IsPrimary = 1
+) img
+WHERE p.Status = 1 
+AND s.Status = 1
+AND s.ShopID IN (
+    SELECT ShopID 
+    FROM dbo.Products
+    GROUP BY ShopID
+    HAVING SUM(SoldCount) > 10
+);
+GO
+
+-- View for detailed product information
+CREATE VIEW dbo.v_ProductDetails
+AS
+SELECT
+    p.ProductID,
+    p.ProductName,
+    p.Description,
+    p.AverageRating,
+    p.TotalReviews,
+    p.ViewCount,
+    p.SoldCount,
+    p.Status,
+    p.CreatedAt,
+    c.CategoryID,
+    c.CategoryName,
+    s.ShopID,
+    s.ShopName,
+    s.LogoURL AS ShopLogoURL,
+    s.Address AS ShopAddress,
+    s.PhoneNumber AS ShopPhone
+FROM dbo.Products p
+JOIN dbo.Categories c ON p.CategoryID = c.CategoryID
+JOIN dbo.Shops s ON p.ShopID = s.ShopID;
+GO
+
+-- View for best-selling products (top 20)
+CREATE VIEW dbo.v_BestSellingProducts
+AS
+SELECT TOP 20
+    p.ProductID,
+    p.ProductName,
+    p.SoldCount,
+    p.AverageRating,
+    v.Price AS DefaultPrice,
+    img.ImageURL AS PrimaryImageURL,
+    s.ShopName,
+    c.CategoryName
+FROM dbo.Products p
+JOIN dbo.Shops s ON p.ShopID = s.ShopID
+JOIN dbo.Categories c ON p.CategoryID = c.CategoryID
+OUTER APPLY (
+    SELECT TOP 1 pv.Price
+    FROM dbo.ProductVariants pv
+    WHERE pv.ProductID = p.ProductID
+    ORDER BY pv.Price
+) v
+OUTER APPLY (
+    SELECT TOP 1 pi.ImageURL
+    FROM dbo.ProductImages pi
+    WHERE pi.ProductID = p.ProductID AND pi.IsPrimary = 1
+) img
+WHERE p.Status = 1 AND s.Status = 1
+ORDER BY p.SoldCount DESC;
+GO
+
+-- View for newest products (top 20)
+CREATE VIEW dbo.v_NewestProducts
+AS
+SELECT TOP 20
+    p.ProductID,
+    p.ProductName,
+    p.CreatedAt,
+    p.AverageRating,
+    v.Price AS DefaultPrice,
+    img.ImageURL AS PrimaryImageURL,
+    s.ShopName,
+    c.CategoryName
+FROM dbo.Products p
+JOIN dbo.Shops s ON p.ShopID = s.ShopID
+JOIN dbo.Categories c ON p.CategoryID = c.CategoryID
+OUTER APPLY (
+    SELECT TOP 1 pv.Price
+    FROM dbo.ProductVariants pv
+    WHERE pv.ProductID = p.ProductID
+    ORDER BY pv.Price
+) v
+OUTER APPLY (
+    SELECT TOP 1 pi.ImageURL
+    FROM dbo.ProductImages pi
+    WHERE pi.ProductID = p.ProductID AND pi.IsPrimary = 1
+) img
+WHERE p.Status = 1 AND s.Status = 1
+ORDER BY p.CreatedAt DESC;
+GO
+
+-- View for top-rated products (top 20)
+CREATE VIEW dbo.v_TopRatedProducts
+AS
+SELECT TOP 20
+    p.ProductID,
+    p.ProductName,
+    p.AverageRating,
+    p.TotalReviews,
+    v.Price AS DefaultPrice,
+    img.ImageURL AS PrimaryImageURL,
+    s.ShopName,
+    c.CategoryName
+FROM dbo.Products p
+JOIN dbo.Shops s ON p.ShopID = s.ShopID
+JOIN dbo.Categories c ON p.CategoryID = c.CategoryID
+OUTER APPLY (
+    SELECT TOP 1 pv.Price
+    FROM dbo.ProductVariants pv
+    WHERE pv.ProductID = p.ProductID
+    ORDER BY pv.Price
+) v
+OUTER APPLY (
+    SELECT TOP 1 pi.ImageURL
+    FROM dbo.ProductImages pi
+    WHERE pi.ProductID = p.ProductID AND pi.IsPrimary = 1
+) img
+WHERE p.Status = 1 AND s.Status = 1 AND p.TotalReviews >= 5
+ORDER BY p.AverageRating DESC, p.TotalReviews DESC;
+GO
+
+-- View for order summary with details
 CREATE VIEW dbo.v_OrderSummary
 AS
 SELECT
     o.OrderID,
     o.OrderDate,
     o.OrderStatus,
+    o.PaymentMethod,
     o.PaymentStatus,
-    c.CustomerID,
-    c.FullName AS CustomerName,
-    u.Email AS CustomerEmail,
-    e.FullName AS EmployeeName,
-    o.ShippingAddress,
     o.GrandTotal,
-    o.TrackingCode,
-    (SELECT COUNT(*) FROM dbo.OrderDetails od WHERE od.OrderID = o.OrderID) AS ItemCount
+    u.UserID,
+    u.FullName AS CustomerName,
+    u.Email AS CustomerEmail,
+    u.PhoneNumber AS CustomerPhone,
+    s.ShopID,
+    s.ShopName,
+    shipper.FullName AS ShipperName,
+    o.RecipientName,
+    o.RecipientPhone,
+    o.ShippingAddress
 FROM dbo.Orders o
-INNER JOIN dbo.Customers c ON o.CustomerID = c.CustomerID
-INNER JOIN dbo.Users u ON c.UserID = u.UserID
-LEFT JOIN dbo.Employees e ON o.EmployeeID = e.EmployeeID;
+JOIN dbo.Users u ON o.UserID = u.UserID
+JOIN dbo.Shops s ON o.ShopID = s.ShopID
+LEFT JOIN dbo.Users shipper ON o.ShipperID = shipper.UserID;
 GO
 
--- View 2: Product statistics
-CREATE VIEW dbo.v_ProductStatistics
+-- View for shop revenue summary
+CREATE VIEW dbo.v_ShopRevenueSummary
 AS
 SELECT
-    p.ProductID,
-    p.ProductName,
-    c.CategoryName,
-    COUNT(DISTINCT v.VariantID) AS VariantCount,
-    ISNULL(MIN(v.Price), 0) AS LowestPrice,
-    ISNULL(MAX(v.Price), 0) AS HighestPrice,
-    SUM(ISNULL(v.Stock, 0)) AS TotalStock,
-    COUNT(DISTINCT r.ReviewID) AS ReviewCount,
-    ISNULL(AVG(CAST(r.Rating AS FLOAT)), 0) AS AverageRating,
-    p.TrendingScore,
-    p.ViewCount,
-    p.IsHotDeal,
-    (SELECT TOP 1 ImageURL FROM dbo.ProductImages WHERE ProductID = p.ProductID AND IsPrimary = 1) AS PrimaryImage
-FROM dbo.Products p
-INNER JOIN dbo.Categories c ON p.CategoryID = c.CategoryID
-LEFT JOIN dbo.ProductVariants v ON p.ProductID = v.ProductID AND v.Status = 1
-LEFT JOIN dbo.OrderDetails od ON v.VariantID = od.VariantID
-LEFT JOIN dbo.Reviews r ON od.OrderDetailID = r.OrderDetailID
-WHERE p.Status = 1
-GROUP BY p.ProductID, p.ProductName, c.CategoryName, p.TrendingScore, p.ViewCount, p.IsHotDeal;
+    s.ShopID,
+    s.ShopName,
+    COUNT(DISTINCT sr.OrderID) AS TotalOrders,
+    SUM(sr.OrderAmount) AS TotalOrderAmount,
+    SUM(sr.CommissionAmount) AS TotalCommission,
+    SUM(sr.NetRevenue) AS TotalNetRevenue,
+    s.CommissionRate
+FROM dbo.Shops s
+LEFT JOIN dbo.ShopRevenue sr ON s.ShopID = sr.ShopID
+GROUP BY s.ShopID, s.ShopName, s.CommissionRate;
 GO
 
--- View 3: Active promotions
-CREATE VIEW dbo.v_ActivePromotions
-AS
-SELECT
-    p.PromotionID,
-    p.PromotionName,
-    p.Description,
-    p.PromoCode,
-    p.DiscountType,
-    p.DiscountValue,
-    p.StartDate,
-    p.EndDate,
-    p.MinOrderValue,
-    p.MaxUsageCount,
-    p.UsageCount,
-    CAST(CASE WHEN GETDATE() BETWEEN p.StartDate AND p.EndDate THEN 1 ELSE 0 END AS BIT) AS IsActive
-FROM dbo.Promotions p
-WHERE p.Status = 1 AND GETDATE() BETWEEN p.StartDate AND p.EndDate;
-GO
-
--- View 4: Customer purchase history
-CREATE VIEW dbo.v_CustomerPurchaseHistory
-AS
-SELECT
-    c.CustomerID,
-    c.FullName,
-    u.Email,
-    COUNT(DISTINCT o.OrderID) AS TotalOrders,
-    SUM(o.GrandTotal) AS TotalSpent,
-    AVG(o.GrandTotal) AS AverageOrderValue,
-    MAX(o.OrderDate) AS LastOrderDate,
-    c.LoyaltyPoints,
-    c.MembershipLevel
-FROM dbo.Customers c
-INNER JOIN dbo.Users u ON c.UserID = u.UserID
-LEFT JOIN dbo.Orders o ON c.CustomerID = o.CustomerID
-GROUP BY c.CustomerID, c.FullName, u.Email, c.LoyaltyPoints, c.MembershipLevel;
-GO
-
--- View 5: Pending orders
-CREATE VIEW dbo.v_PendingOrders
+-- View for shipper assigned orders
+CREATE VIEW dbo.v_ShipperOrders
 AS
 SELECT
     o.OrderID,
     o.OrderDate,
-    c.FullName AS CustomerName,
-    u.PhoneNumber,
-    o.ShippingAddress,
-    o.GrandTotal,
     o.OrderStatus,
-    DATEDIFF(HOUR, o.OrderDate, GETDATE()) AS HoursSinceOrder
+    o.GrandTotal,
+    o.ShipperID,
+    shipper.FullName AS ShipperName,
+    o.RecipientName,
+    o.RecipientPhone,
+    o.ShippingAddress,
+    s.ShopName,
+    CASE 
+        WHEN o.OrderStatus = 'Delivering' THEN 1
+        WHEN o.OrderStatus = 'Completed' THEN 2
+        ELSE 3
+    END AS DeliveryPriority
 FROM dbo.Orders o
-INNER JOIN dbo.Customers c ON o.CustomerID = c.CustomerID
-INNER JOIN dbo.Users u ON c.UserID = u.UserID
-WHERE o.OrderStatus IN ('Pending', 'Processing');
-GO
-
--- View 6: Top selling products
-CREATE VIEW dbo.v_TopSellingProducts
-AS
-SELECT TOP 10
-    p.ProductID,
-    p.ProductName,
-    c.CategoryName,
-    COUNT(od.OrderDetailID) AS TotalSales,
-    SUM(od.Quantity) AS QuantitySold,
-    SUM(od.LineTotal) AS TotalRevenue,
-    AVG(CAST(r.Rating AS FLOAT)) AS AverageRating
-FROM dbo.Products p
-INNER JOIN dbo.Categories c ON p.CategoryID = c.CategoryID
-INNER JOIN dbo.ProductVariants pv ON p.ProductID = pv.ProductID
-INNER JOIN dbo.OrderDetails od ON pv.VariantID = od.VariantID
-LEFT JOIN dbo.Reviews r ON od.OrderDetailID = r.OrderDetailID
-WHERE p.Status = 1
-GROUP BY p.ProductID, p.ProductName, c.CategoryName
-ORDER BY TotalSales DESC;
-GO
-
--- View 7: Unread notifications
-CREATE VIEW dbo.v_UnreadNotifications
-AS
-SELECT
-    n.NotificationID,
-    n.UserID,
-    n.Title,
-    n.Message,
-    n.Type,
-    n.CreatedAt,
-    n.RelatedOrderID
-FROM dbo.Notifications n
-WHERE n.IsRead = 0;
--- SỬA LỖI: Đã xóa "ORDER BY n.CreatedAt DESC;"
-GO
-
--- View 8: Unread chat messages
-CREATE VIEW dbo.v_UnreadChatMessages
-AS
-SELECT
-    cm.MessageID,
-    cm.SenderID,
-    cm.ReceiverID,
-    u.Username AS SenderName,
-    cm.Message,
-    cm.MessageType,
-    cm.CreatedAt
-FROM dbo.ChatMessages cm
-INNER JOIN dbo.Users u ON cm.SenderID = u.UserID
-WHERE cm.IsRead = 0;
--- SỬA LỖI: Đã xóa "ORDER BY cm.CreatedAt DESC;"
+JOIN dbo.Shops s ON o.ShopID = s.ShopID
+LEFT JOIN dbo.Users shipper ON o.ShipperID = shipper.UserID
+WHERE o.ShipperID IS NOT NULL;
 GO
 
 PRINT N'✓ All views created successfully.';
 GO
 
 -- ================================================================
--- PART 7: CREATE FUNCTIONS
--- ================================================================
-
-PRINT N'==== Creating functions...';
-GO
-
--- Function 1: Calculate discounted price
-CREATE FUNCTION dbo.fn_CalculateDiscountedPrice(@ProductID INT, @BasePrice DECIMAL(10,2))
-RETURNS DECIMAL(10,2)
-AS
-BEGIN
-    DECLARE @DiscountPercentage INT;
-    DECLARE @FinalPrice DECIMAL(10,2);
-    
-    SELECT TOP 1 @DiscountPercentage = pp.DiscountPercentage
-    FROM dbo.PromotionProducts pp
-    INNER JOIN dbo.Promotions p ON pp.PromotionID = p.PromotionID
-    WHERE pp.ProductID = @ProductID
-      AND GETDATE() BETWEEN p.StartDate AND p.EndDate
-      AND p.Status = 1
-    ORDER BY pp.DiscountPercentage DESC;
-    
-    IF @DiscountPercentage IS NOT NULL
-        SET @FinalPrice = @BasePrice * (100 - @DiscountPercentage) / 100.0;
-    ELSE
-        SET @FinalPrice = @BasePrice;
-    
-    RETURN @FinalPrice;
-END;
-GO
-
--- Function 2: Check if promotion is active
-CREATE FUNCTION dbo.fn_IsPromotionActive(@PromotionID INT)
-RETURNS BIT
-AS
-BEGIN
-    IF EXISTS (
-        SELECT 1 
-        FROM dbo.Promotions 
-        WHERE PromotionID = @PromotionID 
-          AND GETDATE() BETWEEN StartDate AND EndDate
-          AND Status = 1
-    )
-        RETURN 1;
-    
-    RETURN 0;
-END;
-GO
-
--- Function 3: Calculate total cart amount
-CREATE FUNCTION dbo.fn_CalculateCartTotal(@CartID INT)
-RETURNS DECIMAL(12,2)
-AS
-BEGIN
-    DECLARE @Total DECIMAL(12,2) = 0;
-    
-    SELECT @Total = ISNULL(SUM(ci.LineTotal), 0) +
-                    ISNULL((SELECT SUM(cit.LineTotal) FROM dbo.CartItem_Toppings cit WHERE cit.CartItemID IN (SELECT CartItemID FROM dbo.CartItems WHERE CartID = @CartID)), 0)
-    FROM dbo.CartItems ci
-    WHERE ci.CartID = @CartID;
-    
-    RETURN @Total;
-END;
-GO
-
--- Function 4: Get customer membership level
-CREATE FUNCTION dbo.fn_GetMembershipLevel(@TotalSpent DECIMAL(15,2))
-RETURNS NVARCHAR(20)
-AS
-BEGIN
-    DECLARE @Level NVARCHAR(20);
-    
-    IF @TotalSpent >= 10000000
-        SET @Level = 'Platinum';
-    ELSE IF @TotalSpent >= 5000000
-        SET @Level = 'Gold';
-    ELSE IF @TotalSpent >= 1000000
-        SET @Level = 'Silver';
-    ELSE
-        SET @Level = 'Bronze';
-    
-    RETURN @Level;
-END;
-GO
-
-PRINT N'✓ All functions created successfully.';
-GO
-
--- ================================================================
--- PART 8: INSERT SAMPLE DATA
+-- PART 6: INSERT SAMPLE DATA
 -- ================================================================
 
 PRINT N'==== Inserting sample data...';
 GO
 
--- 1. Insert Roles
-INSERT INTO dbo.Roles (RoleID, RoleName) VALUES 
-(1, 'Admin'), (2, 'Customer'), (3, 'Employee'), (4, 'Shipper');
+-- 1. Roles
+INSERT INTO dbo.Roles (RoleID, RoleName, Description) VALUES 
+(1, 'ADMIN', N'Quản trị viên hệ thống'),
+(2, 'CUSTOMER', N'Khách hàng'),
+(3, 'VENDOR', N'Người bán hàng'),
+(4, 'SHIPPER', N'Nhân viên giao hàng');
 
--- 2. Insert Users
-INSERT INTO dbo.Users (Username, PasswordHash, Email, PhoneNumber, Status) VALUES
-('admin', '$2a$12$G.p/iP.f5h1x/A7Q5w8f1uL.IPoTjSF7xT4O0XkI4w2kC7gq3g/O2', 'admin@alotea.com', '0900000001', 1),
-('nhanvien1', '$2a$12$G.p/iP.f5h1x/A7Q5w8f1uL.IPoTjSF7xT4O0XkI4w2kC7gq3g/O2', 'nhanvien1@alotea.com', '0900000002', 1),
-('nhanvien2', '$2a$12$G.p/iP.f5h1x/A7Q5w8f1uL.IPoTjSF7xT4O0XkI4w2kC7gq3g/O2', 'nhanvien2@alotea.com', '0900000003', 1),
-('minhanh', '$2a$12$G.p/iP.f5h1x/A7Q5w8f1uL.IPoTjSF7xT4O0XkI4w2kC7gq3g/O2', 'minhanh@email.com', '0912345678', 1),
-('baotran', '$2a$12$G.p/iP.f5h1x/A7Q5w8f1uL.IPoTjSF7xT4O0XkI4w2kC7gq3g/O2', 'baotran@email.com', '0987654321', 1),
-('trungkien', '$2a$12$G.p/iP.f5h1x/A7Q5w8f1uL.IPoTjSF7xT4O0XkI4w2kC7gq3g/O2', 'trungkien@email.com', '0911223344', 1);
+-- 2. Users (default password: 123456789)
+-- Password hash generated with BCrypt
+INSERT INTO dbo.Users (Username, PasswordHash, Email, PhoneNumber, FullName, Status) VALUES
+('admin', '$2a$10$ChCyZNXDPasox8exeAvQiOe9/wW6lcl4Gq9zUl5HvChmaAtVAzMK.', 'admin@alotra.com', '0900000001', N'Quản Trị Viên', 1),
+('vendor1', '$2a$10$ChCyZNXDPasox8exeAvQiOe9/wW6lcl4Gq9zUl5HvChmaAtVAzMK.', 'vendor1@shop.com', '0900000002', N'Nguyễn Văn A', 1),
+('vendor2', '$2a$10$ChCyZNXDPasox8exeAvQiOe9/wW6lcl4Gq9zUl5HvChmaAtVAzMK.', 'vendor2@shop.com', '0900000003', N'Trần Thị B', 1),
+('customer1', '$2a$10$ChCyZNXDPasox8exeAvQiOe9/wW6lcl4Gq9zUl5HvChmaAtVAzMK.', 'minhanh@email.com', '0912345678', N'Lê Minh Anh', 1),
+('customer2', '$2a$10$ChCyZNXDPasox8exeAvQiOe9/wW6lcl4Gq9zUl5HvChmaAtVAzMK.', 'baotran@email.com', '0987654321', N'Phạm Bảo Trân', 1),
+('shipper1', '$2a$10$ChCyZNXDPasox8exeAvQiOe9/wW6lcl4Gq9zUl5HvChmaAtVAzMK.', 'shipper1@email.com', '0911111111', N'Giao Hàng Nhanh', 1),
+('customer3', '$2a$10$ChCyZNXDPasox8exeAvQiOe9/wW6lcl4Gq9zUl5HvChmaAtVAzMK.', 'ducminh@email.com', '0923456789', N'Hoàng Đức Minh', 1);
 
--- 3. Assign roles
+-- 3. UserRoles
 INSERT INTO dbo.UserRoles (UserID, RoleID) VALUES
-(1, 1), (2, 3), (3, 3), (4, 2), (5, 2), (6, 2);
+(1, 1), -- admin
+(2, 2), (2, 3), -- vendor1 (customer + vendor)
+(3, 2), (3, 3), -- vendor2 (customer + vendor)
+(4, 2), -- customer1
+(5, 2), -- customer2
+(6, 4), -- shipper1
+(7, 2); -- customer3
 
--- 4. Create employees and customers
-INSERT INTO dbo.Employees (UserID, FullName, Status) VALUES
-(2, N'Nguyễn Văn An', 1),
-(3, N'Trần Thị Bích', 1);
+-- 4. Addresses
+INSERT INTO dbo.Addresses (UserID, AddressName, FullAddress, PhoneNumber, RecipientName, IsDefault) VALUES
+(4, N'Nhà riêng', N'123 Lê Lợi, Phường Bến Thành, Quận 1, TP.HCM', '0912345678', N'Lê Minh Anh', 1),
+(4, N'Văn phòng', N'456 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM', '0912345678', N'Lê Minh Anh', 0),
+(5, N'Nhà riêng', N'789 Pasteur, Phường 6, Quận 3, TP.HCM', '0987654321', N'Phạm Bảo Trân', 1),
+(7, N'Nhà riêng', N'321 Hai Bà Trưng, Phường Tân Định, Quận 1, TP.HCM', '0923456789', N'Hoàng Đức Minh', 1);
 
-INSERT INTO dbo.Customers (UserID, FullName, Status, MembershipLevel) VALUES
-(4, N'Lê Minh Anh', 1, 'Gold'),
-(5, N'Phạm Bảo Trân', 1, 'Silver'),
-(6, N'Đặng Trung Kiên', 1, 'Bronze');
+-- 5. Shops
+INSERT INTO dbo.Shops (UserID, ShopName, Description, Address, PhoneNumber, Status, CommissionRate) VALUES
+(2, N'Trà Sữa Phúc Long Clone', N'Chuyên cung cấp trà sữa cao cấp, pha chế từ nguyên liệu tự nhiên', N'12 Ngô Đức Kế, Phường Bến Nghé, Quận 1, TP.HCM', '0902222222', 1, 5.00),
+(3, N'The Coffee House Mini', N'Cà phê & trà sữa phong cách hiện đại', N'24 Pasteur, Phường Nguyễn Thái Bình, Quận 1, TP.HCM', '0903333333', 1, 5.00);
 
--- 5. Add addresses
-INSERT INTO dbo.Addresses (CustomerID, AddressName, FullAddress, PhoneNumber, RecipientName, IsDefault) VALUES
-(1, N'Nhà', N'123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh', '0912345678', N'Lê Minh Anh', 1),
-(1, N'Công ty', N'456 Đường Nguyễn Huệ, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh', '0912345678', N'Lê Minh Anh', 0),
-(2, N'Nhà', N'789 Đường Pasteur, Phường 6, Quận 3, TP. Hồ Chí Minh', '0987654321', N'Phạm Bảo Trân', 1);
+-- 6. Categories
+INSERT INTO dbo.Categories (CategoryName, Description, Status) VALUES 
+(N'Trà Sữa', N'Các loại trà sữa truyền thống và hiện đại', 1),
+(N'Trà Trái Cây', N'Trà pha chế với trái cây tươi', 1),
+(N'Cà Phê', N'Cà phê rang xay và pha phin', 1),
+(N'Đá Xay', N'Các loại đồ uống đá xay mát lạnh', 1);
 
--- 6. Insert sizes
-INSERT INTO dbo.Sizes (SizeName, Status) VALUES ('S', 1), ('M', 1), ('L', 1);
+-- 7. Sizes
+INSERT INTO dbo.Sizes (SizeName, Description) VALUES 
+('S', N'Nhỏ - 300ml'),
+('M', N'Vừa - 500ml'),
+('L', N'Lớn - 700ml');
 
--- 7. Insert categories
-INSERT INTO dbo.Categories (CategoryName, Description) VALUES 
-(N'Trà Sữa', N'Các loại trà sữa truyền thống'),
-(N'Trà Trái Cây', N'Trà kết hợp với trái cây tươi'),
-(N'Cà Phê', N'Các loại cà phê specialty'),
-(N'Sinh Tố', N'Sinh tố trái cây tươi ngon');
+-- 8. Toppings
+INSERT INTO dbo.Toppings (ToppingName, AdditionalPrice, Status) VALUES
+(N'Trân châu đen', 8000, 1),
+(N'Trân châu trắng', 8000, 1),
+(N'Thạch dừa', 8000, 1),
+(N'Pudding', 10000, 1),
+(N'Thạch rau câu', 8000, 1),
+(N'Kem cheese', 15000, 1);
 
--- 8. Insert products
-INSERT INTO dbo.Products (CategoryID, ProductName, Description, Status, SKU, IsHotDeal) VALUES
-(1, N'Trà Sữa Trân Châu Đường Đen', N'Hương vị trà sữa truyền thống kết hợp với trân châu đường đen.', 1, 'TS001', 1),
-(1, N'Trà Sữa Oolong Kem Phô Mai', N'Trà Oolong thơm dịu phủ lớp kem phô mai mặn béo.', 1, 'TS002', 0),
-(2, N'Trà Chanh Dây Macchiato', N'Vị chua thanh của chanh dây tươi hòa quyện cùng Macchiato.', 1, 'TT001', 1),
-(2, N'Trà Vải Hoa Hồng', N'Sự kết hợp tinh tế giữa trà đen, vải và hương hoa hồng.', 1, 'TT002', 0),
-(3, N'Cà Phê Sữa Đá', N'Cà phê Robusta đậm chất Việt, pha phin truyền thống.', 1, 'CF001', 0),
-(4, N'Sinh Tố Xoài Sữa Chua', N'Xoài cát chín xay mịn cùng sữa chua Hy Lạp.', 1, 'ST001', 1);
+-- 9. Products
+INSERT INTO dbo.Products (ShopID, CategoryID, ProductName, Description, SoldCount, AverageRating, TotalReviews, Status) VALUES
+(1, 1, N'Trà Sữa Phúc Long Đặc Biệt', N'Trà sữa pha chế theo công thức độc quyền, hương vị đậm đà', 35, 4.5, 12, 1),
+(1, 2, N'Trà Đào Cam Sả', N'Trà đen kết hợp với đào, cam và sả tươi', 28, 4.7, 10, 1),
+(1, 1, N'Trà Sữa Ô Long', N'Trà Ô Long thơm ngon pha cùng sữa tươi', 22, 4.3, 8, 1),
+(2, 3, N'Cà Phê Đen Đá', N'Cà phê rang xay pha phin truyền thống', 15, 4.6, 6, 1),
+(2, 3, N'Cà Phê Sữa Đá', N'Cà phê phin pha cùng sữa đặc', 20, 4.8, 9, 1),
+(2, 1, N'Trà Sữa Olong Macchiato', N'Trà Ô Long đặc biệt phủ lớp kem cheese', 18, 4.4, 7, 1),
+(2, 4, N'Đá Xay Matcha', N'Matcha xay cùng đá và kem tươi', 12, 4.2, 5, 1);
 
--- 9. Insert product variants
-INSERT INTO dbo.ProductVariants (ProductID, SizeID, Price, Stock, Status) VALUES
-(1, 1, 35000, 100, 1), (1, 2, 42000, 150, 1), (1, 3, 48000, 80, 1),
-(2, 2, 49000, 120, 1), (2, 3, 55000, 70, 1),
-(3, 2, 45000, 90, 1),
-(4, 2, 48000, 95, 1),
-(5, 1, 25000, 200, 1), (5, 2, 30000, 200, 1),
-(6, 2, 55000, 60, 1);
-
--- 10. Insert product images
+-- 10. Product Images
 INSERT INTO dbo.ProductImages (ProductID, ImageURL, IsPrimary, DisplayOrder) VALUES
-(1, '/images/products/ts-duong-den.jpg', 1, 1),
-(2, '/images/products/ts-oolong-kem-pho-mai.jpg', 1, 1),
-(3, '/images/products/tra-chanh-day.jpg', 1, 1),
-(4, '/images/products/tra-vai.jpg', 1, 1),
-(4, '/images/products/tra-vai-2.jpg', 0, 2),
-(5, '/images/products/cafe-sua-da.jpg', 1, 1),
-(6, '/images/products/sinh-to-xoai.jpg', 1, 1);
+(1, 'https://example.com/images/product1-main.jpg', 1, 1),
+(1, 'https://example.com/images/product1-detail.jpg', 0, 2),
+(2, 'https://example.com/images/product2-main.jpg', 1, 1),
+(3, 'https://example.com/images/product3-main.jpg', 1, 1),
+(4, 'https://example.com/images/product4-main.jpg', 1, 1),
+(5, 'https://example.com/images/product5-main.jpg', 1, 1),
+(6, 'https://example.com/images/product6-main.jpg', 1, 1),
+(7, 'https://example.com/images/product7-main.jpg', 1, 1);
 
--- 11. Insert toppings
-INSERT INTO dbo.Toppings (ToppingName, AdditionalPrice, Status) VALUES 
-(N'Trân Châu Đường Đen', 5000, 1),
-(N'Trân Châu Trắng', 5000, 1),
-(N'Thạch Dừa', 5000, 1),
-(N'Pudding', 7000, 1),
-(N'Kem Phô Mai', 10000, 1);
+-- 11. Product Variants
+INSERT INTO dbo.ProductVariants (ProductID, SizeID, Price, Stock, SKU) VALUES
+-- Trà Sữa Phúc Long Đặc Biệt
+(1, 1, 35000, 100, 'TSPL-S-001'),
+(1, 2, 45000, 150, 'TSPL-M-001'),
+(1, 3, 55000, 100, 'TSPL-L-001'),
+-- Trà Đào Cam Sả
+(2, 2, 50000, 120, 'TDCS-M-002'),
+(2, 3, 60000, 80, 'TDCS-L-002'),
+-- Trà Sữa Ô Long
+(3, 1, 38000, 90, 'TSOL-S-003'),
+(3, 2, 48000, 130, 'TSOL-M-003'),
+(3, 3, 58000, 70, 'TSOL-L-003'),
+-- Cà Phê Đen Đá
+(4, 1, 25000, 100, 'CPDD-S-004'),
+(4, 2, 30000, 150, 'CPDD-M-004'),
+(4, 3, 35000, 100, 'CPDD-L-004'),
+-- Cà Phê Sữa Đá
+(5, 1, 28000, 120, 'CPSD-S-005'),
+(5, 2, 35000, 180, 'CPSD-M-005'),
+(5, 3, 42000, 90, 'CPSD-L-005'),
+-- Trà Sữa Olong Macchiato
+(6, 2, 52000, 100, 'TSOM-M-006'),
+(6, 3, 62000, 80, 'TSOM-L-006'),
+-- Đá Xay Matcha
+(7, 2, 55000, 70, 'DXMT-M-007'),
+(7, 3, 65000, 50, 'DXMT-L-007');
 
--- 12. Insert promotions
-INSERT INTO dbo.Promotions (PromotionName, Description, PromoCode, DiscountType, DiscountValue, StartDate, EndDate, MinOrderValue, Status) VALUES
-(N'Giảm giá mừng khai trương', N'Giảm 20% cho các sản phẩm trà sữa', 'KHAITRA20', 'Percentage', 20, CAST(GETDATE() AS DATE), CAST(DATEADD(MONTH, 1, GETDATE()) AS DATE), 0, 1),
-(N'Mua 2 tặng 1', N'Mua 2 sản phẩm được tặng 1 sản phẩm khác', 'MUA2TANG1', 'Fixed', 50000, CAST(GETDATE() AS DATE), CAST(DATEADD(MONTH, 1, GETDATE()) AS DATE), 100000, 1),
-(N'Giảm giá cho khách hàng mới', N'Giảm 15% cho đơn hàng đầu tiên', 'NEW15', 'Percentage', 15, CAST(GETDATE() AS DATE), CAST(DATEADD(MONTH, 2, GETDATE()) AS DATE), 50000, 1);
+-- 12. Shipping Providers
+INSERT INTO dbo.ShippingProviders (ProviderName, BaseFee, Description, Status) VALUES
+(N'Giao Hàng Nhanh', 20000, N'Giao hàng trong 24h', 1),
+(N'Giao Hàng Tiết Kiệm', 15000, N'Giao hàng trong 2-3 ngày', 1),
+(N'Viettel Post', 18000, N'Dịch vụ bưu chính Viettel', 1);
 
--- 13. Insert promotion products
-INSERT INTO dbo.PromotionProducts (PromotionID, ProductID, DiscountPercentage) VALUES
-(1, 1, 20), (1, 2, 20),
-(2, 3, 10), (2, 4, 10),
-(3, 1, 15), (3, 5, 15);
+-- 13. Promotions
+INSERT INTO dbo.Promotions (CreatedByUserID, CreatedByShopID, PromotionName, Description, PromoCode, DiscountType, DiscountValue, MaxDiscountAmount, StartDate, EndDate, MinOrderValue, UsageLimit, Status) VALUES
+(1, NULL, N'Khuyến mãi tháng 10', N'Giảm 10% cho đơn hàng từ 100k', 'OCT2025', 'Percentage', 10, 50000, '2025-10-01', '2025-10-31', 100000, 100, 1),
+(2, 1, N'Miễn phí ship', N'Miễn phí vận chuyển cho đơn từ 200k', 'FREESHIP', 'FreeShip', 20000, NULL, '2025-10-15', '2025-11-15', 200000, 50, 1),
+(3, 2, N'Giảm 20k', N'Giảm 20k cho đơn đầu tiên', 'NEW20K', 'FixedAmount', 20000, NULL, '2025-10-01', '2025-12-31', 50000, 200, 1);
 
--- 14. Insert system configuration
+-- 14. Sample Orders
+DECLARE @ShopID1 INT = 1, @ShopID2 INT = 2;
+
+-- Order 1 (Completed)
+INSERT INTO dbo.Orders (UserID, ShopID, OrderDate, OrderStatus, PaymentMethod, PaymentStatus, ShippingProviderID, ShippingAddress, RecipientName, RecipientPhone, Subtotal, ShippingFee, DiscountAmount, GrandTotal, ShipperID, CompletedAt)
+VALUES (4, @ShopID1, DATEADD(DAY, -10, GETDATE()), 'Completed', 'COD', 'Paid', 1, N'123 Lê Lợi, Phường Bến Thành, Quận 1, TP.HCM', N'Lê Minh Anh', '0912345678', 45000, 20000, 0, 65000, 6, DATEADD(DAY, -8, GETDATE()));
+
+DECLARE @OrderID1 INT = SCOPE_IDENTITY();
+
+INSERT INTO dbo.OrderDetails (OrderID, VariantID, Quantity, UnitPrice, Subtotal) VALUES
+(@OrderID1, 2, 1, 45000, 45000); -- Trà Sữa Phúc Long size M
+
+-- Order 2 (Completed with toppings)
+INSERT INTO dbo.Orders (UserID, ShopID, OrderDate, OrderStatus, PaymentMethod, PaymentStatus, ShippingProviderID, ShippingAddress, RecipientName, RecipientPhone, Subtotal, ShippingFee, DiscountAmount, GrandTotal, ShipperID, CompletedAt)
+VALUES (5, @ShopID1, DATEADD(DAY, -7, GETDATE()), 'Completed', 'VNPay', 'Paid', 1, N'789 Pasteur, Phường 6, Quận 3, TP.HCM', N'Phạm Bảo Trân', '0987654321', 116000, 20000, 0, 136000, 6, DATEADD(DAY, -5, GETDATE()));
+
+DECLARE @OrderID2 INT = SCOPE_IDENTITY();
+
+INSERT INTO dbo.OrderDetails (OrderID, VariantID, Quantity, UnitPrice, Subtotal) VALUES
+(@OrderID2, 2, 2, 45000, 90000), -- 2x Trà Sữa Phúc Long size M
+(@OrderID2, 7, 1, 48000, 48000); -- 1x Trà Sữa Ô Long size M
+
+DECLARE @OrderDetailID1 INT = SCOPE_IDENTITY() - 1;
+DECLARE @OrderDetailID2 INT = SCOPE_IDENTITY();
+
+INSERT INTO dbo.OrderDetail_Toppings (OrderDetailID, ToppingID, UnitPrice) VALUES
+(@OrderDetailID1, 1, 8000), -- Trân châu đen
+(@OrderDetailID1, 4, 10000); -- Pudding
+
+-- Order 3 (Delivering)
+INSERT INTO dbo.Orders (UserID, ShopID, OrderDate, OrderStatus, PaymentMethod, PaymentStatus, ShippingProviderID, ShippingAddress, RecipientName, RecipientPhone, Subtotal, ShippingFee, DiscountAmount, GrandTotal, ShipperID)
+VALUES (7, @ShopID2, DATEADD(DAY, -2, GETDATE()), 'Delivering', 'COD', 'Unpaid', 1, N'321 Hai Bà Trưng, Phường Tân Định, Quận 1, TP.HCM', N'Hoàng Đức Minh', '0923456789', 70000, 20000, 10000, 80000, 6);
+
+DECLARE @OrderID3 INT = SCOPE_IDENTITY();
+
+INSERT INTO dbo.OrderDetails (OrderID, VariantID, Quantity, UnitPrice, Subtotal) VALUES
+(@OrderID3, 11, 2, 30000, 60000), -- 2x Cà Phê Đen size M
+(@OrderID3, 14, 1, 35000, 35000); -- 1x Cà Phê Sữa size M
+
+-- Order 4 (Pending)
+INSERT INTO dbo.Orders (UserID, ShopID, OrderDate, OrderStatus, PaymentMethod, PaymentStatus, ShippingProviderID, ShippingAddress, RecipientName, RecipientPhone, Subtotal, ShippingFee, DiscountAmount, GrandTotal)
+VALUES (4, @ShopID2, DATEADD(HOUR, -3, GETDATE()), 'Pending', 'Momo', 'Unpaid', 2, N'123 Lê Lợi, Phường Bến Thành, Quận 1, TP.HCM', N'Lê Minh Anh', '0912345678', 52000, 15000, 0, 67000);
+
+DECLARE @OrderID4 INT = SCOPE_IDENTITY();
+
+INSERT INTO dbo.OrderDetails (OrderID, VariantID, Quantity, UnitPrice, Subtotal) VALUES
+(@OrderID4, 16, 1, 52000, 52000); -- Trà Sữa Olong Macchiato size M
+
+-- 15. Sample Reviews (only for completed orders)
+INSERT INTO dbo.Reviews (UserID, ProductID, OrderDetailID, Rating, Comment, ReviewDate, IsVerifiedPurchase) VALUES
+(4, 1, 1, 5, N'Trà sữa rất ngon, pha chế chuẩn vị. Sẽ ủng hộ shop tiếp. Đặc biệt là trân châu rất dai và ngọt vừa phải. Nhân viên phục vụ nhiệt tình.', DATEADD(DAY, -7, GETDATE()), 1),
+(5, 1, 2, 4, N'Trà sữa khá ngon nhưng hơi ngọt so với khẩu vị của mình. Giao hàng nhanh, đóng gói cẩn thận. Lần sau sẽ đặt ít đường hơn để phù hợp hơn.', DATEADD(DAY, -4, GETDATE()), 1);
+
+-- 16. Sample Favorites
+INSERT INTO dbo.Favorites (UserID, ProductID) VALUES
+(4, 1), (4, 2), (4, 5),
+(5, 1), (5, 3), (5, 6),
+(7, 2), (7, 4), (7, 7);
+
+-- 17. Sample Viewed Products
+INSERT INTO dbo.ViewedProducts (UserID, ProductID, ViewCount, LastViewedAt) VALUES
+(4, 1, 5, DATEADD(HOUR, -2, GETDATE())),
+(4, 2, 3, DATEADD(HOUR, -5, GETDATE())),
+(4, 3, 2, DATEADD(DAY, -1, GETDATE())),
+(5, 1, 4, DATEADD(HOUR, -1, GETDATE())),
+(5, 4, 2, DATEADD(HOUR, -3, GETDATE())),
+(7, 2, 1, DATEADD(HOUR, -4, GETDATE())),
+(7, 5, 3, DATEADD(HOUR, -6, GETDATE()));
+
+-- 18. Sample Carts
+INSERT INTO dbo.Carts (UserID) VALUES (4), (5), (7);
+
+DECLARE @CartID1 INT = 1, @CartID2 INT = 2, @CartID3 INT = 3;
+
+INSERT INTO dbo.CartItems (CartID, VariantID, Quantity) VALUES
+(@CartID1, 2, 2), -- 2x Trà Sữa Phúc Long size M
+(@CartID1, 5, 1), -- 1x Trà Đào Cam Sả size L
+(@CartID2, 7, 1), -- 1x Trà Sữa Ô Long size M
+(@CartID3, 11, 1); -- 1x Cà Phê Đen size M
+
+DECLARE @CartItemID1 INT = 1;
+
+INSERT INTO dbo.CartItem_Toppings (CartItemID, ToppingID) VALUES
+(@CartItemID1, 1), -- Trân châu đen
+(@CartItemID1, 6); -- Kem cheese
+
+-- 19. System Configuration
 INSERT INTO dbo.SystemConfiguration (ConfigKey, ConfigValue, Description) VALUES
-('CLOUDINARY_CLOUD_NAME', 'your_cloud_name', 'Cloudinary Cloud Name'),
-('CLOUDINARY_API_KEY', 'your_api_key', 'Cloudinary API Key'),
-('CLOUDINARY_API_SECRET', 'your_api_secret', 'Cloudinary API Secret (Keep it secret!)'),
-('MAX_IMAGE_SIZE_MB', '5', 'Maximum image upload size in MB'),
-('ALLOWED_IMAGE_FORMATS', 'jpg,png,jpeg,gif,webp', 'Allowed image formats'),
-('JWT_SECRET_KEY', 'your-secret-key-change-in-production', 'JWT Secret Key'),
-('JWT_EXPIRATION_HOURS', '24', 'JWT Token expiration in hours'),
-('REFRESH_TOKEN_EXPIRATION_DAYS', '30', 'Refresh Token expiration in days'),
-('SHIPPING_FEE_DEFAULT', '30000', 'Default shipping fee in VND'),
-('LOYALTY_POINTS_MULTIPLIER', '1000', 'Loyalty points earned per 1000 VND spent');
+('SITE_NAME', N'Alo Trà - Hệ Thống Trà Sữa', N'Tên website'),
+('SITE_EMAIL', 'contact@alotra.com', N'Email liên hệ'),
+('SITE_PHONE', '1900-1234', N'Số điện thoại hotline'),
+('OTP_EXPIRY_MINUTES', '5', N'Thời gian hết hạn OTP (phút)'),
+('MIN_ORDER_VALUE', '30000', N'Giá trị đơn hàng tối thiểu'),
+('MAX_CART_ITEMS', '20', N'Số lượng sản phẩm tối đa trong giỏ'),
+('REVIEW_MIN_LENGTH', '50', N'Độ dài tối thiểu của đánh giá'),
+('DEFAULT_COMMISSION_RATE', '5.00', N'Tỷ lệ hoa hồng mặc định (%)'),
+('CLOUDINARY_CLOUD_NAME', 'your_cloud_name', N'Tên cloud của Cloudinary'),
+('CLOUDINARY_API_KEY', 'your_api_key', N'API Key của Cloudinary'),
+('VNPAY_TMN_CODE', 'your_tmn_code', N'Mã TmnCode VNPay'),
+('VNPAY_HASH_SECRET', 'your_hash_secret', N'Hash Secret VNPay'),
+('MOMO_PARTNER_CODE', 'your_partner_code', N'Partner Code MoMo'),
+('MOMO_ACCESS_KEY', 'your_access_key', N'Access Key MoMo'),
+('JWT_SECRET', 'your_jwt_secret_key_here', N'Secret key cho JWT'),
+('JWT_EXPIRATION_MS', '86400000', N'Thời gian hết hạn JWT (milliseconds) - 24h'),
+('REFRESH_TOKEN_EXPIRATION_MS', '604800000', N'Thời gian hết hạn Refresh Token (milliseconds) - 7 days');
 
--- 15. Sample cart for customer 1
-INSERT INTO dbo.Carts (CustomerID, Status) VALUES (1, 'ACTIVE');
-DECLARE @CartID_1 INT = SCOPE_IDENTITY();
-
-INSERT INTO dbo.CartItems (CartID, VariantID, Quantity, UnitPrice, LineTotal, Notes) VALUES
-(@CartID_1, 4, 2, 49000, 98000, N'Ít đá, 70% đường');
-
-DECLARE @CartItemID_1 INT = SCOPE_IDENTITY();
-INSERT INTO dbo.CartItem_Toppings (CartItemID, ToppingID, Quantity, UnitPrice, LineTotal) VALUES
-(@CartItemID_1, 4, 1, 7000, 7000);
-
-INSERT INTO dbo.CartItems (CartID, VariantID, Quantity, UnitPrice, LineTotal, Notes) VALUES
-(@CartID_1, 8, 1, 25000, 25000, N'Ít ngọt');
-
--- 16. Sample completed order for customer 2
-INSERT INTO dbo.Orders (CustomerID, EmployeeID, OrderStatus, PaymentStatus, PaymentMethod, PaidAt, ShippingAddress, RecipientName, RecipientPhone, Subtotal, ShippingFee, GrandTotal, Notes, OrderDate) VALUES
-(2, 1, 'Completed', 'Paid', 'Momo', GETDATE(), N'789 Đường Pasteur, Phường 6, Quận 3, TP. Hồ Chí Minh', N'Phạm Bảo Trân', '0987654321', 80000, 15000, 95000, N'Giao nhanh!', DATEADD(DAY, -5, GETDATE()));
-
-DECLARE @OrderID_1 INT = SCOPE_IDENTITY();
-
-INSERT INTO dbo.OrderDetails (OrderID, VariantID, Quantity, UnitPrice, LineTotal) VALUES
-(@OrderID_1, 1, 1, 35000, 35000);
-
-DECLARE @OrderDetailID_1 INT = SCOPE_IDENTITY();
-
-INSERT INTO dbo.OrderDetail_Toppings (OrderDetailID, ToppingID, Quantity, UnitPrice, LineTotal) VALUES
-(@OrderDetailID_1, 1, 1, 5000, 5000);
-
-INSERT INTO dbo.OrderDetails (OrderID, VariantID, Quantity, UnitPrice, LineTotal) VALUES
-(@OrderID_1, 6, 1, 45000, 45000);
-
-DECLARE @OrderDetailID_2 INT = SCOPE_IDENTITY();
-
--- 17. Add reviews
-INSERT INTO dbo.Reviews (CustomerID, OrderDetailID, Rating, Comment) VALUES
-(2, @OrderDetailID_2, 5, N'Trà rất ngon, vị chua ngọt vừa phải. Sẽ ủng hộ quán!');
-
-INSERT INTO dbo.Reviews (CustomerID, OrderDetailID, Rating, Comment) VALUES
-(2, @OrderDetailID_1, 5, N'Trân châu chứ không quá ngon!');
-
--- 18. Add some favorites
-INSERT INTO dbo.Favorites (CustomerID, ProductID) VALUES
-(1, 1), (1, 3), (1, 6),
-(2, 2), (2, 4),
-(3, 1), (3, 5);
-
--- 19. Add notifications
-INSERT INTO dbo.Notifications (UserID, Title, Message, Type, IsRead) VALUES
-(4, N'Chào mừng!', N'Chào mừng bạn đến với AloTea', 'System', 0),
-(5, N'Đơn hàng đã giao', N'Đơn hàng của bạn đã giao thành công', 'OrderStatus', 1),
-(6, N'Khuyến mãi mới', N'Có khuyến mãi mới giảm 20% cho trà sữa', 'Promotion', 0);
+-- 20. Sample Notifications
+INSERT INTO dbo.Notifications (UserID, Title, Message, Type, RelatedEntityID, IsRead) VALUES
+(4, N'Đơn hàng đã giao thành công', N'Đơn hàng #' + CAST(@OrderID1 AS NVARCHAR) + N' đã được giao thành công. Cảm ơn bạn đã mua hàng!', 'OrderStatus', @OrderID1, 1),
+(5, N'Đơn hàng đã giao thành công', N'Đơn hàng #' + CAST(@OrderID2 AS NVARCHAR) + N' đã được giao thành công. Đánh giá sản phẩm để nhận điểm thưởng!', 'OrderStatus', @OrderID2, 1),
+(7, N'Đơn hàng đang được giao', N'Đơn hàng #' + CAST(@OrderID3 AS NVARCHAR) + N' đang trên đường giao đến bạn. Vui lòng chú ý điện thoại!', 'OrderStatus', @OrderID3, 0),
+(4, N'Khuyến mãi mới', N'Giảm 10% cho đơn hàng từ 100k với mã OCT2025. Áp dụng đến 31/10!', 'NewPromotion', 1, 0);
 
 GO
 
@@ -1406,53 +1244,446 @@ PRINT N'✓ All sample data inserted successfully.';
 GO
 
 -- ================================================================
--- PART 9: VERIFY AND DISPLAY RESULTS
+-- PART 7: CREATE STORED PROCEDURES
 -- ================================================================
 
-PRINT N'==== Database verification...';
+PRINT N'==== Creating stored procedures...';
 GO
 
-PRINT N'Total tables created:';
-SELECT COUNT(*) AS TableCount FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo';
-
-PRINT N'Users in system:';
-SELECT UserID, Username, Email, Status FROM dbo.Users;
-
-PRINT N'Customers:';
-SELECT CustomerID, FullName, MembershipLevel, LoyaltyPoints FROM dbo.Customers;
-
-PRINT N'Products:';
-SELECT ProductID, ProductName, SKU, Status FROM dbo.Products;
-
-PRINT N'Orders:';
-SELECT OrderID, OrderDate, OrderStatus, GrandTotal FROM dbo.Orders;
-
-PRINT N'Active Promotions:';
-SELECT PromotionID, PromotionName, PromoCode, StartDate, EndDate FROM dbo.Promotions;
-
-PRINT N'System Configuration:';
-SELECT ConfigKey, ConfigValue FROM dbo.SystemConfiguration WHERE ConfigKey NOT LIKE '%SECRET%' AND ConfigKey NOT LIKE '%PASSWORD%';
-
+-- Procedure to get products by category with pagination
+CREATE PROCEDURE sp_GetProductsByCategory
+    @CategoryID INT = NULL,
+    @PageNumber INT = 1,
+    @PageSize INT = 20,
+    @SortBy NVARCHAR(20) = 'newest' -- 'newest', 'bestselling', 'rating', 'price_asc', 'price_desc'
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    DECLARE @Offset INT = (@PageNumber - 1) * @PageSize;
+    
+    WITH ProductList AS (
+        SELECT 
+            p.ProductID,
+            p.ProductName,
+            p.Description,
+            p.AverageRating,
+            p.TotalReviews,
+            p.SoldCount,
+            p.CreatedAt,
+            c.CategoryName,
+            s.ShopName,
+            s.LogoURL AS ShopLogoURL,
+            (SELECT TOP 1 pv.Price FROM dbo.ProductVariants pv WHERE pv.ProductID = p.ProductID ORDER BY pv.Price) AS MinPrice,
+            (SELECT TOP 1 pv.Price FROM dbo.ProductVariants pv WHERE pv.ProductID = p.ProductID ORDER BY pv.Price DESC) AS MaxPrice,
+            (SELECT TOP 1 pi.ImageURL FROM dbo.ProductImages pi WHERE pi.ProductID = p.ProductID AND pi.IsPrimary = 1) AS PrimaryImageURL
+        FROM dbo.Products p
+        JOIN dbo.Categories c ON p.CategoryID = c.CategoryID
+        JOIN dbo.Shops s ON p.ShopID = s.ShopID
+        WHERE p.Status = 1 
+        AND s.Status = 1
+        AND (@CategoryID IS NULL OR p.CategoryID = @CategoryID)
+    )
+    SELECT *
+    FROM ProductList
+    ORDER BY 
+        CASE WHEN @SortBy = 'newest' THEN CreatedAt END DESC,
+        CASE WHEN @SortBy = 'bestselling' THEN SoldCount END DESC,
+        CASE WHEN @SortBy = 'rating' THEN AverageRating END DESC,
+        CASE WHEN @SortBy = 'price_asc' THEN MinPrice END ASC,
+        CASE WHEN @SortBy = 'price_desc' THEN MaxPrice END DESC
+    OFFSET @Offset ROWS
+    FETCH NEXT @PageSize ROWS ONLY;
+END;
 GO
 
-PRINT N'';
-PRINT N'========================================';
-PRINT N'✓ DATABASE SETUP COMPLETED SUCCESSFULLY!';
-PRINT N'========================================';
-PRINT N'Database: MilkTeaShopDB';
-PRINT N'Tables: 20 tables created';
-PRINT N'Views: 8 views created';
-PRINT N'Stored Procedures: 8 procedures created';
-PRINT N'Functions: 4 functions created';
-PRINT N'Triggers: 10 triggers created';
-PRINT N'Indexes: 30+ performance indexes created';
-PRINT N'Sample Data: Complete with products, users, orders, and promotions';
-PRINT N'';
-PRINT N'Ready for Spring Boot Integration with:';
-PRINT N'- JWT Token Authentication';
-PRINT N'- WebSocket Support (Chat & Notifications)';
-PRINT N'- Cloudinary Integration';
-PRINT N'- JPA/Hibernate ORM';
-PRINT N'- Real-time Features';
-PRINT N'========================================';
+-- Procedure to search products
+CREATE PROCEDURE sp_SearchProducts
+    @SearchKeyword NVARCHAR(255),
+    @CategoryID INT = NULL,
+    @MinPrice DECIMAL(10,2) = NULL,
+    @MaxPrice DECIMAL(10,2) = NULL,
+    @MinRating DECIMAL(3,2) = NULL,
+    @PageNumber INT = 1,
+    @PageSize INT = 20
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    DECLARE @Offset INT = (@PageNumber - 1) * @PageSize;
+    
+    SELECT 
+        p.ProductID,
+        p.ProductName,
+        p.Description,
+        p.AverageRating,
+        p.TotalReviews,
+        p.SoldCount,
+        c.CategoryName,
+        s.ShopName,
+        (SELECT TOP 1 pv.Price FROM dbo.ProductVariants pv WHERE pv.ProductID = p.ProductID ORDER BY pv.Price) AS MinPrice,
+        (SELECT TOP 1 pi.ImageURL FROM dbo.ProductImages pi WHERE pi.ProductID = p.ProductID AND pi.IsPrimary = 1) AS PrimaryImageURL
+    FROM dbo.Products p
+    JOIN dbo.Categories c ON p.CategoryID = c.CategoryID
+    JOIN dbo.Shops s ON p.ShopID = s.ShopID
+    WHERE p.Status = 1 
+    AND s.Status = 1
+    AND (
+        p.ProductName LIKE N'%' + @SearchKeyword + '%' 
+        OR p.Description LIKE N'%' + @SearchKeyword + '%'
+    )
+    AND (@CategoryID IS NULL OR p.CategoryID = @CategoryID)
+    AND (@MinPrice IS NULL OR EXISTS (SELECT 1 FROM dbo.ProductVariants pv WHERE pv.ProductID = p.ProductID AND pv.Price >= @MinPrice))
+    AND (@MaxPrice IS NULL OR EXISTS (SELECT 1 FROM dbo.ProductVariants pv WHERE pv.ProductID = p.ProductID AND pv.Price <= @MaxPrice))
+    AND (@MinRating IS NULL OR p.AverageRating >= @MinRating)
+    ORDER BY p.SoldCount DESC, p.AverageRating DESC
+    OFFSET @Offset ROWS
+    FETCH NEXT @PageSize ROWS ONLY;
+END;
+GO
+
+-- Procedure to get user's order history
+CREATE PROCEDURE sp_GetUserOrderHistory
+    @UserID INT,
+    @OrderStatus NVARCHAR(30) = NULL,
+    @PageNumber INT = 1,
+    @PageSize INT = 10
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    DECLARE @Offset INT = (@PageNumber - 1) * @PageSize;
+    
+    SELECT 
+        o.OrderID,
+        o.OrderDate,
+        o.OrderStatus,
+        o.PaymentMethod,
+        o.PaymentStatus,
+        o.GrandTotal,
+        s.ShopName,
+        s.LogoURL AS ShopLogoURL,
+        o.RecipientName,
+        o.RecipientPhone,
+        (SELECT COUNT(*) FROM dbo.OrderDetails od WHERE od.OrderID = o.OrderID) AS TotalItems
+    FROM dbo.Orders o
+    JOIN dbo.Shops s ON o.ShopID = s.ShopID
+    WHERE o.UserID = @UserID
+    AND (@OrderStatus IS NULL OR o.OrderStatus = @OrderStatus)
+    ORDER BY o.OrderDate DESC
+    OFFSET @Offset ROWS
+    FETCH NEXT @PageSize ROWS ONLY;
+END;
+GO
+
+-- Procedure to get shop's order management
+CREATE PROCEDURE sp_GetShopOrders
+    @ShopID INT,
+    @OrderStatus NVARCHAR(30) = NULL,
+    @PageNumber INT = 1,
+    @PageSize INT = 10
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    DECLARE @Offset INT = (@PageNumber - 1) * @PageSize;
+    
+    SELECT 
+        o.OrderID,
+        o.OrderDate,
+        o.OrderStatus,
+        o.PaymentMethod,
+        o.PaymentStatus,
+        o.GrandTotal,
+        u.FullName AS CustomerName,
+        u.PhoneNumber AS CustomerPhone,
+        o.RecipientName,
+        o.RecipientPhone,
+        o.ShippingAddress,
+        shipper.FullName AS ShipperName,
+        (SELECT COUNT(*) FROM dbo.OrderDetails od WHERE od.OrderID = o.OrderID) AS TotalItems
+    FROM dbo.Orders o
+    JOIN dbo.Users u ON o.UserID = u.UserID
+    LEFT JOIN dbo.Users shipper ON o.ShipperID = shipper.UserID
+    WHERE o.ShopID = @ShopID
+    AND (@OrderStatus IS NULL OR o.OrderStatus = @OrderStatus)
+    ORDER BY o.OrderDate DESC
+    OFFSET @Offset ROWS
+    FETCH NEXT @PageSize ROWS ONLY;
+END;
+GO
+
+-- Procedure to get shipper's assigned orders
+CREATE PROCEDURE sp_GetShipperOrders
+    @ShipperID INT,
+    @OrderStatus NVARCHAR(30) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT 
+        o.OrderID,
+        o.OrderDate,
+        o.OrderStatus,
+        o.GrandTotal,
+        o.RecipientName,
+        o.RecipientPhone,
+        o.ShippingAddress,
+        s.ShopName,
+        s.PhoneNumber AS ShopPhone,
+        CASE 
+            WHEN o.OrderStatus = 'Delivering' THEN 1
+            WHEN o.OrderStatus = 'Completed' THEN 2
+            ELSE 3
+        END AS Priority
+    FROM dbo.Orders o
+    JOIN dbo.Shops s ON o.ShopID = s.ShopID
+    WHERE o.ShipperID = @ShipperID
+    AND (@OrderStatus IS NULL OR o.OrderStatus = @OrderStatus)
+    ORDER BY Priority ASC, o.OrderDate DESC;
+END;
+GO
+
+-- Procedure to calculate shop revenue
+CREATE PROCEDURE sp_GetShopRevenue
+    @ShopID INT,
+    @StartDate DATETIME2 = NULL,
+    @EndDate DATETIME2 = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    IF @StartDate IS NULL SET @StartDate = DATEADD(MONTH, -1, GETDATE());
+    IF @EndDate IS NULL SET @EndDate = GETDATE();
+    
+    SELECT 
+        COUNT(DISTINCT sr.OrderID) AS TotalOrders,
+        SUM(sr.OrderAmount) AS TotalOrderAmount,
+        SUM(sr.CommissionAmount) AS TotalCommission,
+        SUM(sr.NetRevenue) AS TotalNetRevenue,
+        s.CommissionRate
+    FROM dbo.ShopRevenue sr
+    JOIN dbo.Shops s ON sr.ShopID = s.ShopID
+    WHERE sr.ShopID = @ShopID
+    AND sr.RecordedAt BETWEEN @StartDate AND @EndDate
+    GROUP BY s.CommissionRate;
+END;
+GO
+
+-- Procedure to get product reviews with pagination
+CREATE PROCEDURE sp_GetProductReviews
+    @ProductID INT,
+    @Rating INT = NULL,
+    @PageNumber INT = 1,
+    @PageSize INT = 10
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    DECLARE @Offset INT = (@PageNumber - 1) * @PageSize;
+    
+    SELECT 
+        r.ReviewID,
+        r.Rating,
+        r.Comment,
+        r.MediaURLs,
+        r.ReviewDate,
+        r.IsVerifiedPurchase,
+        u.FullName AS ReviewerName,
+        u.AvatarURL AS ReviewerAvatar
+    FROM dbo.Reviews r
+    JOIN dbo.Users u ON r.UserID = u.UserID
+    WHERE r.ProductID = @ProductID
+    AND (@Rating IS NULL OR r.Rating = @Rating)
+    ORDER BY r.ReviewDate DESC
+    OFFSET @Offset ROWS
+    FETCH NEXT @PageSize ROWS ONLY;
+END;
+GO
+
+-- Procedure to validate and apply promotion
+CREATE PROCEDURE sp_ValidatePromotion
+    @PromoCode NVARCHAR(50),
+    @UserID INT,
+    @ShopID INT,
+    @OrderSubtotal DECIMAL(12,2),
+    @IsValid BIT OUTPUT,
+    @DiscountAmount DECIMAL(12,2) OUTPUT,
+    @Message NVARCHAR(500) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    DECLARE @PromotionID INT;
+    DECLARE @DiscountType NVARCHAR(20);
+    DECLARE @DiscountValue DECIMAL(10,2);
+    DECLARE @MaxDiscountAmount DECIMAL(10,2);
+    DECLARE @MinOrderValue DECIMAL(10,2);
+    DECLARE @UsageLimit INT;
+    DECLARE @UsedCount INT;
+    DECLARE @StartDate DATETIME2;
+    DECLARE @EndDate DATETIME2;
+    DECLARE @CreatedByShopID INT;
+    
+    SET @IsValid = 0;
+    SET @DiscountAmount = 0;
+    
+    -- Get promotion details
+    SELECT 
+        @PromotionID = PromotionID,
+        @DiscountType = DiscountType,
+        @DiscountValue = DiscountValue,
+        @MaxDiscountAmount = MaxDiscountAmount,
+        @MinOrderValue = MinOrderValue,
+        @UsageLimit = UsageLimit,
+        @UsedCount = UsedCount,
+        @StartDate = StartDate,
+        @EndDate = EndDate,
+        @CreatedByShopID = CreatedByShopID
+    FROM dbo.Promotions
+    WHERE PromoCode = @PromoCode AND Status = 1;
+    
+    -- Check if promotion exists
+    IF @PromotionID IS NULL
+    BEGIN
+        SET @Message = N'Mã khuyến mãi không tồn tại hoặc đã bị vô hiệu hóa';
+        RETURN;
+    END;
+    
+    -- Check if promotion is valid for this shop
+    IF @CreatedByShopID IS NOT NULL AND @CreatedByShopID <> @ShopID
+    BEGIN
+        SET @Message = N'Mã khuyến mãi không áp dụng cho shop này';
+        RETURN;
+    END;
+    
+    -- Check date range
+    IF GETDATE() < @StartDate OR GETDATE() > @EndDate
+    BEGIN
+        SET @Message = N'Mã khuyến mãi đã hết hạn hoặc chưa có hiệu lực';
+        RETURN;
+    END;
+    
+    -- Check minimum order value
+    IF @OrderSubtotal < @MinOrderValue
+    BEGIN
+        SET @Message = N'Giá trị đơn hàng chưa đạt mức tối thiểu ' + CAST(@MinOrderValue AS NVARCHAR) + N'đ';
+        RETURN;
+    END;
+    
+    -- Check usage limit
+    IF @UsageLimit IS NOT NULL AND @UsedCount >= @UsageLimit
+    BEGIN
+        SET @Message = N'Mã khuyến mãi đã hết lượt sử dụng';
+        RETURN;
+    END;
+    
+    -- Calculate discount
+    IF @DiscountType = 'Percentage'
+    BEGIN
+        SET @DiscountAmount = @OrderSubtotal * @DiscountValue / 100;
+        IF @MaxDiscountAmount IS NOT NULL AND @DiscountAmount > @MaxDiscountAmount
+            SET @DiscountAmount = @MaxDiscountAmount;
+    END
+    ELSE IF @DiscountType = 'FixedAmount'
+    BEGIN
+        SET @DiscountAmount = @DiscountValue;
+    END
+    ELSE IF @DiscountType = 'FreeShip'
+    BEGIN
+        SET @DiscountAmount = @DiscountValue; -- This should be applied to shipping fee
+    END;
+    
+    SET @IsValid = 1;
+    SET @Message = N'Áp dụng mã khuyến mãi thành công';
+END;
+GO
+
+PRINT N'✓ All stored procedures created successfully.';
+GO
+
+-- ================================================================
+-- PART 8: CREATE FUNCTIONS
+-- ================================================================
+
+PRINT N'==== Creating functions...';
+GO
+
+-- Function to calculate order total
+CREATE FUNCTION fn_CalculateOrderTotal
+(
+    @Subtotal DECIMAL(12,2),
+    @ShippingFee DECIMAL(12,2),
+    @DiscountAmount DECIMAL(12,2)
+)
+RETURNS DECIMAL(12,2)
+AS
+BEGIN
+    DECLARE @Total DECIMAL(12,2);
+    SET @Total = @Subtotal + @ShippingFee - @DiscountAmount;
+    IF @Total < 0 SET @Total = 0;
+    RETURN @Total;
+END;
+GO
+
+-- Function to check if user can review a product
+CREATE FUNCTION fn_CanUserReviewProduct
+(
+    @UserID INT,
+    @ProductID INT
+)
+RETURNS BIT
+AS
+BEGIN
+    DECLARE @CanReview BIT = 0;
+    
+    -- Check if user has purchased and received this product
+    IF EXISTS (
+        SELECT 1
+        FROM dbo.Orders o
+        JOIN dbo.OrderDetails od ON o.OrderID = od.OrderID
+        JOIN dbo.ProductVariants pv ON od.VariantID = pv.VariantID
+        WHERE o.UserID = @UserID
+        AND pv.ProductID = @ProductID
+        AND o.OrderStatus = 'Completed'
+        AND NOT EXISTS (
+            SELECT 1 FROM dbo.Reviews r 
+            WHERE r.OrderDetailID = od.OrderDetailID
+        )
+    )
+    BEGIN
+        SET @CanReview = 1;
+    END;
+    
+    RETURN @CanReview;
+END;
+GO
+
+-- Function to get user's cart total
+CREATE FUNCTION fn_GetCartTotal
+(
+    @UserID INT
+)
+RETURNS DECIMAL(12,2)
+AS
+BEGIN
+    DECLARE @Total DECIMAL(12,2) = 0;
+    
+    SELECT @Total = SUM(pv.Price * ci.Quantity + ISNULL(ToppingTotal, 0))
+    FROM dbo.Carts c
+    JOIN dbo.CartItems ci ON c.CartID = ci.CartID
+    JOIN dbo.ProductVariants pv ON ci.VariantID = pv.VariantID
+    OUTER APPLY (
+        SELECT SUM(t.AdditionalPrice) AS ToppingTotal
+        FROM dbo.CartItem_Toppings cit
+        JOIN dbo.Toppings t ON cit.ToppingID = t.ToppingID
+        WHERE cit.CartItemID = ci.CartItemID
+    ) AS Toppings
+    WHERE c.UserID = @UserID;
+    
+    RETURN ISNULL(@Total, 0);
+END;
+GO
+
+PRINT N'✓ All functions created successfully.';
 GO

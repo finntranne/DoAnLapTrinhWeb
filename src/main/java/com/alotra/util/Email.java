@@ -48,7 +48,7 @@ public class Email {
 
 			mess.setSubject("Confirm Code");
 			
-			mess.setText("Your code is: " + user.getCodeOTP());
+			mess.setText("Your code is: " + user.getOtpCode());
 			
 			Transport.send(mess);
 			

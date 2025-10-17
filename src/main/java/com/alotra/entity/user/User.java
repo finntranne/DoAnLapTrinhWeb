@@ -30,20 +30,18 @@ public class User {
     @Column(name = "PhoneNumber", unique = true, length = 20)
     private String phoneNumber;
 
+    @Column(name = "FullName", nullable = false, length = 255)
+    private String fullName;
+
     @Column(name = "Status", nullable = false)
-    private Byte status = 1;
+    private Byte status = 0; // 0: Pending, 1: Active, 2: Suspended
 
     @Column(name = "AvatarURL", length = 500)
     private String avatarURL;
 
-    @Column(name = "CreatedAt", nullable = false, columnDefinition = "DATETIME2")
-    private LocalDateTime createdAt;
-
-    @Column(name = "UpdatedAt", nullable = false, columnDefinition = "DATETIME2")
-    private LocalDateTime updatedAt;
-
+    // OTP fields
     @Column(name = "OtpCode", length = 10)
-    private String codeOTP;
+    private String otpCode;
 
     @Column(name = "OtpExpiryTime", columnDefinition = "DATETIME2")
     private LocalDateTime otpExpiryTime;
@@ -51,7 +49,16 @@ public class User {
     @Column(name = "OtpPurpose", length = 20)
     private String otpPurpose;
 
-    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @Column(name = "CreatedAt", nullable = false, columnDefinition = "DATETIME2")
+    private LocalDateTime createdAt;
+
+    @Column(name = "UpdatedAt", nullable = false, columnDefinition = "DATETIME2")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "LastLoginAt", columnDefinition = "DATETIME2")
+    private LocalDateTime lastLoginAt;
+
+    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
     @JoinTable(
         name = "UserRoles",
         joinColumns = @JoinColumn(name = "UserID", referencedColumnName = "UserID"),
@@ -64,7 +71,7 @@ public class User {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
         if (status == null) {
-            status = 1;
+            status = 0; // Default: Pending
         }
     }
 

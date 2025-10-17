@@ -41,7 +41,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         logger.info("Number of roles: {}", roles != null ? roles.size() : 0);
         
         if (roles != null) {
-            roles.forEach(role -> logger.info("Role: id={}, name={}", role.getRoleId(), role.getRoleName()));
+            roles.forEach(role -> logger.info("Role: id={}, name={}", role.getId(), role.getRoleName()));
         }
 
         Collection<? extends GrantedAuthority> authorities = mapRolesToAuthorities(roles);
