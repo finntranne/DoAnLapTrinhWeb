@@ -48,4 +48,17 @@ public class LoginController {
         return "auth/403"; // Trang lỗi 403 - Access Denied
     }
     
+//    private String redirectByRole(int roleId) {
+//		switch (roleId) {
+//			case 1: // Admin
+//				return "redirect:/admin/dashboard";
+//			case 2: // Customer
+//				return "redirect:/customer/home";
+//			case 3: // vendor
+//				return "redirect:/vendor/dashboard";
+//			default:
+//				return "redirect:/login";
+//		}
+//	}
+    
 }
