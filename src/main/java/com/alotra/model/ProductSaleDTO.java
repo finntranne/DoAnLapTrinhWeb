@@ -11,7 +11,7 @@ public class ProductSaleDTO {
 
     public ProductSaleDTO(Product product, Long totalSold, Integer discountPercentage) {
         this.product = product;
-        this.totalSold = totalSold;
+        this.totalSold = (totalSold != null) ? totalSold : 0L; // <-- Xử lý NULL ở đây
         this.discountPercentage = discountPercentage;
     }
 }

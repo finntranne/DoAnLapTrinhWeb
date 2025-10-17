@@ -449,3 +449,22 @@ otpInputs.forEach((input, index) => {
       }
   });
   
+  document.addEventListener("DOMContentLoaded", function() {
+      const topNav = document.getElementById("top-nav");
+      const mainNav = document.getElementById("main-nav");
+
+      if (!topNav || !mainNav) return;
+
+      const triggerPoint = topNav.offsetHeight; // khi cuộn qua chiều cao của thanh đầu
+
+      window.addEventListener("scroll", function() {
+          if (window.scrollY > triggerPoint) {
+              mainNav.classList.add("sticky");
+          } else {
+              mainNav.classList.remove("sticky");
+          }
+      });
+  });
+
+
+  

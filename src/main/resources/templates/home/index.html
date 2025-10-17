@@ -8,14 +8,6 @@
 
 <body>
     <section>
-        <div class="row">
-            <div class="col-lg-3 col-md-4">
-                <div th:replace="~{fragments/sidebar :: pageSidebar}"></div>
-            </div>
-            <div class="col-lg-9 col-md-8">
-                <div th:replace="~{fragments/carousel :: pageCarousel}"></div>
-            </div>
-        </div>
 <div class="my-5">
     <h2 class="text-center mb-4">Sản Phẩm Bán Chạy</h2>
     <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-4" th:if="${topProducts != null and not #lists.isEmpty(topProducts)}">
@@ -48,9 +40,10 @@
 
                 <div class="product-card-footer">
                     <div class="sold-progress-bar">
-                        <div class="sold-progress" th:style="'width: ' + (${sale.totalSold} > 500 ? 100 : ${sale.totalSold} * 100 / 500) + '%'"></div>
-                        <span class="sold-text" th:text="${sale.totalSold} + ' đã bán'"></span>
-                    </div>
+    <div class="sold-progress" th:with="sold=${sale.totalSold ?: 0}" 
+         th:style="'width: ' + (${sold} > 500 ? 100 : ${sold} * 100 / 500) + '%'"></div>
+    <span class="sold-text" th:text="${sale.totalSold ?: 0} + ' đã bán'"></span>
+</div>
                     <button class="btn-add-to-cart">
                         <i class="fa-solid fa-plus"></i>
                     </button>
@@ -60,28 +53,39 @@
     </div>
 </div>
 
-        <div class="my-5" th:if="${#authorization.expression('isAuthenticated()')} and ${viewedProducts != null and not #lists.isEmpty(viewedProducts)}">
-            <h2 class="text-center mb-4">Gợi Ý Dành Cho Bạn</h2>
-            
-            <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-4">
-                <div class="col" th:each="product : ${viewedProducts}">
-                    <a th:href="@{'/products/' + ${product.productId}}" class="product-card h-100">
-                        <img th:if="${not #lists.isEmpty(product.productImages)}" th:src="${product.productImages[0].imageUrl}" class="card-img-top" th:alt="${product.productName}">
-                        <img th:unless="${not #lists.isEmpty(product.productImages)}" th:src="@{/images/placeholder.png}" class="card-img-top" th:alt="${product.productName}">
+<div class="my-5" th:if="${newestProducts != null and not #lists.isEmpty(newestProducts)}">
+    <h2 class="text-center mb-4">Sản Phẩm Mới</h2>
 
-                        <div class="card-body">
-                            <p class="product-brand mb-1">Highlands Coffee</p>
-                            <h5 class="product-title" th:text="${product.productName}">Tên sản phẩm</h5>
-                            <p class="product-price" th:if="${not #lists.isEmpty(product.productVariants)}" th:text="${#numbers.formatDecimal(product.productVariants[0].price, 0, 'POINT', 0, 'COMMA')} + 'đ'">Liên hệ</p>
-                        </div>
-                        
-                        <button class="btn-add-to-cart">
-                            <i class="fa-solid fa-plus"></i>
-                        </button>
-                    </a>
+    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-4">
+        <div class="col" th:each="product : ${newestProducts}">
+            <div class="product-card h-100">
+                <a th:href="@{'/products/' + ${product.productId}}" class="product-card-link">
+                    <img th:if="${not #lists.isEmpty(product.productImages)}" th:src="${product.productImages[0].imageUrl}" class="card-img-top" th:alt="${product.productName}">
+                    <img th:unless="${not #lists.isEmpty(product.productImages)}" th:src="@{/images/placeholder.png}" class="card-img-top" th:alt="${product.productName}">
+                </a>
+                <div class="card-body">
+                    <p class="product-brand mb-1">ALOTRA</p>
+                    <h5 class="product-title" th:text="${product.productName}">Tên sản phẩm</h5>
+                    <div class="product-price" th:if="${not #lists.isEmpty(product.productVariants)}">
+                        <span th:text="${#numbers.formatDecimal(product.productVariants[0].price, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                    </div>
+                </div>
+                <div class="product-card-footer">
+                    <div class="sold-progress-bar">
+                         <span class="sold-text" th:text="'Ngày tạo: ' + ${#temporals.format(product.createdAt, 'dd-MM-yyyy')}"></span>
+                    </div>
+                    <button class="btn-add-to-cart"><i class="fa-solid fa-plus"></i></button>
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="text-center mt-4">
+        <a th:href="@{/products/new}" class="btn btn-outline-success px-4 py-2">Xem tất cả</a>
+    </div>
+</div>
+
+        
     </section>
 </body>
 </html>

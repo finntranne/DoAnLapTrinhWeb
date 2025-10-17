@@ -88,7 +88,7 @@ public class WebSecurityConfig {
                 .requestMatchers("/admin/**").hasAuthority("ADMIN")
                 
                 // Chỉ USER (hoặc CUSTOMER) mới có thể vào trang cá nhân, giỏ hàng...
-                .requestMatchers("/profile/**", "/cart/**", "/orders/**").hasAuthority("USER")
+                .requestMatchers("/profile/**", "/cart/**", "/orders/**", "products/**").hasAuthority("USER")
 
                 // --- TẤT CẢ CÁC REQUEST CÒN LẠI ---
                 // Bất kỳ yêu cầu nào chưa được định nghĩa ở trên đều yêu cầu phải đăng nhập

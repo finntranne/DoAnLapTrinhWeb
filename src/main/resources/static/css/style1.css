@@ -1,0 +1,396 @@
+
+    :root {
+        --primary-color: #73A580; /* Màu xanh matcha chủ đạo */
+    }
+    body {
+        background-color: #f8f9fa;
+    }
+    /* === NAVIGATION STYLES === */
+    .navbar-theme {
+        background-color: var(--primary-color);
+    }
+    .navbar-theme .navbar-brand img {
+        transition: opacity 0.3s;
+    }
+    .navbar-theme .navbar-brand:hover img {
+        opacity: 0.8;
+    }
+    .navbar-theme .nav-link {
+        transition: color 0.3s;
+    }
+    .navbar-theme .nav-link:hover {
+        color: #ddd !important;
+    }
+    .search-bar {
+        flex-grow: 1;
+        max-width: 600px; /* <-- Tăng giá trị ở đây từ 500px lên 600px */
+    }
+    .search-bar input {
+        border-radius: 5px 0 0 5px; border: none;
+    }
+    .search-bar button {
+        border-radius: 0 5px 5px 0; border: none; background-color: #e9ecef;
+    }
+    .icon-text-group .text {
+        display: block; font-size: 0.8rem; line-height: 1;
+    }
+    .main-nav {
+        background-color: var(--primary-color);
+    }
+    .main-nav .nav-link {
+        color: white;
+        transition: color 0.3s;
+    }
+    .main-nav .nav-link:hover {
+        color: #ddd;
+    }
+    
+    /* === PRODUCT CARD STYLES === */
+    .product-card { text-decoration: none; color: inherit; display: block; background-color: #fff; border: 1px solid #f0f0f0; transition: all 0.3s ease-in-out; position: relative; overflow: hidden; }
+    .product-card:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.1); transform: translateY(-5px); }
+    .product-card .card-img-top { border-radius: 0; }
+    .product-card .card-body { text-align: center; padding: 1.25rem; }
+    .product-brand { font-size: 0.8rem; color: #a5a5a5; text-transform: uppercase; letter-spacing: 1px; }
+    .product-title { font-weight: bold; color: #212529; margin-bottom: 0.5rem; }
+    .product-price { font-size: 1.2rem; font-weight: bold; color: #212529; }
+    .btn-add-to-cart { position: absolute; bottom: 80px; right: 10px; width: 30px; height: 30px; border-radius: 50%; background-color: var(--primary-color); color: white; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; line-height: 1; border: none; transform: translateY(150%); transition: transform 0.3s ease; }
+    .product-card:hover .btn-add-to-cart { transform: translateY(0); }
+
+    /* === FOOTER STYLES === */
+    .footer-links a { text-decoration: none; color: inherit; transition: color 0.2s ease-in-out; }
+    .footer-links a:hover { color: var(--primary-color); text-decoration: underline; }
+    .social-icon { transition: color 0.2s ease-in-out; }
+    .social-icon:hover { color: var(--primary-color) !important; }
+    
+    
+    /* === CSS MỚI CHO GIAO DIỆN SẢN PHẨM NÂNG CAO === */
+
+.product-card .card-body {
+    padding-bottom: 50px; /* Tạo không gian cho thanh "đã bán" */
+}
+
+/* Huy hiệu giảm giá */
+.discount-badge {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background-color: var(--primary-color);
+    color: white;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+    z-index: 10;
+}
+
+/* Giá gốc bị gạch ngang */
+.original-price {
+    text-decoration: line-through;
+    color: #a5a5a5;
+    font-weight: normal;
+    font-size: 1rem;
+    margin-left: 8px;
+}
+
+/* Thanh số lượng đã bán */
+.sold-progress-bar {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    height: 20px;
+    background-color: #E4EBD9;
+    overflow: hidden;
+    border-radius: 10px;
+}
+.sold-progress {
+    background-color: var(--primary-color);
+    height: 100%;
+    border-radius: 0 20px 20px 0;
+}
+.sold-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: black;
+    font-size: 0.8rem;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+/* === CSS CHO TRANG DANH MỤC SẢN PHẨM === */
+
+/* Thanh sắp xếp sản phẩm */
+.sort-options {
+    font-size: 0.9rem;
+}
+.sort-options span {
+    font-weight: bold;
+    color: #333;
+}
+.sort-options a {
+    text-decoration: none;
+    color: #666;
+    margin-left: 15px;
+    padding: 6px 12px;
+    border-radius: 20px; /* Bo tròn */
+    transition: all 0.2s;
+}
+.sort-options a:hover, .sort-options a.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* === CSS CHO THANH PHÂN TRANG (HÌNH TRÒN) === */
+.pagination .page-item .page-link {
+    border-radius: 50% !important; /* Bo tròn thành hình tròn */
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 5px;
+    border: 1px solid #ddd;
+    color: #555;
+    font-weight: 500;
+}
+.pagination .page-item.active .page-link {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.pagination .page-item.disabled .page-link {
+    color: #ccc;
+    background-color: #f8f9fa;
+}
+.pagination .page-item .page-link:hover {
+    background-color: #e9ecef;
+}
+.pagination .page-item.active .page-link:hover {
+    background-color: #5a8a69; /* Màu xanh đậm hơn khi hover */
+}
+
+/* === MENU DROPDOWN THANH HEADER (NỀN XANH MATCHA) === */
+.main-nav {
+    position: relative;
+    background: var(--primary-color); /* ✅ Nền xanh matcha */
+    border-bottom: none;
+    padding: 0.3rem 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.main-nav .dropdown {
+    position: relative;
+}
+
+/* Nút chính của dropdown */
+.main-nav .btn.dropdown-toggle {
+    background-color: transparent;
+    color: #fff; /* ✅ Trắng nổi bật trên nền xanh */
+    border: none;
+    font-weight: 600;
+    padding: 0.75rem 1.25rem;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.2s ease;
+}
+
+.main-nav .btn.dropdown-toggle:hover,
+.main-nav .btn.dropdown-toggle:focus {
+    color: #E4EBD9; /* Xanh nhạt hơn khi hover */
+    background-color: rgba(255,255,255,0.1);
+    border-radius: 8px;
+}
+
+/* Dropdown menu (ẩn ban đầu) */
+.main-nav .dropdown-menu {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 100%;
+    width: 100%; /* ✅ Chiều rộng dropdown */
+    border: none;
+    border-top: 3px solid var(--primary-color);
+    border-radius: 0 0 8px 8px;
+    background-color: #fff;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+    padding: 0.5rem 0;
+    animation: fadeIn 0.2s ease-in-out;
+    z-index: 999;
+}
+
+/* Hiển thị menu khi hover */
+.main-nav .dropdown:hover > .dropdown-menu {
+    display: block;
+}
+
+/* Từng item trong dropdown */
+.main-nav .dropdown-menu .dropdown-item {
+    width: 100%;
+    padding: 0.6rem 1.25rem;
+    color: #444;
+    font-weight: 500;
+    transition: all 0.25s ease;
+    border-left: 3px solid transparent;
+}
+
+/* Hiệu ứng hover từng item */
+.main-nav .dropdown-menu .dropdown-item:hover {
+    background-color: #f5f5f5;
+    color: var(--primary-color);
+    border-left: 3px solid var(--primary-color);
+}
+
+/* Biểu tượng trong item (nếu có) */
+.main-nav .dropdown-menu .dropdown-item i {
+    margin-right: 10px;
+    color: var(--primary-color);
+}
+
+/* Hiệu ứng xuất hiện */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* === MENU CHÍNH (CHÍNH SÁCH, LIÊN HỆ, TIN TỨC) === */
+.main-nav-links {
+    margin-left: 30px;
+    display: flex;
+    align-items: center;
+}
+
+.main-nav-links .nav-item {
+    display: flex;
+    align-items: center;
+}
+
+.main-nav-links .nav-link {
+    color: #fff; /* ✅ Chữ trắng */
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.main-nav-links .nav-link:hover {
+    color: #E4EBD9; /* ✅ Trắng nhạt khi hover */
+    text-decoration: underline;
+}
+
+.main-nav-links i {
+    color: #fff;
+    transition: color 0.3s ease;
+}
+
+.main-nav-links .nav-item:hover i {
+    color: #E4EBD9;
+}
+
+
+/* === Breadcrumb tùy chỉnh === */
+.breadcrumb-nav {
+    background-color: #f8f9fa; /* hoặc trắng tùy giao diện */
+    padding: 0.75rem 0;
+}
+
+.breadcrumb {
+    margin: 0;
+    background: none;
+}
+
+.breadcrumb-item a {
+    text-decoration: none; /* ❌ Bỏ gạch chân */
+    color: var(--primary-color); /* ✅ Dùng màu chủ đạo của bạn */
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.breadcrumb-item a:hover {
+    color: #5a8a69; /* Xanh đậm hơn khi hover */
+    text-decoration: underline; /* Có thể thêm gạch chân khi hover nếu muốn */
+}
+
+.breadcrumb-item.active {
+    color: #555;
+    font-weight: 600;
+}
+
+
+/**/
+
+/* === CSS CHO CAROUSEL - PHIÊN BẢN NÂNG CẤP === */
+
+/* Định nghĩa animation zoom chậm */
+@keyframes kenburns-zoom {
+    0% {
+        transform: scale(1);
+    }
+    100% {
+        transform: scale(1.1); /* Zoom lên 10% */
+    }
+}
+
+.main-carousel {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+}
+
+.main-carousel .carousel-item {
+    /* Đặt thời gian chuyển slide ở đây (ví dụ: 6 giây) */
+    /* Quan trọng: Phải khớp với data-bs-interval trong HTML */
+    animation-duration: 6s; 
+}
+
+.main-carousel .carousel-item img {
+    width: 100%;
+    /* Sử dụng aspect-ratio để tự động điều chỉnh chiều cao */
+    aspect-ratio: 16 / 7; /* Tỉ lệ 16:7, phổ biến cho banner */
+    object-fit: cover;
+    border-radius: 0;
+}
+
+/* Áp dụng animation cho slide đang hoạt động */
+.main-carousel .carousel-item.active img {
+    animation: kenburns-zoom 6s linear forwards; /* 6s phải khớp với ở trên */
+}
+
+/* Thanh sticky */
+#main-nav {
+    position: relative;
+    width: 100%;
+    background-color: #fff;
+    transition: all 0.3s ease;
+    z-index: 1030;
+    border-bottom: 1px solid #eee;
+}
+
+/* Khi sticky được kích hoạt */
+#main-nav.sticky {
+    position: fixed;
+    top: 0;
+    left: 0;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    animation: slideDown 0.3s ease;
+}
+
+/* Hiệu ứng trượt xuống */
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+

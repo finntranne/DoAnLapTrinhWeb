@@ -21,76 +21,93 @@
                 </div>
 
                 <ul class="navbar-nav ms-auto align-items-center">
-    <li class="nav-item">
-        <a href="#" class="nav-link text-white d-flex align-items-center">
-            <i class="fa-solid fa-location-dot fa-2x"></i>
-            <div class="ms-2">
-                <span class="text small d-block">Giao tận nơi</span>
-                <span class="fw-bold d-block">Chọn</span>
-            </div>
-        </a>
-    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link text-white d-flex align-items-center">
+                            <i class="fa-solid fa-location-dot fa-2x"></i>
+                            <div class="ms-2">
+                                <span class="text small d-block">Giao tận nơi</span>
+                                <span class="fw-bold d-block">Chọn</span>
+                            </div>
+                        </a>
+                    </li>
 
-    <li class="nav-item" th:if="${#authorization.expression('!isAuthenticated()')}">
-        <a href="/login" class="nav-link text-white d-flex align-items-center">
-            <i class="fa-solid fa-user fa-2x"></i>
-            <div class="ms-2">
-                <span class="text small d-block">Tài khoản</span>
-                <span class="fw-bold d-block">Đăng nhập</span>
-            </div>
-        </a>
-    </li>
+                    <li class="nav-item" th:if="${#authorization.expression('!isAuthenticated()')}">
+                        <a href="/login" class="nav-link text-white d-flex align-items-center">
+                            <i class="fa-solid fa-user fa-2x"></i>
+                            <div class="ms-2">
+                                <span class="text small d-block">Tài khoản</span>
+                                <span class="fw-bold d-block">Đăng nhập</span>
+                            </div>
+                        </a>
+                    </li>
 
-    <li class="nav-item dropdown" th:if="${#authorization.expression('isAuthenticated()')}">
-        <a class="nav-link text-white d-flex align-items-center dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="fa-solid fa-user-check fa-2x"></i>
-            <div class="ms-2">
-                <span class="text small d-block">Xin chào,</span>
-                <span class="fw-bold d-block" th:text="${#authentication.name}"></span>
-            </div>
-        </a>
-        <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="/profile">
-                <i class="fa-solid fa-address-card me-2"></i>Hồ sơ của tôi
-            </a></li>
-            <li><a class="dropdown-item" href="/orders">
-                <i class="fa-solid fa-receipt me-2"></i>Lịch sử mua hàng
-            </a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item" href="/logout">
-                <i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất
-            </a></li>
-        </ul>
-    </li>
-    
-    <li class="nav-item">
-        <a href="/cart" class="nav-link text-white d-flex align-items-center">
-            <i class="fa-solid fa-cart-shopping fa-2x"></i>
-            <span class="ms-2 fw-bold">Giỏ hàng</span>
-        </a>
-    </li>
-</ul>
+                    <li class="nav-item dropdown" th:if="${#authorization.expression('isAuthenticated()')}">
+                        <a class="nav-link text-white d-flex align-items-center dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-solid fa-user-check fa-2x"></i>
+                            <div class="ms-2">
+                                <span class="text small d-block">Xin chào,</span>
+                                <span class="fw-bold d-block" th:text="${#authentication.name}"></span>
+                            </div>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="/profile">
+                                <i class="fa-solid fa-address-card me-2"></i>Hồ sơ của tôi
+                            </a></li>
+                            <li><a class="dropdown-item" href="/orders">
+                                <i class="fa-solid fa-receipt me-2"></i>Lịch sử mua hàng
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/logout">
+                                <i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất
+                            </a></li>
+                        </ul>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a href="/cart" class="nav-link text-white d-flex align-items-center">
+                            <i class="fa-solid fa-cart-shopping fa-2x"></i>
+                            <span class="ms-2 fw-bold">Giỏ hàng</span>
+                        </a>
+                    </li>
+                </ul>
             </div>
         </div>
     </nav>
 
-    <nav class="main-nav py-2">
-        <div class="container d-flex justify-content-start"> <ul class="nav">
-                <li class="nav-item me-4 d-flex align-items-center">
-                    <i class="fa-solid fa-rotate-left me-2"></i>
-                    <a class="nav-link fw-bold p-0" href="#">CHÍNH SÁCH ĐỔI TRẢ</a>
-                </li>
-                <li class="nav-item me-4 d-flex align-items-center">
-                    <i class="fa-solid fa-phone me-2"></i>
-                    <a class="nav-link fw-bold p-0" href="#">LIÊN HỆ</a>
-                </li>
-                <li class="nav-item d-flex align-items-center">
-                    <i class="fa-solid fa-newspaper me-2"></i>
-                    <a class="nav-link fw-bold p-0" href="#">TIN TỨC</a>
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-theme py-2">
+    </nav>
+
+<nav class="main-nav py-2">
+    <div class="container d-flex justify-content-start align-items-center">
+        
+        <div class="dropdown">
+            <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fa-solid fa-bars me-2"></i>
+                Danh mục sản phẩm
+            </button>
+            <ul class="dropdown-menu" th:if="${categories != null}">
+                <li th:each="category : ${categories}">
+                    <a class="dropdown-item" href="#" th:text="${category.categoryName}"></a>
                 </li>
             </ul>
         </div>
-    </nav>
+
+        <ul class="nav main-nav-links" th:classappend="${isHomePage == false} ? 'ms-4' : ''">
+            <li class="nav-item me-4 d-flex align-items-center">
+                <i class="fa-solid fa-rotate-left me-2"></i>
+                <a class="nav-link fw-bold p-0" href="#">Chính sách đổi trả</a>
+            </li>
+            <li class="nav-item me-4 d-flex align-items-center">
+                <i class="fa-solid fa-phone me-2"></i>
+                <a class="nav-link fw-bold p-0" href="#">Liên hệ</a>
+            </li>
+            <li class="nav-item d-flex align-items-center">
+                <i class="fa-solid fa-newspaper me-2"></i>
+                <a class="nav-link fw-bold p-0" href="#">Tin tức</a>
+            </li>
+        </ul>
+    </div>
+</nav>
 </div>
 
 </html>

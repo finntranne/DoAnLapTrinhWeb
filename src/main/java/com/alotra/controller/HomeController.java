@@ -1,13 +1,18 @@
 package com.alotra.controller;
 
+import com.alotra.entity.product.Product;
 import com.alotra.service.product.CategoryService;
 import com.alotra.service.product.ProductService;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +20,6 @@ import java.util.List;
 @Controller
 public class HomeController {
 
-    // Bỏ ProductService vì chúng ta đã lấy Product thông qua Category
     @Autowired
     private ProductService productService;
 
@@ -32,26 +36,43 @@ public class HomeController {
     }
 
     @GetMapping("/")
-    public String home(Model model) {
-        // === SỬA LỖI Ở ĐÂY ===
-        // 1. Lấy danh sách categories (đã bao gồm products bên trong) từ service
+    public String home(Model model, @RequestParam(defaultValue = "0") int page) {
+        // Thêm danh sách categories
         model.addAttribute("categories", categoryService.findAll());
         
+        // Thêm flag để biết đây là trang chủ
+        model.addAttribute("isHomePage", true);
 
+        // Thêm danh sách top products
         model.addAttribute("topProducts", productService.getTopProducts());
 
-        // 3. Giữ lại dữ liệu mẫu cho banner
+        // Thêm dữ liệu banner
         List<Banner> banners = new ArrayList<>();
-        banners.add(new Banner("https://bizweb.dktcdn.net/100/487/455/themes/917232/assets/slider_3.jpg?1759892738511", "Banner PhinDi"));
-        banners.add(new Banner("https://bizweb.dktcdn.net/100/487/455/themes/917232/assets/slider_1.jpg?1759892738511", "Banner Trà"));
+        banners.add(new Banner("https://gongcha.com.vn/wp-content/uploads/2025/09/cover-web-khe%CC%82%CC%81-scaled.jpg", "Banner PhinDi"));
+        banners.add(new Banner("https://gongcha.com.vn/wp-content/uploads/2025/08/cover-web-warabi-scaled.jpg", "Banner Trà"));
         model.addAttribute("banners", banners);
-        
-        System.out.println("Authenticated: " + SecurityContextHolder.getContext().getAuthentication().isAuthenticated());
-        System.out.println("User: " + SecurityContextHolder.getContext().getAuthentication().getName());
 
-        // Đảm bảo trả về đúng tên template "index"
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getPrincipal())) {
+            model.addAttribute("newestProducts", productService.findTop10Newest());
+        }
+
+        // Trả về template home/index
         return "home/index";
+    }
+
+    @GetMapping("/products/new")
+    public String showNewProductsPage(@RequestParam(name = "page", defaultValue = "0") int page, Model model) {
+        int size = 2;
+        PageRequest pageable = PageRequest.of(page, size);
+        Page<Product> newestProductPage = productService.findNewestProductsPaginated(pageable);
+
+        model.addAttribute("newestProductPage", newestProductPage);
+        model.addAttribute("categories", categoryService.findAll());
         
-        
+        // Đánh dấu đây KHÔNG phải trang chủ
+        model.addAttribute("isHomePage", false);
+
+        return "product/new-products";
     }
 }
