@@ -449,22 +449,26 @@ otpInputs.forEach((input, index) => {
       }
   });
   
-  document.addEventListener("DOMContentLoaded", function() {
-      const topNav = document.getElementById("top-nav");
-      const mainNav = document.getElementById("main-nav");
-
-      if (!topNav || !mainNav) return;
-
-      const triggerPoint = topNav.offsetHeight; // khi cuộn qua chiều cao của thanh đầu
-
-      window.addEventListener("scroll", function() {
-          if (window.scrollY > triggerPoint) {
-              mainNav.classList.add("sticky");
-          } else {
-              mainNav.classList.remove("sticky");
-          }
-      });
+  
+  // Sticky Navigation on Scroll
+  document.addEventListener('DOMContentLoaded', function() {
+      const stickyNav = document.getElementById('stickyNav');
+      
+      if (stickyNav) {
+          let lastScrollTop = 0;
+          
+          window.addEventListener('scroll', function() {
+              const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+              
+              // Hiển thị sticky nav khi cuộn xuống hơn 150px
+              if (scrollTop > 150) {
+                  stickyNav.classList.add('show');
+              } else {
+                  stickyNav.classList.remove('show');
+              }
+              
+              lastScrollTop = scrollTop;
+          });
+      }
   });
-
-
   

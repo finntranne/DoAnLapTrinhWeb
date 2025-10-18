@@ -43,9 +43,6 @@ public class HomeController {
         // Thêm flag để biết đây là trang chủ
         model.addAttribute("isHomePage", true);
 
-        // Thêm danh sách top products
-        model.addAttribute("topProducts", productService.getTopProducts());
-
         // Thêm dữ liệu banner
         List<Banner> banners = new ArrayList<>();
         banners.add(new Banner("https://gongcha.com.vn/wp-content/uploads/2025/09/cover-web-khe%CC%82%CC%81-scaled.jpg", "Banner PhinDi"));
@@ -54,8 +51,14 @@ public class HomeController {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getPrincipal())) {
-            model.addAttribute("newestProducts", productService.findTop10Newest());
+            model.addAttribute("newestProducts", productService.findNewestProductsPaginated(PageRequest.of(0, 10)));
+            model.addAttribute("topProducts", productService.getBestSellingProductsPaginated(PageRequest.of(0, 10)));
         }
+        else {
+        	// Thêm danh sách top products
+            model.addAttribute("topProducts", productService.getBestSellingProductsPaginated(PageRequest.of(0, 20)));
+        }
+        	
 
         // Trả về template home/index
         return "home/index";
@@ -65,14 +68,27 @@ public class HomeController {
     public String showNewProductsPage(@RequestParam(name = "page", defaultValue = "0") int page, Model model) {
         int size = 2;
         PageRequest pageable = PageRequest.of(page, size);
-        Page<Product> newestProductPage = productService.findNewestProductsPaginated(pageable);
 
-        model.addAttribute("newestProductPage", newestProductPage);
+        model.addAttribute("newestProductPage", productService.findNewestProductsPaginated(pageable));
         model.addAttribute("categories", categoryService.findAll());
         
         // Đánh dấu đây KHÔNG phải trang chủ
         model.addAttribute("isHomePage", false);
 
         return "product/new-products";
+    }
+    
+    @GetMapping("/products/best-selling")
+    public String showBestSellingProductsPage(@RequestParam(name = "page", defaultValue = "0") int page, Model model) {
+        int size = 1;
+        PageRequest pageable = PageRequest.of(page, size);
+
+        model.addAttribute("bestSellingProductPage", productService.getBestSellingProductsPaginated(pageable));
+        model.addAttribute("categories", categoryService.findAll());
+        
+        // Đánh dấu đây KHÔNG phải trang chủ
+        model.addAttribute("isHomePage", false);
+
+        return "product/best-selling-products";
     }
 }

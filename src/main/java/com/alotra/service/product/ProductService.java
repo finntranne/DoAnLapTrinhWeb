@@ -16,16 +16,12 @@ public class ProductService {
     @Autowired
     private ProductRepository productRepository;
 
-    public List<ProductSaleDTO> getTopProducts() { // Sửa kiểu trả về
-        return productRepository.findBestSellingProducts();
+    public Page<ProductSaleDTO> getBestSellingProductsPaginated(Pageable pageable) {
+        return productRepository.findBestSellingProducts(pageable);
     }
     
-    public Page<Product> findNewestProductsPaginated(Pageable pageable) {
-        return productRepository.findAllByOrderByCreatedAtDesc(pageable);
-    }
-    
-    public List<Product> findTop10Newest() {
-        return productRepository.findTop10ByOrderByCreatedAtDesc();
+    public Page<ProductSaleDTO> findNewestProductsPaginated(Pageable pageable) {
+        return productRepository.findNewestProductsWithSale(pageable);
     }
     
 }

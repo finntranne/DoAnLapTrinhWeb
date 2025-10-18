@@ -51,29 +51,50 @@
             </div>
         </div>
     </div>
+    
+    <div class="text-center mt-4" 
+     th:if="${topProducts != null and not #lists.isEmpty(topProducts) and #authorization.expression('isAuthenticated()')}">
+    <a th:href="@{/products/best-selling}" class="btn btn-outline-success px-4 py-2">Xem tất cả</a>
 </div>
+    </div>
 
 <div class="my-5" th:if="${newestProducts != null and not #lists.isEmpty(newestProducts)}">
     <h2 class="text-center mb-4">Sản Phẩm Mới</h2>
 
     <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-4">
-        <div class="col" th:each="product : ${newestProducts}">
+        <div class="col" th:each="sale : ${newestProducts}">
             <div class="product-card h-100">
-                <a th:href="@{'/products/' + ${product.productId}}" class="product-card-link">
-                    <img th:if="${not #lists.isEmpty(product.productImages)}" th:src="${product.productImages[0].imageUrl}" class="card-img-top" th:alt="${product.productName}">
-                    <img th:unless="${not #lists.isEmpty(product.productImages)}" th:src="@{/images/placeholder.png}" class="card-img-top" th:alt="${product.productName}">
+                
+                <a th:href="@{'/products/' + ${sale.product.productId}}" class="product-card-link position-relative">
+
+                    <div th:if="${sale.discountPercentage != null and sale.discountPercentage > 0}" class="discount-badge" th:text="'-' + ${sale.discountPercentage} + '%'"></div>
+
+                    <div class="new-badge">
+                Mới
+            </div>
+                    
+                    <img th:if="${not #lists.isEmpty(sale.product.productImages)}" th:src="${sale.product.productImages[0].imageUrl}" class="card-img-top" th:alt="${sale.product.productName}">
+                    <img th:unless="${not #lists.isEmpty(sale.product.productImages)}" th:src="@{/images/placeholder.png}" class="card-img-top" th:alt="${sale.product.productName}">
                 </a>
+                
                 <div class="card-body">
                     <p class="product-brand mb-1">ALOTRA</p>
-                    <h5 class="product-title" th:text="${product.productName}">Tên sản phẩm</h5>
-                    <div class="product-price" th:if="${not #lists.isEmpty(product.productVariants)}">
-                        <span th:text="${#numbers.formatDecimal(product.productVariants[0].price, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                    <h5 class="product-title" th:text="${sale.product.productName}">Tên sản phẩm</h5>
+                    
+                    <div class="product-price" th:if="${not #lists.isEmpty(sale.product.productVariants)}">
+                        <th:block th:with="originalPrice=${sale.product.productVariants[0].price}">
+                            <div th:if="${sale.discountPercentage != null and sale.discountPercentage > 0}">
+                                <span th:text="${#numbers.formatDecimal(originalPrice * (100 - sale.discountPercentage) / 100, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                                <span class="original-price" th:text="${#numbers.formatDecimal(originalPrice, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                            </div>
+                            <div th:unless="${sale.discountPercentage != null and sale.discountPercentage > 0}">
+                                <span th:text="${#numbers.formatDecimal(originalPrice, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                            </div>
+                        </th:block>
                     </div>
                 </div>
+                
                 <div class="product-card-footer">
-                    <div class="sold-progress-bar">
-                         <span class="sold-text" th:text="'Ngày tạo: ' + ${#temporals.format(product.createdAt, 'dd-MM-yyyy')}"></span>
-                    </div>
                     <button class="btn-add-to-cart"><i class="fa-solid fa-plus"></i></button>
                 </div>
             </div>
