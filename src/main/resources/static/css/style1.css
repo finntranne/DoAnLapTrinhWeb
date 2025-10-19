@@ -1,6 +1,7 @@
 
     :root {
         --primary-color: #73A580; /* Màu xanh matcha chủ đạo */
+        --primary-color-rgb: 115, 165, 128;
     }
     body {
         background-color: #f8f9fa;
@@ -46,13 +47,13 @@
     }
     
     /* === PRODUCT CARD STYLES === */
-    .product-card { text-decoration: none; color: inherit; display: block; background-color: #fff; border: 1px solid #f0f0f0; transition: all 0.3s ease-in-out; position: relative; overflow: hidden; }
+    .product-card { text-decoration: none; color: inherit; display: flex; flex-direction: column; height: 100%; background-color: #fff; border: 1px solid #f0f0f0; transition: all 0.3s ease-in-out; position: relative; overflow: hidden; }
     .product-card:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.1); transform: translateY(-5px); }
-    .product-card .card-img-top { border-radius: 0; }
-    .product-card .card-body { text-align: center; padding: 1.25rem; }
+    .product-card .card-img-top { border-radius: 0; width: 100%; object-fit: cover; }
+    .product-card .card-body { text-align: center; padding: 1.25rem; display: flex; flex-direction: column; flex-grow: 1; }
     .product-brand { font-size: 0.8rem; color: #a5a5a5; text-transform: uppercase; letter-spacing: 1px; }
-    .product-title { font-weight: bold; color: #212529; margin-bottom: 0.5rem; }
-    .product-price { font-size: 1.2rem; font-weight: bold; color: #212529; }
+    .product-title { font-weight: bold; color: #212529; margin-bottom: 0.5rem; min-height: 2.8em; line-height: 1.4em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; }
+    .product-price { font-size: 1.2rem; font-weight: bold; color: #212529; margin-top: auto; }
     .btn-add-to-cart { position: absolute; bottom: 80px; right: 10px; width: 30px; height: 30px; border-radius: 50%; background-color: var(--primary-color); color: white; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; line-height: 1; border: none; transform: translateY(150%); transition: transform 0.3s ease; }
     .product-card:hover .btn-add-to-cart { transform: translateY(0); }
 
@@ -324,22 +325,6 @@
     border: 1px solid #ddd;
     color: #555;
     font-weight: 500;
-}
-.pagination .page-item.active .page-link {
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
-    color: white;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-.pagination .page-item.disabled .page-link {
-    color: #ccc;
-    background-color: #f8f9fa;
-}
-.pagination .page-item .page-link:hover {
-    background-color: #e9ecef;
-}
-.pagination .page-item.active .page-link:hover {
-    background-color: #5a8a69; /* Màu xanh đậm hơn khi hover */
 }
 
 /* === MENU DROPDOWN THANH HEADER (NỀN XANH MATCHA) === */
@@ -654,4 +639,392 @@
     padding: 6px 14px 6px 10px;
     clip-path: polygon(0 0, 100% 0, 95% 100%, 0% 100%); /* ✅ Cắt xiên góc phải */
     border-radius: 4px 0 0 4px;
+}
+
+/*Like*/
+.likes-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    padding: 6px 12px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 2;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(220, 53, 69, 0.1);
+    animation: fadeInScale 0.4s ease-out;
+}
+
+/* Hiệu ứng xuất hiện mượt mà */
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.likes-badge:hover {
+    transform: scale(1.08) translateY(-2px);
+    box-shadow: 0 6px 16px rgba(220, 53, 69, 0.25);
+    background: rgba(255, 255, 255, 1);
+    border-color: rgba(220, 53, 69, 0.3);
+}
+
+.likes-badge i {
+    color: #dc3545;
+    font-size: 14px;
+    animation: heartbeat 1.5s ease-in-out infinite;
+    filter: drop-shadow(0 1px 2px rgba(220, 53, 69, 0.3));
+}
+
+/* Hiệu ứng nhịp tim cho icon */
+@keyframes heartbeat {
+    0%, 100% {
+        transform: scale(1);
+    }
+    10%, 30% {
+        transform: scale(1.1);
+    }
+    20%, 40% {
+        transform: scale(1);
+    }
+}
+
+/* Tạm dừng animation khi hover */
+.likes-badge:hover i {
+    animation: none;
+    transform: scale(1.15);
+}
+
+.likes-badge span {
+    color: #333;
+    line-height: 1;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    letter-spacing: 0.3px;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+}
+
+/* Hiệu ứng khi badge có nhiều lượt thích */
+.likes-badge[data-popular="true"] {
+    background: linear-gradient(135deg, rgba(255, 245, 245, 0.98) 0%, rgba(255, 255, 255, 0.98) 100%);
+    border-color: rgba(220, 53, 69, 0.2);
+}
+
+/* Responsive cho mobile */
+@media (max-width: 576px) {
+    .likes-badge {
+        padding: 4px 10px;
+        font-size: 12px;
+        top: 8px;
+        right: 8px;
+    }
+    
+    .likes-badge i {
+        font-size: 12px;
+    }
+}
+
+/* Hiệu ứng cho số lượt thích tăng */
+@keyframes countUp {
+    0% {
+        transform: translateY(10px);
+        opacity: 0;
+    }
+    50% {
+        transform: translateY(-3px);
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.likes-badge span {
+    animation: countUp 0.5s ease-out;
+}
+
+/* Thêm glow effect khi hover */
+.likes-badge::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 20px;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(220, 53, 69, 0.1), rgba(220, 53, 69, 0.05));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.likes-badge:hover::before {
+    opacity: 1;
+}
+
+/* Style cho sản phẩm hot (>100 likes) */
+.product-card:has(.likes-badge span:contains("100")) .likes-badge,
+.likes-badge.hot {
+    background: linear-gradient(135deg, rgba(255, 235, 238, 0.98) 0%, rgba(255, 245, 247, 0.98) 100%);
+    box-shadow: 0 3px 12px rgba(220, 53, 69, 0.2);
+}
+
+.likes-badge.hot i {
+    animation: heartbeatStrong 1s ease-in-out infinite;
+}
+
+@keyframes heartbeatStrong {
+    0%, 100% {
+        transform: scale(1);
+    }
+    10% {
+        transform: scale(1.2);
+    }
+    20% {
+        transform: scale(1);
+    }
+    30% {
+        transform: scale(1.15);
+    }
+    40% {
+        transform: scale(1);
+    }
+}
+
+
+/* Pagination Wrapper */
+.pagination-wrapper {
+    margin: 40px 0;
+    padding: 20px 0;
+}
+
+/* Pagination Modern Style */
+.pagination-modern {
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.pagination-modern .page-item {
+    margin: 0;
+}
+
+.pagination-modern .page-link {
+    border: 2px solid #e8e8e8;
+    border-radius: 10px;
+    color: #333;
+    font-weight: 600;
+    min-width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.pagination-modern .page-link:hover {
+    background: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(115, 165, 128, 0.3);
+}
+
+/* Active Page */
+.pagination-modern .page-item.active .page-link {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(115, 165, 128, 0.3);
+    transform: translateY(-2px);
+    z-index: 3;
+}
+
+.pagination-modern .page-item.active .page-link:hover {
+    background: #5f8f6d; /* Màu xanh matcha đậm hơn */
+    border-color: #5f8f6d;
+}
+
+/* Disabled State */
+.pagination-modern .page-item.disabled .page-link {
+    background: #f5f5f5;
+    border-color: #e8e8e8;
+    color: #ccc;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.pagination-modern .page-item.disabled .page-link:hover {
+    transform: none;
+    background: #f5f5f5;
+    color: #ccc;
+    border-color: #e8e8e8;
+}
+
+/* Navigation Buttons (First, Prev, Next, Last) */
+.pagination-modern .page-first,
+.pagination-modern .page-last,
+.pagination-modern .page-prev,
+.pagination-modern .page-next {
+    background: #fff;
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    font-weight: 700;
+}
+
+.pagination-modern .page-first:hover,
+.pagination-modern .page-last:hover,
+.pagination-modern .page-prev:hover,
+.pagination-modern .page-next:hover {
+    background: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 4px 12px rgba(115, 165, 128, 0.4);
+}
+
+/* Disabled navigation buttons */
+.pagination-modern .page-item.disabled .page-first,
+.pagination-modern .page-item.disabled .page-last,
+.pagination-modern .page-item.disabled .page-prev,
+.pagination-modern .page-item.disabled .page-next {
+    background: #f5f5f5;
+    color: #ccc;
+    border-color: #e8e8e8;
+}
+
+/* Dots */
+.page-dots {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #999;
+    font-weight: bold;
+    cursor: default;
+    letter-spacing: 2px;
+}
+
+/* Pagination Info */
+.pagination-info {
+    font-size: 14px;
+    animation: fadeIn 0.5s ease-in;
+}
+
+.pagination-info strong {
+    color: var(--primary-color);
+    font-size: 16px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.pagination-modern .page-item {
+    animation: slideIn 0.3s ease-out backwards;
+}
+
+.pagination-modern .page-item:nth-child(1) { animation-delay: 0.05s; }
+.pagination-modern .page-item:nth-child(2) { animation-delay: 0.1s; }
+.pagination-modern .page-item:nth-child(3) { animation-delay: 0.15s; }
+.pagination-modern .page-item:nth-child(4) { animation-delay: 0.2s; }
+.pagination-modern .page-item:nth-child(5) { animation-delay: 0.25s; }
+.pagination-modern .page-item:nth-child(6) { animation-delay: 0.3s; }
+.pagination-modern .page-item:nth-child(7) { animation-delay: 0.35s; }
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+    .pagination-modern .page-link {
+        min-width: 36px;
+        height: 36px;
+        font-size: 14px;
+    }
+    
+    .pagination-modern {
+        gap: 4px;
+    }
+    
+    .pagination-info {
+        font-size: 12px;
+    }
+    
+    .pagination-info strong {
+        font-size: 14px;
+    }
+}
+
+/* Hover effect cho toàn bộ pagination */
+.pagination-wrapper:hover .page-link:not(.active):not(.disabled) {
+    border-color: #ddd;
+}
+
+/* Ripple Effect khi click */
+.page-link {
+    position: relative;
+    overflow: hidden;
+}
+
+.page-link::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.page-link:active::after {
+    width: 100px;
+    height: 100px;
+}
+
+/* Focus state for accessibility */
+.pagination-modern .page-link:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(115, 165, 128, 0.1);
+}
+
+/* Smooth page number transition */
+.pagination-modern .page-link span {
+    display: inline-block;
+    transition: transform 0.2s ease;
+}
+
+.pagination-modern .page-link:hover span {
+    transform: scale(1.1);
 }

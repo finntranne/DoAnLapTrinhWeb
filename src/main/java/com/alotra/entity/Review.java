@@ -1,36 +1,57 @@
 package com.alotra.entity;
 
-      import com.alotra.entity.order.OrderDetail;
+import com.alotra.entity.order.OrderDetail;
+import com.alotra.entity.product.Product;
 import com.alotra.entity.user.Customer;
-
 import jakarta.persistence.*;
-      import lombok.AllArgsConstructor;
-      import lombok.Data;
-      import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-      @Entity
-      @Table(name = "reviews")
-      @Data
-      @NoArgsConstructor
-      @AllArgsConstructor
-      public class Review {
+import java.time.LocalDateTime;
 
-          @Id
-          @GeneratedValue(strategy = GenerationType.IDENTITY)
-          @Column(name = "ReviewID")
-          private Integer reviewId;
+@Entity
+@Table(name = "Reviews")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Review {
 
-          @Column(name = "Rating")
-          private Integer rating;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ReviewID")
+    private Integer reviewId;
 
-          @Column(name = "Comment")
-          private String comment;
+    @ManyToOne
+    @JoinColumn(name = "CustomerID", nullable = false)
+    private Customer customer;
 
-          @ManyToOne
-          @JoinColumn(name = "orderDetailId", referencedColumnName = "OrderDetailID")
-          private OrderDetail orderDetail;
+    @ManyToOne
+    @JoinColumn(name = "ProductID", nullable = false)
+    private Product product;
 
-          @ManyToOne
-          @JoinColumn(name = "customerId", referencedColumnName = "CustomerID")
-          private Customer customer;
-      }
+    @OneToOne
+    @JoinColumn(name = "OrderDetailID", nullable = false, unique = true)
+    private OrderDetail orderDetail;
+
+    @Column(name = "Rating", nullable = false)
+    private Integer rating;
+
+    @Column(name = "Comment", columnDefinition = "NVARCHAR(MAX)")
+    private String comment;
+
+    @Column(name = "MediaURLs", columnDefinition = "NVARCHAR(MAX)")
+    private String mediaUrls;
+
+    @Column(name = "ReviewDate", nullable = false)
+    private LocalDateTime reviewDate = LocalDateTime.now();
+
+    // Ensure Rating is between 1 and 5
+    @PrePersist
+    @PreUpdate
+    private void validateRating() {
+        if (rating < 1 || rating > 5) {
+            throw new IllegalArgumentException("Rating must be between 1 and 5");
+        }
+    }
+}

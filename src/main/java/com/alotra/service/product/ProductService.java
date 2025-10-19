@@ -15,13 +15,8 @@ public class ProductService {
 
     @Autowired
     private ProductRepository productRepository;
-
-    public Page<ProductSaleDTO> getBestSellingProductsPaginated(Pageable pageable) {
-        return productRepository.findBestSellingProducts(pageable);
-    }
     
-    public Page<ProductSaleDTO> findNewestProductsPaginated(Pageable pageable) {
-        return productRepository.findNewestProductsWithSale(pageable);
+    public Page<ProductSaleDTO> findProductSaleDataPaginated(Pageable pageable) {
+        return productRepository.findProductSaleData(pageable);
     }
-    
 }

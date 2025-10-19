@@ -33,7 +33,7 @@
         <div class="my-5">
     <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-4" th:if="${bestSellingProductPage != null and not #lists.isEmpty(bestSellingProductPage)}">
         
-        <div class="col" th:each="sale : ${bestSellingProductPage}">
+        <div class="col" th:each="sale : ${bestSellingProductPage.content}">
             <div class="product-card h-100">
                 <a th:href="@{'/products/' + ${sale.product.productId}}" class="product-card-link">
                     <div th:if="${sale.discountPercentage != null and sale.discountPercentage > 0}" class="discount-badge" th:text="'-' + ${sale.discountPercentage} + '%'"></div>

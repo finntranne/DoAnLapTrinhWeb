@@ -1,11 +1,13 @@
 package com.alotra.entity.product;
 
+import com.alotra.entity.Review;
 import com.alotra.entity.promotion.PromotionProduct;
 import com.alotra.entity.shop.Shop; // Import Shop entity
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -56,6 +58,9 @@ public class Product {
     @Column(name = "SoldCount")
     private Integer soldCount;
     
+    @Column(name = "TotalLikes")
+    private Integer totalLikes;
+    
     @CreationTimestamp
     @Column(name = "CreatedAt", nullable = false, updatable = false)
     private Instant createdAt;
@@ -75,4 +80,7 @@ public class Product {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private Set<PromotionProduct> promotionProducts;
+    
+    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
+    private List<Review> reviews;
 }

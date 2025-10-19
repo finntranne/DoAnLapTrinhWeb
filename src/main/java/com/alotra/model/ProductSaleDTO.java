@@ -8,6 +8,8 @@ public class ProductSaleDTO {
     private Product product;
     private Long totalSold;
     private Integer discountPercentage; // Có thể null nếu không giảm giá
+    private Double avgRating;  // Thêm
+    private Long reviewCount;
 
     public ProductSaleDTO(Product product, Long totalSold, Integer discountPercentage) {
         this.product = product;
