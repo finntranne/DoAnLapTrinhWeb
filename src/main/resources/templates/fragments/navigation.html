@@ -67,10 +67,16 @@
                     </li>
                     
                     <li class="nav-item">
-                        <a href="/cart" class="nav-link text-white d-flex align-items-center">
-                            <i class="fa-solid fa-cart-shopping fa-2x"></i>
-                            <span class="ms-2 fw-bold">Giỏ hàng</span>
-                        </a>
+                        <a href="/cart" class="sticky-nav-item position-relative">
+    <i class="fa-solid fa-cart-shopping"></i>
+    <div class="nav-text">
+        <strong>Giỏ hàng</strong>
+    </div>
+    <span class="cart-badge"
+          th:if="${cartItemCount != null and cartItemCount > 0}"
+          th:text="${cartItemCount}">
+          </span>
+</a>
                     </li>
                 </ul>
             </div>
@@ -187,12 +193,15 @@
                 
                 <!-- Cart -->
                 <a href="/cart" class="sticky-nav-item position-relative">
-                    <i class="fa-solid fa-cart-shopping"></i>
-                    <div class="nav-text">
-                        <strong>Giỏ hàng</strong>
-                    </div>
-                    <span class="cart-badge">2</span>
-                </a>
+    <i class="fa-solid fa-cart-shopping"></i>
+    <div class="nav-text">
+        <strong>Giỏ hàng</strong>
+    </div>
+    <span class="cart-badge"
+          th:if="${cartItemCount != null and cartItemCount > 0}"
+          th:text="${cartItemCount}">
+          </span>
+</a>
             </div>
         </div>
     </nav>

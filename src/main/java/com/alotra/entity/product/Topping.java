@@ -25,6 +25,11 @@ public class Topping {
     @Column(name = "AdditionalPrice", nullable = false)
     private BigDecimal additionalPrice;
 
+    // --- ADD IMAGE URL ---
+    @Column(name = "ImageUrl") // Allow null if some toppings don't have images
+    private String imageUrl;
+    // ---------------------
+
     @Column(name = "Status", nullable = false)
     private Byte status; // 0: Inactive, 1: Active
 }

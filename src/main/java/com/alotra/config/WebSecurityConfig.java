@@ -19,7 +19,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 import com.alotra.service.user.CustomUserDetailsService;
-import com.alotra.service.user.UserServiceImpl;
+import com.alotra.service.user.impl.UserServiceImpl;
 
 
 

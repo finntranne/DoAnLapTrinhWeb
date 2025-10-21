@@ -93,6 +93,31 @@
                             </button>
                         </div>
                     </div>
+                    
+                    <div class="mb-4" th:if="${not #lists.isEmpty(toppings)}">
+    <label class="form-label fw-bold d-block mb-3">Chọn Topping (Tùy chọn):</label>
+    <div class="row row-cols-2 row-cols-sm-3 g-3"> <div class="col" th:each="topping : ${toppings}">
+            <div class="topping-item"> <input class="form-check-input topping-checkbox" 
+                       type="checkbox" 
+                       name="toppingIds" 
+                       th:value="${topping.toppingId}" 
+                       th:id="'topping-' + ${topping.toppingId}"
+                       th:data-price="${topping.additionalPrice}">
+                <label class="topping-label" th:for="'topping-' + ${topping.toppingId}"> <img th:if="${topping.imageUrl != null}" 
+                         th:src="${topping.imageUrl}" 
+                         th:alt="${topping.toppingName}" 
+                         class="topping-image">
+                    <div class="topping-info">
+                        <span class="topping-name" th:text="${topping.toppingName}">Topping Name</span>
+                        <small class="topping-price" 
+                               th:text="'+' + ${#numbers.formatDecimal(topping.additionalPrice, 0, 'POINT', 0, 'COMMA')} + 'đ'">
+                        </small>
+                    </div>
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
 
                     <!-- Add to Cart Button -->
                     <div class="d-grid gap-2 d-md-flex">

@@ -1,13 +1,19 @@
 package com.alotra.controller;
 
 import com.alotra.entity.product.Category;
+import com.alotra.entity.user.Customer;
+import com.alotra.entity.user.User;
 import com.alotra.model.ProductSaleDTO;
+import com.alotra.service.cart.CartService;
 import com.alotra.service.product.CategoryService;
 import com.alotra.service.product.ProductService;
+import com.alotra.service.user.CustomerService;
+import com.alotra.service.user.UserService;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Controller
 public class HomeController {
@@ -31,6 +38,12 @@ public class HomeController {
 
     @Autowired
     private CategoryService categoryService;
+    
+    @Autowired private CartService cartService;
+    
+    @Autowired @Qualifier("userServiceImpl") private UserService userService; // Giữ nguyên
+    
+    @Autowired private CustomerService customerService; // Giữ nguyên
 
     // ... (Class Banner giữ nguyên) ...
     public static class Banner {
@@ -40,12 +53,30 @@ public class HomeController {
         public String getImageUrl() { return imageUrl; }
         public String getAltText() { return altText; }
     }
+    
+ // --- Hàm trợ giúp lấy số lượng giỏ hàng ---
+    private int getCurrentCartItemCount() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+            String username = auth.getName();
+            Optional<User> userOpt = userService.findByUsername(username); // Hoặc findByEmail
+            if (userOpt.isPresent()) {
+                Optional<Customer> customerOpt = customerService.findByUser(userOpt.get());
+                if (customerOpt.isPresent()) {
+                    return cartService.getCartItemCount(customerOpt.get());
+                }
+            }
+        }
+        return 0; // Trả về 0 nếu chưa đăng nhập hoặc có lỗi
+    }
 
     @GetMapping("/")
     public String home(Model model, @RequestParam(defaultValue = "0") int page) {
         // ... (Code trang chủ giữ nguyên) ...
         model.addAttribute("categories", categoryService.findAll());
         model.addAttribute("isHomePage", true);
+        
+        model.addAttribute("cartItemCount", getCurrentCartItemCount());
 
         List<Banner> banners = new ArrayList<>();
         banners.add(new Banner("https://gongcha.com.vn/wp-content/uploads/2025/09/cover-web-khe%CC%82%CC%81-scaled.jpg", "Banner PhinDi"));
@@ -88,6 +119,8 @@ public class HomeController {
         model.addAttribute("categories", categoryService.findAll());
         model.addAttribute("isHomePage", false);
         
+        model.addAttribute("cartItemCount", getCurrentCartItemCount());
+        
         model.addAttribute("currentSort", sortType); // Thêm
         model.addAttribute("baseUrl", "/products/new"); // Thêm
         
@@ -107,6 +140,7 @@ public class HomeController {
         model.addAttribute("bestSellingProductPage", productService.findProductSaleDataPaginated(pageable));
         model.addAttribute("categories", categoryService.findAll());
         model.addAttribute("isHomePage", false);
+        model.addAttribute("cartItemCount", getCurrentCartItemCount());
         
         model.addAttribute("currentSort", sortType); // Thêm
         model.addAttribute("baseUrl", "/products/best-selling"); // Thêm
@@ -127,6 +161,7 @@ public class HomeController {
         model.addAttribute("topRatedProductPage", productService.findProductSaleDataPaginated(pageable));
         model.addAttribute("categories", categoryService.findAll());
         model.addAttribute("isHomePage", false);
+        model.addAttribute("cartItemCount", getCurrentCartItemCount());
         
         model.addAttribute("currentSort", sortType); // Thêm
         model.addAttribute("baseUrl", "/products/top-rated"); // Thêm
@@ -147,6 +182,7 @@ public class HomeController {
         model.addAttribute("topLikedProductPage", productService.findProductSaleDataPaginated(pageable));
         model.addAttribute("categories", categoryService.findAll());
         model.addAttribute("isHomePage", false);
+        model.addAttribute("cartItemCount", getCurrentCartItemCount());
         
         model.addAttribute("currentSort", sortType); // Thêm
         model.addAttribute("baseUrl", "/products/top-liked"); // Thêm
@@ -175,6 +211,7 @@ public class HomeController {
         model.addAttribute("isHomePage", false);
         model.addAttribute("currentSort", sortType); 
         model.addAttribute("baseUrl", "/categories/" + categoryId);
+        model.addAttribute("cartItemCount", getCurrentCartItemCount());
 
         return "product/category-products";
     }

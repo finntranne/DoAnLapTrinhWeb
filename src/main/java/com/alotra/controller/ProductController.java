@@ -1,13 +1,24 @@
 package com.alotra.controller;
 
 import com.alotra.entity.product.Product;
+import com.alotra.entity.product.Topping;
+import com.alotra.entity.user.Customer;
 import com.alotra.entity.user.Review;
+import com.alotra.entity.user.User;
 import com.alotra.model.ProductSaleDTO;
+import com.alotra.service.cart.CartService;
 import com.alotra.service.product.CategoryService;
 import com.alotra.service.product.ProductService;
+import com.alotra.service.user.CustomerService;
 import com.alotra.service.user.ReviewService;
+import com.alotra.service.user.UserService;
+
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -17,6 +28,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @Controller
 public class ProductController {
@@ -29,6 +42,28 @@ public class ProductController {
 
     @Autowired
     private ReviewService reviewService; // Cần cho đánh giá
+    
+    @Autowired private CartService cartService;
+    
+    @Autowired @Qualifier("userServiceImpl") private UserService userService; // Giữ nguyên
+    
+    @Autowired private CustomerService customerService; // Giữ nguyên
+    
+ // --- Hàm trợ giúp lấy số lượng giỏ hàng ---
+    private int getCurrentCartItemCount() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+            String username = auth.getName();
+            Optional<User> userOpt = userService.findByUsername(username); // Hoặc findByEmail
+            if (userOpt.isPresent()) {
+                Optional<Customer> customerOpt = customerService.findByUser(userOpt.get());
+                if (customerOpt.isPresent()) {
+                    return cartService.getCartItemCount(customerOpt.get());
+                }
+            }
+        }
+        return 0; // Trả về 0 nếu chưa đăng nhập hoặc có lỗi
+    }
 
     @GetMapping("/products/{id}")
     public String getProductDetail(@PathVariable("id") Integer id, Model model) {
@@ -54,6 +89,16 @@ public class ProductController {
         model.addAttribute("variants", product.getProductVariants()); // Cho JS chọn size
         model.addAttribute("reviews", reviewPage.getContent());
         model.addAttribute("relatedProducts", relatedProducts.getContent());
+        
+        model.addAttribute("cartItemCount", getCurrentCartItemCount());
+        
+     // --- PASS TOPPINGS TO VIEW ---
+        // Filter only active toppings if needed
+        Set<Topping> activeToppings = product.getAvailableToppings().stream()
+                                          .filter(t -> t.getStatus() != null && t.getStatus() == 1)
+                                          .collect(Collectors.toSet());
+        model.addAttribute("toppings", activeToppings);
+        // -----------------------------
         
         // Cần cho layout
         model.addAttribute("categories", categoryService.findAll()); 

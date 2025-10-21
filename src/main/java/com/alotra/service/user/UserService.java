@@ -1,5 +1,11 @@
 package com.alotra.service.user;
 
-public class UserService {
+import com.alotra.entity.user.User;
+import java.util.Optional;
 
+public interface UserService {
+    // Thêm hàm này (nếu chưa có)
+    Optional<User> findByUsername(String username);
+
+    // (Thêm các hàm quản lý User khác nếu cần: save, findById, etc.)
 }

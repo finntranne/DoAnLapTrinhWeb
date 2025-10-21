@@ -8,6 +8,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -62,7 +63,7 @@ public class Product {
     @Column(name = "TotalLikes")
     private Integer totalLikes;
     
-    @Column(name = "BasePrice", columnDefinition = "DECIMAL(18, 2) DEFAULT 0.0") // <-- THÊM DÒNG NÀY
+    @Column(name = "BasePrice", columnDefinition = "DECIMAL(18, 2)") // <-- THÊM DÒNG NÀY
     private BigDecimal basePrice; // Giá thấp nhất để sắp xếp
     
     @CreationTimestamp
@@ -87,4 +88,14 @@ public class Product {
     
     @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
     private List<Review> reviews;
+    
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "ProductAvailableToppings", // Name of the join table
+        joinColumns = @JoinColumn(name = "ProductID"),
+        inverseJoinColumns = @JoinColumn(name = "ToppingID")
+    )
+    @EqualsAndHashCode.Exclude // Important for ManyToMany
+    @ToString.Exclude        // Important for ManyToMany
+    private Set<Topping> availableToppings = new HashSet<>();
 }
