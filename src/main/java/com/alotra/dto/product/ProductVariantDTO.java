@@ -2,7 +2,6 @@ package com.alotra.dto.product;
 
 import java.math.BigDecimal;
 import jakarta.validation.constraints.*;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,19 +11,19 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ProductVariantDTO {
 
-    private Integer variantId; // null nếu CREATE, có giá trị nếu UPDATE
+	private Integer variantId;
 
-    @NotNull(message = "Size is required")
-    private Integer sizeId;
+	@NotNull(message = "Vui lòng chọn kích cỡ")
+	private Integer sizeId;
 
-    @NotNull(message = "Price is required")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0")
-    private BigDecimal price;
+	@NotNull(message = "Vui lòng nhập giá sản phẩm")
+	@DecimalMin(value = "0.0", message = "Giá phải lớn hơn hoặc bằng 0")
+	private BigDecimal price;
 
-    @NotNull(message = "Stock is required")
-    @Min(value = 0, message = "Stock cannot be negative")
-    private Integer stock;
+	@NotNull(message = "Vui lòng nhập số lượng")
+	@Min(value = 0, message = "Số lượng phải lớn hơn hoặc bằng 0")
+	private Integer stock;
 
-    @Size(max = 50, message = "SKU must not exceed 50 characters")
-    private String sku;
+	@Size(max = 100, message = "Mã SKU không được vượt quá 100 ký tự")
+	private String sku;
 }

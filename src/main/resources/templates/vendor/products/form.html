@@ -78,7 +78,7 @@
 
 		<form method="post"
 			th:action="${action == 'create' ? '/vendor/products/create' : '/vendor/products/edit/' + productId}"
-			th:object="${product}" enctype="multipart/form-data">
+			th:object="${product}" enctype="multipart/form-data" id="productForm">
 
 			<div class="row">
 				<div class="col-md-8">
@@ -132,53 +132,18 @@
 						</div>
 						<div class="card-body">
 							<div id="variantsContainer">
-								<!-- Existing variants -->
-								<div th:each="variant, iterStat : *{variants}"
-									class="variant-item border rounded p-3 mb-3 position-relative">
-									<button type="button"
-										class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2"
-										onclick="removeVariant(this)" th:if="${iterStat.index > 0}">
-										<i class="bi bi-trash"></i>
-									</button>
-									<div class="row g-3">
-										<div class="col-md-3">
-											<label class="form-label">Kích cỡ <span
-												class="text-danger">*</span></label> <select class="form-select"
-												th:field="*{variants[__${iterStat.index}__].sizeId}"
-												required>
-												<option value="">Chọn size</option>
-												<option th:each="size : ${sizes}" th:value="${size.sizeID}"
-													th:text="${size.sizeName}"></option>
-											</select>
-										</div>
-										<div class="col-md-3">
-											<label class="form-label">Giá (VNĐ) <span
-												class="text-danger">*</span></label> <input type="number"
-												class="form-control"
-												th:field="*{variants[__${iterStat.index}__].price}" min="0"
-												step="1000" required>
-										</div>
-										<div class="col-md-3">
-											<label class="form-label">Số lượng <span
-												class="text-danger">*</span></label> <input type="number"
-												class="form-control"
-												th:field="*{variants[__${iterStat.index}__].stock}" min="0"
-												required>
-										</div>
-										<div class="col-md-3">
-											<label class="form-label">SKU</label> <input type="text"
-												class="form-control"
-												th:field="*{variants[__${iterStat.index}__].sku}"
-												placeholder="Mã SKU">
-										</div>
-									</div>
-								</div>
+								<!-- Variants will be rendered here -->
 							</div>
 
 							<button type="button" class="btn btn-outline-primary btn-sm"
 								onclick="addVariant()">
 								<i class="bi bi-plus-circle"></i> Thêm biến thể
 							</button>
+
+							<div class="alert alert-danger mt-3 d-none" id="variantError">
+								<i class="bi bi-exclamation-triangle"></i> Vui lòng thêm ít nhất
+								một biến thể sản phẩm
+							</div>
 						</div>
 					</div>
 				</div>
@@ -255,13 +220,78 @@
         /*<![CDATA[*/
         
         const sizes = /*[[${sizes}]]*/ [];
-        let variantCount = /*[[${product.variants != null ? product.variants.size() : 1}]]*/ 1;
+        let variantCount = 0;
+        
+        // Load existing variants (for edit mode)
+        const existingVariants = /*[[${product.variants}]]*/ [];
         
         console.log('Sizes loaded:', sizes);
-        console.log('Initial variant count:', variantCount);
+        console.log('Existing variants:', existingVariants);
+        
+        // Initialize form
+        document.addEventListener('DOMContentLoaded', function() {
+            if (existingVariants && existingVariants.length > 0) {
+                // Load existing variants for edit mode
+                existingVariants.forEach((variant, index) => {
+                    addVariantWithData(variant, index);
+                });
+            } else {
+                // Add one empty variant for create mode
+                addVariant();
+            }
+        });
+        
+        function addVariantWithData(variant, index) {
+            const container = document.getElementById('variantsContainer');
+            
+            let optionsHTML = '<option value="">Chọn size</option>';
+            sizes.forEach(size => {
+                const selected = variant.sizeId === size.sizeID ? 'selected' : '';
+                optionsHTML += `<option value="${size.sizeID}" ${selected}>${size.sizeName}</option>`;
+            });
+        
+            const variantHTML = `
+                <div class="variant-item border rounded p-3 mb-3 position-relative" data-index="${index}">
+                    ${index > 0 ? `
+                    <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2" 
+                            onclick="removeVariant(this)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                    ` : ''}
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Kích cỡ <span class="text-danger">*</span></label>
+                            <select class="form-select" name="variants[${index}].sizeId" required>
+                                ${optionsHTML}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Giá (VNĐ) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" name="variants[${index}].price"
+                                   min="0" step="1000" value="${variant.price || ''}" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Số lượng <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" name="variants[${index}].stock"
+                                   min="0" value="${variant.stock || ''}" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">SKU</label>
+                            <input type="text" class="form-control" name="variants[${index}].sku"
+                                   placeholder="Mã SKU" value="${variant.sku || ''}">
+                        </div>
+                    </div>
+                    ${variant.variantId ? `<input type="hidden" name="variants[${index}].variantId" value="${variant.variantId}">` : ''}
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', variantHTML);
+            variantCount = index + 1;
+        }
         
         function addVariant() {
             const container = document.getElementById('variantsContainer');
+            const index = variantCount;
             
             if (!container) {
                 console.error('Container not found!');
@@ -274,31 +304,33 @@
             });
         
             const variantHTML = `
-                <div class="variant-item border rounded p-3 mb-3 position-relative">
+                <div class="variant-item border rounded p-3 mb-3 position-relative" data-index="${index}">
+                    ${index > 0 ? `
                     <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2" 
                             onclick="removeVariant(this)">
                         <i class="bi bi-trash"></i>
                     </button>
+                    ` : ''}
                     <div class="row g-3">
                         <div class="col-md-3">
                             <label class="form-label">Kích cỡ <span class="text-danger">*</span></label>
-                            <select class="form-select" name="variants[${variantCount}].sizeId" required>
+                            <select class="form-select" name="variants[${index}].sizeId" required>
                                 ${optionsHTML}
                             </select>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Giá (VNĐ) <span class="text-danger">*</span></label>
-                            <input type="number" class="form-control" name="variants[${variantCount}].price"
+                            <input type="number" class="form-control" name="variants[${index}].price"
                                    min="0" step="1000" required>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Số lượng <span class="text-danger">*</span></label>
-                            <input type="number" class="form-control" name="variants[${variantCount}].stock"
+                            <input type="number" class="form-control" name="variants[${index}].stock"
                                    min="0" required>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">SKU</label>
-                            <input type="text" class="form-control" name="variants[${variantCount}].sku"
+                            <input type="text" class="form-control" name="variants[${index}].sku"
                                    placeholder="Mã SKU">
                         </div>
                     </div>
@@ -311,10 +343,60 @@
         }
         
         function removeVariant(button) {
+            const variantsContainer = document.getElementById('variantsContainer');
+            const variantItems = variantsContainer.querySelectorAll('.variant-item');
+            
+            if (variantItems.length <= 1) {
+                alert('Phải có ít nhất một biến thể sản phẩm!');
+                return;
+            }
+            
             if (confirm('Bạn có chắc muốn xóa biến thể này?')) {
                 button.closest('.variant-item').remove();
+                reindexVariants();
             }
         }
+        
+        function reindexVariants() {
+            const variantsContainer = document.getElementById('variantsContainer');
+            const variantItems = variantsContainer.querySelectorAll('.variant-item');
+            
+            variantItems.forEach((item, newIndex) => {
+                item.setAttribute('data-index', newIndex);
+                
+                // Update all input names
+                const inputs = item.querySelectorAll('input, select');
+                inputs.forEach(input => {
+                    const name = input.getAttribute('name');
+                    if (name && name.startsWith('variants[')) {
+                        const fieldName = name.match(/\.(\w+)$/)[1];
+                        input.setAttribute('name', `variants[${newIndex}].${fieldName}`);
+                    }
+                });
+                
+                // Show/hide delete button
+                const deleteBtn = item.querySelector('.btn-danger');
+                if (deleteBtn) {
+                    deleteBtn.style.display = newIndex === 0 ? 'none' : 'block';
+                }
+            });
+            
+            variantCount = variantItems.length;
+        }
+        
+        // Form validation before submit
+        document.getElementById('productForm').addEventListener('submit', function(e) {
+            const variantsContainer = document.getElementById('variantsContainer');
+            const variantItems = variantsContainer.querySelectorAll('.variant-item');
+            
+            if (variantItems.length === 0) {
+                e.preventDefault();
+                document.getElementById('variantError').classList.remove('d-none');
+                return false;
+            } else {
+                document.getElementById('variantError').classList.add('d-none');
+            }
+        });
         
         function previewImages(event) {
             const container = document.getElementById('imagePreviewContainer');
@@ -379,9 +461,6 @@
                 }
             });
         });
-        
-        // Log on page load
-        console.log('Form initialized');
         
         /*]]>*/
     </script>

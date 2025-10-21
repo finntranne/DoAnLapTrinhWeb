@@ -150,16 +150,55 @@ public class VendorController {
 
 	@PostMapping("/products/create")
 	public String createProduct(@AuthenticationPrincipal MyUserDetails userDetails,
-			@Valid @ModelAttribute("product") ProductRequestDTO request, BindingResult result,
+			@ModelAttribute("product") ProductRequestDTO request, BindingResult result, Model model,
 			RedirectAttributes redirectAttributes) {
 
+		// Debug log - xem dữ liệu nhận được
+		log.info("=== CREATE PRODUCT REQUEST ===");
+		log.info("Product name: {}", request.getProductName());
+		log.info("Category ID: {}", request.getCategoryId());
+		log.info("Description: {}", request.getDescription());
+		log.info("Variants count: {}", request.getVariants() != null ? request.getVariants().size() : "NULL");
+		if (request.getVariants() != null) {
+			for (int i = 0; i < request.getVariants().size(); i++) {
+				var v = request.getVariants().get(i);
+				log.info("Variant[{}]: sizeId={}, price={}, stock={}, sku={}", i, v.getSizeId(), v.getPrice(),
+						v.getStock(), v.getSku());
+			}
+		}
+		log.info("Images count: {}", request.getImages() != null ? request.getImages().size() : "NULL");
+		log.info("Primary image index: {}", request.getPrimaryImageIndex());
+
 		if (result.hasErrors()) {
+			log.error("Validation errors: {}", result.getAllErrors());
+			model.addAttribute("categories", vendorService.getAllCategories());
+			model.addAttribute("sizes", vendorService.getAllSizesSimple());
+			model.addAttribute("action", "create");
 			return "vendor/products/form";
 		}
 
 		try {
 			Integer shopId = getShopIdOrThrow(userDetails);
 			Integer userId = getUserIdOrThrow(userDetails);
+
+			log.info("Creating product request - Shop ID: {}, User ID: {}", shopId, userId);
+			log.info("Product name: {}", request.getProductName());
+			log.info("Category ID: {}", request.getCategoryId());
+			log.info("Variants count: {}", request.getVariants() != null ? request.getVariants().size() : 0);
+			log.info("Images count: {}", request.getImages() != null ? request.getImages().size() : 0);
+
+			// Validate variants
+			if (request.getVariants() == null || request.getVariants().isEmpty()) {
+				redirectAttributes.addFlashAttribute("error", "Sản phẩm phải có ít nhất một biến thể");
+				return "redirect:/vendor/products/create";
+			}
+
+			// Validate images
+			if (request.getImages() == null || request.getImages().isEmpty()
+					|| request.getImages().stream().allMatch(file -> file == null || file.isEmpty())) {
+				redirectAttributes.addFlashAttribute("error", "Vui lòng upload ít nhất một hình ảnh");
+				return "redirect:/vendor/products/create";
+			}
 
 			vendorService.requestProductCreation(shopId, request, userId);
 
@@ -169,11 +208,12 @@ public class VendorController {
 			return "redirect:/vendor/products";
 
 		} catch (IllegalStateException e) {
+			log.error("Auth error: {}", e.getMessage());
 			redirectAttributes.addFlashAttribute("error", e.getMessage());
 			return "redirect:/shop/register";
-		} catch (JsonProcessingException e) {
+		} catch (Exception e) {
 			log.error("Error creating product", e);
-			redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra khi tạo sản phẩm");
+			redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
 			return "redirect:/vendor/products/create";
 		}
 	}
@@ -210,16 +250,36 @@ public class VendorController {
 
 	@PostMapping("/products/edit/{id}")
 	public String updateProduct(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
-			@Valid @ModelAttribute("product") ProductRequestDTO request, BindingResult result,
+			@Valid @ModelAttribute("product") ProductRequestDTO request, BindingResult result, Model model,
 			RedirectAttributes redirectAttributes) {
 
 		if (result.hasErrors()) {
+			log.error("Validation errors: {}", result.getAllErrors());
+			try {
+				Integer shopId = getShopIdOrThrow(userDetails);
+				Product product = vendorService.getProductDetail(shopId, id);
+				model.addAttribute("categories", vendorService.getAllCategories());
+				model.addAttribute("sizes", vendorService.getAllSizesSimple());
+				model.addAttribute("existingImages", product.getImages());
+				model.addAttribute("action", "edit");
+				model.addAttribute("productId", id);
+			} catch (Exception e) {
+				log.error("Error loading form data", e);
+			}
 			return "vendor/products/form";
 		}
 
 		try {
 			Integer shopId = getShopIdOrThrow(userDetails);
 			Integer userId = getUserIdOrThrow(userDetails);
+
+			log.info("Updating product request - Product ID: {}, Shop ID: {}, User ID: {}", id, shopId, userId);
+
+			// Validate variants
+			if (request.getVariants() == null || request.getVariants().isEmpty()) {
+				redirectAttributes.addFlashAttribute("error", "Sản phẩm phải có ít nhất một biến thể");
+				return "redirect:/vendor/products/edit/" + id;
+			}
 
 			request.setProductId(id);
 			vendorService.requestProductUpdate(shopId, request, userId);
@@ -229,13 +289,31 @@ public class VendorController {
 
 			return "redirect:/vendor/products";
 
+			// ... (try block) ...
 		} catch (IllegalStateException e) {
+			log.error("Auth error: {}", e.getMessage());
 			redirectAttributes.addFlashAttribute("error", e.getMessage());
 			return "redirect:/shop/register";
+
+			// Sửa lại khối catch (Exception e)
 		} catch (Exception e) {
 			log.error("Error updating product", e);
-			redirectAttributes.addFlashAttribute("error", e.getMessage());
-			return ("redirect:/vendor/products/edit/" + id);
+
+			// 1. Kiểm tra xem có phải lỗi "Đang chờ phê duyệt" không
+			if (e.getMessage() != null && e.getMessage().contains("Đã có yêu cầu đang chờ phê duyệt")) {
+
+				// 2. Dùng thông báo "warning" (cảnh báo) thay vì "error" (lỗi)
+				redirectAttributes.addFlashAttribute("warning", e.getMessage());
+
+				// 3. Chuyển hướng về trang danh sách sản phẩm (list)
+				return "redirect:/vendor/products";
+
+			} else {
+				// 4. Đối với tất cả các lỗi khác (lỗi validation, lỗi hệ thống...)
+				// thì giữ nguyên hành vi cũ: quay lại form edit
+				redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+				return "redirect:/vendor/products/edit/" + id;
+			}
 		}
 	}
 

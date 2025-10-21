@@ -12,24 +12,28 @@ import com.alotra.entity.product.ProductApproval;
 
 @Repository
 public interface ProductApprovalRepository extends JpaRepository<ProductApproval, Integer> {
-    
-    List<ProductApproval> findByProduct_Shop_ShopIdAndStatusOrderByRequestedAtDesc(
-        Integer shopId, String status);
-    
-    List<ProductApproval> findByStatusOrderByRequestedAtDesc(String status);
-    
-    Optional<ProductApproval> findByProduct_ProductIDAndStatusAndActionType(Integer productID, String status, String actionType);
 
-    
-    @Query("SELECT COUNT(pa) FROM ProductApproval pa " +
-           "WHERE pa.product.shop.shopId = :shopId AND pa.status = 'Pending'")
-    Long countPendingByShopId(@Param("shopId") Integer shopId);
-    
-    @Query("SELECT pa FROM ProductApproval pa " +
-           "WHERE pa.status = 'Pending' " +
-           "ORDER BY pa.requestedAt ASC")
-    List<ProductApproval> findAllPendingApprovals();
-    
-    @Query("SELECT COUNT(pa) FROM ProductApproval pa WHERE pa.status = 'Pending'")
-    Long countAllPending();
+	List<ProductApproval> findByProduct_Shop_ShopIdAndStatusOrderByRequestedAtDesc(Integer shopId, String status);
+
+	List<ProductApproval> findByStatusOrderByRequestedAtDesc(String status);
+
+	Optional<ProductApproval> findByProduct_ProductIDAndStatusAndActionType(Integer productID, String status,
+			String actionType);
+
+	@Query("SELECT COUNT(pa) FROM ProductApproval pa "
+			+ "WHERE pa.product.shop.shopId = :shopId AND pa.status = 'Pending'")
+	Long countPendingByShopId(@Param("shopId") Integer shopId);
+
+	@Query("SELECT pa FROM ProductApproval pa " + "WHERE pa.status = 'Pending' " + "ORDER BY pa.requestedAt ASC")
+	List<ProductApproval> findAllPendingApprovals();
+
+	@Query("SELECT COUNT(pa) FROM ProductApproval pa WHERE pa.status = 'Pending'")
+	Long countAllPending();
+
+	Optional<ProductApproval> findTopByProduct_ProductIDAndStatusOrderByRequestedAtDesc(Integer productId,
+			String status);
+	
+	// Tìm approval theo productId và status (không cần actionType)
+    List<ProductApproval> findByProduct_ProductIDAndStatus(Integer productId, String status);
+
 }

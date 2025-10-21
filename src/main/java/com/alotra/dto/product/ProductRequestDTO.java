@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import com.alotra.enums.ActionType;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Data
 @NoArgsConstructor
@@ -25,7 +26,8 @@ public class ProductRequestDTO {
 
     @Size(max = 5000, message = "Mô tả sản phẩm không được vượt quá 5000 ký tự")
     private String description;
-
+    
+    @JsonIgnore
     @Size(max = 10, message = "Chỉ được tải lên tối đa 10 hình ảnh")
     private List<MultipartFile> images;
 
@@ -36,7 +38,4 @@ public class ProductRequestDTO {
     @Size(min = 1, message = "Phải có ít nhất một biến thể sản phẩm")
     @Valid
     private List<ProductVariantDTO> variants;
-
-    @NotNull(message = "Loại thao tác (CREATE hoặc UPDATE) là bắt buộc")
-    private ActionType actionType; // CREATE, UPDATE
 }

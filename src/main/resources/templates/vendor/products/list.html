@@ -21,17 +21,21 @@
 		</div>
 
 		<div th:if="${success}"
-			class="alert alert-success alert-dismissible fade show">
+			class="alert alert-success alert-dismissible fade show" role="alert">
 			<i class="bi bi-check-circle"></i> <span th:text="${success}"></span>
-			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+			<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 		</div>
-
+		
+		<div th:if="${warning}"
+			class="alert alert-warning alert-dismissible fade show" role="alert">
+			<i class="bi bi-exclamation-triangle"></i> <span th:text="${warning}"></span>
+			<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+		</div>
 		<div th:if="${error}"
-			class="alert alert-danger alert-dismissible fade show">
+			class="alert alert-danger alert-dismissible fade show" role="alert">
 			<i class="bi bi-exclamation-triangle"></i> <span th:text="${error}"></span>
-			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+			<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 		</div>
-
 		<div class="card mb-4">
 			<div class="card-body">
 				<form method="get" action="/vendor/products" class="row g-3">

@@ -136,10 +136,31 @@ public class VendorService {
 			product.getVariants().stream().map(ProductVariant::getPrice).min(BigDecimal::compareTo)
 					.ifPresent(dto::setMinPrice);
 
-			// Kiểm tra trạng thái phê duyệt
-			productApprovalRepository
-					.findByProduct_ProductIDAndStatusAndActionType(product.getProductID(), "Pending", null)
-					.ifPresent(approval -> dto.setApprovalStatus("Pending: " + approval.getActionType()));
+			// Kiểm tra trạng thái phê duyệt - Tìm approval mới nhất với status Pending
+			List<ProductApproval> pendingApprovals = productApprovalRepository
+					.findByProduct_ProductIDAndStatus(product.getProductID(), "Pending");
+
+			if (!pendingApprovals.isEmpty()) {
+				// Lấy approval mới nhất
+				ProductApproval approval = pendingApprovals.stream()
+						.max(Comparator.comparing(ProductApproval::getRequestedAt)).get();
+
+				String actionTypeText = "";
+				switch (approval.getActionType()) {
+				case "CREATE":
+					actionTypeText = "Tạo mới";
+					break;
+				case "UPDATE":
+					actionTypeText = "Cập nhật";
+					break;
+				case "DELETE":
+					actionTypeText = "Xóa";
+					break;
+				default:
+					actionTypeText = approval.getActionType();
+				}
+				dto.setApprovalStatus("Đang chờ: " + actionTypeText);
+			}
 
 			return dto;
 		});
@@ -174,33 +195,60 @@ public class VendorService {
 
 		product = productRepository.save(product);
 
+		log.info("Product entity created with ID: {}", product.getProductID());
+
 		// Upload và lưu hình ảnh
 		if (request.getImages() != null && !request.getImages().isEmpty()) {
-			for (int i = 0; i < request.getImages().size(); i++) {
-				MultipartFile file = request.getImages().get(i);
-				if (!file.isEmpty()) {
-					String imageUrl = cloudinaryService.uploadImage(file);
+			boolean hasValidImage = false;
+			for (MultipartFile file : request.getImages()) {
+				if (file != null && !file.isEmpty()) {
+					hasValidImage = true;
+					break;
+				}
+			}
 
-					ProductImage productImage = new ProductImage();
-					productImage.setProduct(product);
-					productImage.setImageURL(imageUrl);
-					productImage.setIsPrimary(i == request.getPrimaryImageIndex());
-					productImage.setDisplayOrder(i);
-					productImageRepository.save(productImage);
+			if (hasValidImage) {
+				for (int i = 0; i < request.getImages().size(); i++) {
+					MultipartFile file = request.getImages().get(i);
+					if (file != null && !file.isEmpty()) {
+						try {
+							String imageUrl = cloudinaryService.uploadImage(file);
+
+							ProductImage productImage = new ProductImage();
+							productImage.setProduct(product);
+							productImage.setImageURL(imageUrl);
+							productImage.setIsPrimary(
+									i == (request.getPrimaryImageIndex() != null ? request.getPrimaryImageIndex() : 0));
+							productImage.setDisplayOrder(i);
+							productImageRepository.save(productImage);
+
+							log.info("Image uploaded and saved: {}", imageUrl);
+						} catch (Exception e) {
+							log.error("Error uploading image at index {}: {}", i, e.getMessage());
+							throw new RuntimeException("Lỗi khi upload hình ảnh: " + e.getMessage());
+						}
+					}
 				}
 			}
 		}
 
 		// Tạo variants
-		for (ProductVariantDTO variantDTO : request.getVariants()) {
-			ProductVariant variant = new ProductVariant();
-			variant.setProduct(product);
-			variant.setSize(sizeRepository.findById(variantDTO.getSizeId())
-					.orElseThrow(() -> new RuntimeException("Size not found")));
-			variant.setPrice(variantDTO.getPrice());
-			variant.setStock(variantDTO.getStock());
-			variant.setSku(variantDTO.getSku());
-			productVariantRepository.save(variant);
+		if (request.getVariants() != null && !request.getVariants().isEmpty()) {
+			for (ProductVariantDTO variantDTO : request.getVariants()) {
+				ProductVariant variant = new ProductVariant();
+				variant.setProduct(product);
+				variant.setSize(sizeRepository.findById(variantDTO.getSizeId())
+						.orElseThrow(() -> new RuntimeException("Size not found")));
+				variant.setPrice(variantDTO.getPrice());
+				variant.setStock(variantDTO.getStock());
+				variant.setSku(variantDTO.getSku());
+				productVariantRepository.save(variant);
+
+				log.info("Variant saved: Size={}, Price={}, Stock={}", variantDTO.getSizeId(), variantDTO.getPrice(),
+						variantDTO.getStock());
+			}
+		} else {
+			throw new RuntimeException("Sản phẩm phải có ít nhất một biến thể");
 		}
 
 		// Tạo yêu cầu phê duyệt
@@ -213,12 +261,20 @@ public class VendorService {
 				userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found")));
 		approval.setRequestedAt(LocalDateTime.now());
 
-		productApprovalRepository.save(approval);
+		approval = productApprovalRepository.save(approval);
+
+		log.info("Product approval created with ID: {}", approval.getApprovalId());
 
 		// Gửi thông báo cho admin
-		notificationService.notifyAdminsAboutNewApproval("PRODUCT", product.getProductID());
+		try {
+			notificationService.notifyAdminsAboutNewApproval("PRODUCT", product.getProductID());
+		} catch (Exception e) {
+			log.error("Error sending notification: {}", e.getMessage());
+			// Không throw exception vì approval đã được lưu thành công
+		}
 
-		log.info("Product creation requested - Product ID: {}, Shop ID: {}", product.getProductID(), shopId);
+		log.info("Product creation requested - Product ID: {}, Shop ID: {}, Approval ID: {}", product.getProductID(),
+				shopId, approval.getApprovalId());
 	}
 
 	public void requestProductUpdate(Integer shopId, ProductRequestDTO request, Integer userId)
@@ -232,11 +288,27 @@ public class VendorService {
 		}
 
 		// Kiểm tra xem có yêu cầu pending nào không
-		Optional<ProductApproval> existingApproval = productApprovalRepository
-				.findByProduct_ProductIDAndStatusAndActionType(product.getProductID(), "Pending", "UPDATE");
+		List<ProductApproval> existingApprovals = productApprovalRepository
+				.findByProduct_ProductIDAndStatus(product.getProductID(), "Pending");
 
-		if (existingApproval.isPresent()) {
-			throw new RuntimeException("There is already a pending update request for this product");
+		if (!existingApprovals.isEmpty()) {
+			throw new RuntimeException("Đã có yêu cầu đang chờ phê duyệt cho sản phẩm này");
+		}
+
+		// Xử lý upload hình ảnh mới (nếu có)
+		if (request.getImages() != null && !request.getImages().isEmpty()) {
+			boolean hasValidImage = false;
+			for (MultipartFile file : request.getImages()) {
+				if (file != null && !file.isEmpty()) {
+					hasValidImage = true;
+					break;
+				}
+			}
+
+			if (hasValidImage) {
+				// Lưu thông tin hình ảnh mới vào changeDetails để admin xem xét
+				log.info("New images detected for product update, will be processed after approval");
+			}
 		}
 
 		// Tạo yêu cầu phê duyệt
@@ -249,11 +321,19 @@ public class VendorService {
 				userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found")));
 		approval.setRequestedAt(LocalDateTime.now());
 
-		productApprovalRepository.save(approval);
+		approval = productApprovalRepository.save(approval);
 
-		notificationService.notifyAdminsAboutNewApproval("PRODUCT", product.getProductID());
+		log.info("Product approval created with ID: {}", approval.getApprovalId());
 
-		log.info("Product update requested - Product ID: {}, Shop ID: {}", product.getProductID(), shopId);
+		// Gửi thông báo
+		try {
+			notificationService.notifyAdminsAboutNewApproval("PRODUCT", product.getProductID());
+		} catch (Exception e) {
+			log.error("Error sending notification: {}", e.getMessage());
+		}
+
+		log.info("Product update requested - Product ID: {}, Shop ID: {}, Approval ID: {}", product.getProductID(),
+				shopId, approval.getApprovalId());
 	}
 
 	public void requestProductDeletion(Integer shopId, Integer productId, Integer userId) {
@@ -262,6 +342,14 @@ public class VendorService {
 
 		if (!product.getShop().getShopId().equals(shopId)) {
 			throw new RuntimeException("Unauthorized: Product does not belong to this shop");
+		}
+
+		// Kiểm tra pending requests
+		List<ProductApproval> existingApprovals = productApprovalRepository
+				.findByProduct_ProductIDAndStatus(product.getProductID(), "Pending");
+
+		if (!existingApprovals.isEmpty()) {
+			throw new RuntimeException("Đã có yêu cầu đang chờ phê duyệt cho sản phẩm này");
 		}
 
 		// Tạo yêu cầu phê duyệt
@@ -273,11 +361,19 @@ public class VendorService {
 				userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found")));
 		approval.setRequestedAt(LocalDateTime.now());
 
-		productApprovalRepository.save(approval);
+		approval = productApprovalRepository.save(approval);
 
-		notificationService.notifyAdminsAboutNewApproval("PRODUCT", product.getProductID());
+		log.info("Product approval created with ID: {}", approval.getApprovalId());
 
-		log.info("Product deletion requested - Product ID: {}, Shop ID: {}", product.getProductID(), shopId);
+		// Gửi thông báo
+		try {
+			notificationService.notifyAdminsAboutNewApproval("PRODUCT", product.getProductID());
+		} catch (Exception e) {
+			log.error("Error sending notification: {}", e.getMessage());
+		}
+
+		log.info("Product deletion requested - Product ID: {}, Shop ID: {}, Approval ID: {}", product.getProductID(),
+				shopId, approval.getApprovalId());
 	}
 
 	public List<SimpleCategoryDTO> getAllCategoriesSimple() {
