@@ -21,13 +21,12 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="mb-0">Sản Phẩm Mới</h2>
             <div class="sort-options">
-                <span>Sắp xếp:</span>
-                <a href="#">A → Z</a>
-                <a href="#">Z → A</a>
-                <a href="#">Giá tăng dần</a>
-                <a href="#">Giá giảm dần</a>
-                <a href="#" class="active">Hàng mới</a>
-            </div>
+    <span>Sắp xếp:</span>
+    <a th:href="@{${baseUrl}(sort='nameAsc')}" th:classappend="${currentSort == 'nameAsc'} ? 'active'">A → Z</a>
+    <a th:href="@{${baseUrl}(sort='nameDesc')}" th:classappend="${currentSort == 'nameDesc'} ? 'active'">Z → A</a>
+    <a th:href="@{${baseUrl}(sort='priceAsc')}" th:classappend="${currentSort == 'priceAsc'} ? 'active'">Giá tăng dần</a>
+    <a th:href="@{${baseUrl}(sort='priceDesc')}" th:classappend="${currentSort == 'priceDesc'} ? 'active'">Giá giảm dần</a>
+</div>
         </div>
 
         <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-4" th:if="${newestProductPage != null and not newestProductPage.empty}">

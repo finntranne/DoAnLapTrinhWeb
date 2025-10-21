@@ -1,8 +1,8 @@
-package com.alotra.entity;
+package com.alotra.entity.user;
 
 import com.alotra.entity.order.OrderDetail;
 import com.alotra.entity.product.Product;
-import com.alotra.entity.user.Customer;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <!-- Fragment cho product card -->
+    <div th:fragment="product-card(sale)" class="product-card h-100">
+        <a th:href="@{'/products/' + ${sale.product.productId}}" class="product-card-link">
+            <!-- Discount badge -->
+            <div th:if="${sale.discountPercentage != null and sale.discountPercentage > 0}" 
+                 class="discount-badge" 
+                 th:text="'-' + ${sale.discountPercentage} + '%'"></div>
+
+            <!-- Product image -->
+            <img th:if="${not #lists.isEmpty(sale.product.productImages)}" 
+                 th:src="${sale.product.productImages[0].imageUrl}" 
+                 class="card-img-top" 
+                 th:alt="${sale.product.productName}">
+            <img th:unless="${not #lists.isEmpty(sale.product.productImages)}" 
+                 th:src="@{/images/placeholder.png}" 
+                 class="card-img-top" 
+                 th:alt="${sale.product.productName}">
+        </a>
+
+        <div class="card-body">
+            <!-- Brand -->
+            <p class="product-brand mb-1">ALOTRA</p>
+            
+            <!-- Product title -->
+            <h5 class="product-title" th:text="${sale.product.productName}">Tên sản phẩm</h5>
+
+            <!-- Price -->
+            <div class="product-price" th:if="${not #lists.isEmpty(sale.product.productVariants)}">
+                <th:block th:with="originalPrice=${sale.product.productVariants[0].price}">
+                    <!-- With discount -->
+                    <div th:if="${sale.discountPercentage != null and sale.discountPercentage > 0}">
+                        <span class="current-price" 
+                              th:text="${#numbers.formatDecimal(originalPrice * (100 - sale.discountPercentage) / 100, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                        <span class="original-price" 
+                              th:text="${#numbers.formatDecimal(originalPrice, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                    </div>
+                    <!-- Without discount -->
+                    <div th:unless="${sale.discountPercentage != null and sale.discountPercentage > 0}">
+                        <span class="current-price" 
+                              th:text="${#numbers.formatDecimal(originalPrice, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                    </div>
+                </th:block>
+            </div>
+        </div>
+
+        <!-- Footer with sold progress and add to cart button -->
+        <div class="product-card-footer">
+            <button class="btn-add-to-cart" type="button">
+                <i class="fa-solid fa-plus"></i>
+            </button>
+        </div>
+    </div>
+</body>
+</html>

@@ -1028,3 +1028,193 @@
 .pagination-modern .page-link:hover span {
     transform: scale(1.1);
 }
+
+
+/* Product Detail Page Styles */
+
+/* Size Options */
+.size-options .btn-check:checked + .btn-outline-secondary {
+    background-color: #73A580; /* Thay đổi */
+    border-color: #73A580; /* Thay đổi */
+    color: white;
+}
+
+.size-options .btn-outline-secondary {
+    border-radius: 20px;
+    padding: 8px 20px;
+    font-weight: 500;
+    min-width: 60px;
+    transition: all 0.3s ease;
+}
+
+.size-options .btn-outline-secondary:hover {
+    background-color: #f8f9fa;
+    border-color: #73A580; /* Thay đổi */
+    color: #73A580; /* Thay đổi */
+}
+
+/* Quantity Selector */
+.quantity-selector {
+    border: 1px solid #dee2e6;
+    border-radius: 25px;
+    overflow: hidden;
+}
+
+.quantity-selector .btn {
+    border: none;
+    border-radius: 0;
+    background-color: white;
+    color: #495057;
+    padding: 8px 16px;
+}
+
+.quantity-selector .btn:hover {
+    background-color: #f8f9fa;
+    color: #73A580; /* Thay đổi */
+}
+
+.quantity-selector .form-control {
+    border: none;
+    border-left: 1px solid #dee2e6;
+    border-right: 1px solid #dee2e6;
+    box-shadow: none;
+    font-weight: 600;
+    padding: 8px 12px;
+}
+
+/* Action Buttons (Đã đổi tên class .btn-danger thành .btn-primary-custom 
+   để dễ hiểu hơn, nhưng bạn có thể giữ .btn-danger nếu muốn) */
+.btn-danger {
+    background-color: #73A580; /* Thay đổi */
+    border-color: #73A580; /* Thay đổi */
+    border-radius: 25px;
+    padding: 12px 32px;
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    letter-spacing: 0.5px;
+}
+
+.btn-danger:hover {
+    background-color: #5c8667; /* Sắc thái đậm hơn */
+    border-color: #54785e; /* Sắc thái đậm hơn */
+    transform: translateY(-2px);
+    /* Cập nhật màu shadow với RGB của #73A580 */
+    box-shadow: 0 4px 12px rgba(115, 165, 128, 0.3); /* Thay đổi */
+}
+
+.btn-outline-danger {
+    border-color: #73A580; /* Thay đổi */
+    color: #73A580; /* Thay đổi */
+    border-radius: 25px;
+    padding: 12px 32px;
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    letter-spacing: 0.5px;
+    background-color: white;
+}
+
+.btn-outline-danger:hover {
+    background-color: #73A580; /* Thay đổi */
+    border-color: #73A580; /* Thay đổi */
+    color: white;
+    transform: translateY(-2px);
+    /* Cập nhật màu shadow với RGB của #73A580 */
+    box-shadow: 0 4px 12px rgba(115, 165, 128, 0.3); /* Thay đổi */
+}
+
+/* Price Display (Đã đổi tên class .text-danger thành .text-primary-custom) */
+.text-danger {
+    color: #73A580 !important; /* Thay đổi */
+}
+
+/* Product Info Section */
+.product-info h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #212529;
+    margin-bottom: 16px;
+}
+
+/* Tabs */
+.nav-tabs .nav-link {
+    color: #6c757d;
+    font-weight: 500;
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 12px 24px;
+    transition: all 0.3s ease;
+}
+
+.nav-tabs .nav-link.active {
+    color: #73A580; /* Thay đổi */
+    background-color: transparent;
+    border-bottom: 3px solid #73A580; /* Thay đổi */
+}
+
+.nav-tabs .nav-link:hover {
+    color: #73A580; /* Thay đổi */
+    border-bottom: 3px solid #73A580; /* Thay đổi */
+}
+
+/* Reviews Section */
+.fa-star {
+    font-size: 14px;
+}
+
+/* Form Labels */
+.form-label {
+    font-size: 15px;
+    margin-bottom: 12px;
+    color: #212529;
+}
+
+/* Breadcrumb */
+.breadcrumb-nav {
+    background-color: #f8f9fa;
+    padding: 16px 0;
+    margin-bottom: 32px;
+}
+
+.breadcrumb {
+    margin-bottom: 0;
+}
+
+.breadcrumb-item a {
+    color: #6c757d;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.breadcrumb-item a:hover {
+    color: #73A580; /* Thay đổi */
+}
+
+.breadcrumb-item.active {
+    color: #212529;
+    font-weight: 500;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .btn-danger, .btn-outline-danger {
+        padding: 10px 24px;
+        font-size: 13px;
+    }
+    
+    .product-info h1 {
+        font-size: 24px;
+    }
+    
+    .quantity-selector {
+        max-width: 130px !important;
+    }
+}
+
+/* Cursor Pointer Utility */
+.cursor-pointer {
+    cursor: pointer;
+}

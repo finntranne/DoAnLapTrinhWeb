@@ -1,8 +1,9 @@
 package com.alotra.entity.product;
 
-import com.alotra.entity.Review;
 import com.alotra.entity.promotion.PromotionProduct;
 import com.alotra.entity.shop.Shop; // Import Shop entity
+import com.alotra.entity.user.Review;
+
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -60,6 +61,9 @@ public class Product {
     
     @Column(name = "TotalLikes")
     private Integer totalLikes;
+    
+    @Column(name = "BasePrice", columnDefinition = "DECIMAL(18, 2) DEFAULT 0.0") // <-- THÊM DÒNG NÀY
+    private BigDecimal basePrice; // Giá thấp nhất để sắp xếp
     
     @CreationTimestamp
     @Column(name = "CreatedAt", nullable = false, updatable = false)
