@@ -21,7 +21,7 @@ public interface OrderDetailRepository extends JpaRepository<OrderDetail, Intege
     @Query("SELECT od FROM OrderDetail od " +
            "JOIN FETCH od.variant v " +
            "JOIN FETCH v.product p " +
-           "WHERE od.order.user.userID = :userId " +
+           "WHERE od.order.user.id = :userId " +
            "AND od.order.orderStatus = 'Completed' " +
            "AND NOT EXISTS (SELECT 1 FROM Review r WHERE r.orderDetail.orderDetailID = od.orderDetailID)")
     List<OrderDetail> findUnreviewedCompletedOrderDetails(@Param("userId") Integer userId);

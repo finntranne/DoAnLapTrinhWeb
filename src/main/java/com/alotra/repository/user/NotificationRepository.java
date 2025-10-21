@@ -14,16 +14,16 @@ import com.alotra.entity.user.Notification;
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Integer> {
     
-    List<Notification> findByUser_UserIDOrderByCreatedAtDesc(Integer userId);
+    List<Notification> findByUser_IdOrderByCreatedAtDesc(Integer userId);
     
-    Page<Notification> findByUser_UserIDOrderByCreatedAtDesc(Integer userId, Pageable pageable);
+    Page<Notification> findByUser_IdOrderByCreatedAtDesc(Integer userId, Pageable pageable);
     
     @Query("SELECT n FROM Notification n " +
-           "WHERE n.user.userID = :userId AND n.isRead = false " +
+           "WHERE n.user.id = :userId AND n.isRead = false " +
            "ORDER BY n.createdAt DESC")
     List<Notification> findUnreadNotifications(@Param("userId") Integer userId);
     
     @Query("SELECT COUNT(n) FROM Notification n " +
-           "WHERE n.user.userID = :userId AND n.isRead = false")
-    Long countUnreadByUserId(@Param("userId") Integer userId);
+           "WHERE n.user.id = :userId AND n.isRead = false")
+    Long countUnreadByUser_Id(@Param("userId") Integer userId);
 }

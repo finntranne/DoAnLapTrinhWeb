@@ -18,8 +18,8 @@ public interface ProductApprovalRepository extends JpaRepository<ProductApproval
     
     List<ProductApproval> findByStatusOrderByRequestedAtDesc(String status);
     
-    Optional<ProductApproval> findByProduct_ProductIdAndStatusAndActionType(
-        Integer productId, String status, String actionType);
+    Optional<ProductApproval> findByProduct_ProductIDAndStatusAndActionType(Integer productID, String status, String actionType);
+
     
     @Query("SELECT COUNT(pa) FROM ProductApproval pa " +
            "WHERE pa.product.shop.shopId = :shopId AND pa.status = 'Pending'")

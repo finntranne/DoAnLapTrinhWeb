@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.Set;
 
+import com.alotra.entity.shop.Shop;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,7 +19,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "UserID")
     private Integer id;
-
+    
     @Column(name = "Username", nullable = false, unique = true, length = 50)
     private String username;
 
@@ -65,7 +67,10 @@ public class User {
         inverseJoinColumns = @JoinColumn(name = "RoleID", referencedColumnName = "RoleID")
     )
     private Set<Role> roles;
-
+    
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
+    private Shop shop;
+    
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

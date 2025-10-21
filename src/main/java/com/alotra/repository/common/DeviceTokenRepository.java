@@ -14,7 +14,7 @@ import java.util.Optional;
 public interface DeviceTokenRepository extends JpaRepository<DeviceToken, Integer> {
     
     // Tìm device token của user
-    List<DeviceToken> findByUser_UserIDAndIsActiveTrue(Integer userId);
+    List<DeviceToken> findByUser_IdAndIsActiveTrue(Integer userId);
     
     // Tìm theo device token
     Optional<DeviceToken> findByDeviceToken(String deviceToken);

@@ -13,7 +13,7 @@ import com.alotra.entity.shop.Shop;
 @Repository
 public interface ShopRepository extends JpaRepository<Shop, Integer> {
     
-    Optional<Shop> findByUser_UserID(Integer userId);
+    Optional<Shop> findByUser_Id(Integer userId);
     
     Optional<Shop> findByShopName(String shopName);
     

@@ -50,8 +50,9 @@ public class WebSecurityConfig {
 						.permitAll()
 
 						// Role-based access
-						.requestMatchers("/admin/**").hasAuthority("ADMIN").requestMatchers("/vendor/**")
-						.hasAuthority("VENDOR").requestMatchers("/shipper/**").hasAuthority("SHIPPER")
+						.requestMatchers("/admin/**").hasAuthority("ADMIN")
+						.requestMatchers("/vendor/**").hasAuthority("VENDOR")
+						.requestMatchers("/shipper/**").hasAuthority("SHIPPER")
 						.requestMatchers("/customer/**").hasAuthority("CUSTOMER")
 
 						// Tất cả request khác cần authentication

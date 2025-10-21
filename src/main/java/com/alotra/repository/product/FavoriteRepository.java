@@ -13,13 +13,13 @@ import com.alotra.entity.product.Favorite;
 @Repository
 public interface FavoriteRepository extends JpaRepository<Favorite, Integer> {
     
-    List<Favorite> findByUser_UserIDOrderByCreatedAtDesc(Integer userId);
+    List<Favorite> findByUser_IdOrderByCreatedAtDesc(Integer userId);
     
-    Optional<Favorite> findByUser_UserIDAndProduct_ProductID(Integer userId, Integer productId);
+    Optional<Favorite> findByUser_IdAndProduct_ProductID(Integer userId, Integer productId);
     
-    Boolean existsByUser_UserIDAndProduct_ProductID(Integer userId, Integer productId);
+    Boolean existsByUser_IdAndProduct_ProductID(Integer userId, Integer productId);
     
-    void deleteByUser_UserIDAndProduct_ProductID(Integer userId, Integer productId);
+    void deleteByUser_IdAndProduct_ProductID(Integer userId, Integer productId);
     
     @Query("SELECT COUNT(f) FROM Favorite f WHERE f.product.productID = :productId")
     Long countByProductId(@Param("productId") Integer productId);

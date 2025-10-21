@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{vendor/layouts/vendor-layout}" lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Quản lý đơn hàng - Vendor | AloTra</title>
+
+<style>
+.status-badge {
+	font-size: 0.85rem;
+	padding: 0.4em 0.8em;
+}
+</style>
+</head>
+<body>
+
+	<div layout:fragment="content">
+
+		<div
+			class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+			<h1 class="h2">
+				<i class="bi bi-cart-check"></i> Quản lý đơn hàng
+			</h1>
+		</div>
+
+		<div th:if="${success}"
+			class="alert alert-success alert-dismissible fade show">
+			<i class="bi bi-check-circle"></i> <span th:text="${success}"></span>
+			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+		</div>
+
+		<div th:if="${error}"
+			class="alert alert-danger alert-dismissible fade show">
+			<i class="bi bi-exclamation-triangle"></i> <span th:text="${error}"></span>
+			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+		</div>
+
+		<ul class="nav nav-tabs mb-4">
+			<li class="nav-item"><a class="nav-link"
+				th:classappend="${status == null ? 'active' : ''}"
+				href="/vendor/orders"> <i class="bi bi-list"></i> Tất cả
+			</a></li>
+			<li class="nav-item"><a class="nav-link"
+				th:classappend="${status == 'Pending' ? 'active' : ''}"
+				href="/vendor/orders?status=Pending"> <i class="bi bi-clock"></i>
+					Chờ xác nhận
+			</a></li>
+			<li class="nav-item"><a class="nav-link"
+				th:classappend="${status == 'Confirmed' ? 'active' : ''}"
+				href="/vendor/orders?status=Confirmed"> <i
+					class="bi bi-check-circle"></i> Đã xác nhận
+			</a></li>
+			<li class="nav-item"><a class="nav-link"
+				th:classappend="${status == 'Delivering' ? 'active' : ''}"
+				href="/vendor/orders?status=Delivering"> <i class="bi bi-truck"></i>
+					Đang giao
+			</a></li>
+			<li class="nav-item"><a class="nav-link"
+				th:classappend="${status == 'Completed' ? 'active' : ''}"
+				href="/vendor/orders?status=Completed"> <i
+					class="bi bi-check-all"></i> Hoàn thành
+			</a></li>
+			<li class="nav-item"><a class="nav-link"
+				th:classappend="${status == 'Cancelled' ? 'active' : ''}"
+				href="/vendor/orders?status=Cancelled"> <i
+					class="bi bi-x-circle"></i> Đã hủy
+			</a></li>
+		</ul>
+
+		<div class="card">
+			<div class="card-body">
+				<div class="table-responsive">
+					<table class="table table-hover align-middle">
+						<thead class="table-light">
+							<tr>
+								<th>Mã ĐH</th>
+								<th>Ngày đặt</th>
+								<th>Khách hàng</th>
+								<th>Người nhận</th>
+								<th>Tổng tiền</th>
+								<th>Thanh toán</th>
+								<th>Trạng thái</th>
+								<th>Thao tác</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr th:if="${orders.isEmpty()}">
+								<td colspan="8" class="text-center text-muted py-5"><i
+									class="bi bi-inbox" style="font-size: 3rem;"></i>
+									<p class="mt-2">Chưa có đơn hàng nào</p></td>
+							</tr>
+							<tr th:each="order : ${orders}">
+								<td><strong>#<span th:text="${order.orderId}"></span></strong>
+									<br> <small class="text-muted"> <i
+										class="bi bi-box"></i> <span th:text="${order.totalItems}"></span>
+										sản phẩm
+								</small></td>
+								<td><span
+									th:text="${#temporals.format(order.orderDate, 'dd/MM/yyyy')}"></span>
+									<br> <small class="text-muted"
+									th:text="${#temporals.format(order.orderDate, 'HH:mm')}"></small>
+								</td>
+								<td>
+									<div>
+										<strong th:text="${order.customerName}"></strong>
+									</div> <small class="text-muted"> <i class="bi bi-telephone"></i>
+										<span th:text="${order.customerPhone}"></span>
+								</small>
+								</td>
+								<td>
+									<div>
+										<span th:text="${order.recipientName}"></span>
+									</div> <small class="text-muted"> <i class="bi bi-telephone"></i>
+										<span th:text="${order.recipientPhone}"></span>
+								</small>
+								</td>
+								<td><strong class="text-success"> <span
+										th:text="${#numbers.formatDecimal(order.grandTotal, 0, 'COMMA', 0, 'POINT')}"></span>đ
+								</strong></td>
+								<td>
+									<div>
+										<span class="badge bg-secondary"
+											th:text="${order.paymentMethod}"></span>
+									</div> <span class="badge status-badge"
+									th:classappend="${order.paymentStatus == 'Paid' ? 'bg-success' : 'bg-warning'}"
+									th:text="${order.paymentStatus}"></span>
+								</td>
+								<td><span class="badge status-badge"
+									th:classappend="${order.orderStatus == 'Pending' ? 'bg-warning' :
+                                                           (order.orderStatus == 'Confirmed' ? 'bg-info' :
+                                                           (order.orderStatus == 'Delivering' ? 'bg-primary' :
+                                                           (order.orderStatus == 'Completed' ? 'bg-success' : 'bg-danger')))}"
+									th:text="${order.orderStatus}"></span>
+									<div th:if="${order.shipperName != null}" class="mt-1">
+										<small class="text-muted"> <i class="bi bi-person"></i>
+											<span th:text="${order.shipperName}"></span>
+										</small>
+									</div></td>
+								<td><a
+									th:href="@{/vendor/orders/{id}(id=${order.orderId})}"
+									class="btn btn-sm btn-outline-primary"> <i
+										class="bi bi-eye"></i> Chi tiết
+								</a></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+
+				<nav th:if="${totalPages > 1}" aria-label="Page navigation">
+					<ul class="pagination justify-content-center">
+						<li class="page-item"
+							th:classappend="${currentPage == 0 ? 'disabled' : ''}"><a
+							class="page-link"
+							th:href="@{/vendor/orders(page=${currentPage - 1}, status=${status})}">
+								Trước </a></li>
+
+						<li class="page-item"
+							th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+							th:classappend="${i == currentPage ? 'active' : ''}"><a
+							class="page-link"
+							th:href="@{/vendor/orders(page=${i}, status=${status})}"
+							th:text="${i + 1}"></a></li>
+
+						<li class="page-item"
+							th:classappend="${currentPage == totalPages - 1 ? 'disabled' : ''}">
+							<a class="page-link"
+							th:href="@{/vendor/orders(page=${currentPage + 1}, status=${status})}">
+								Sau </a>
+						</li>
+					</ul>
+				</nav>
+			</div>
+		</div>
+
+	</div>
+</body>
+</html>

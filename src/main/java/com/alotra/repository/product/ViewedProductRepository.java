@@ -15,12 +15,12 @@ import com.alotra.entity.product.ViewedProduct;
 @Repository
 public interface ViewedProductRepository extends JpaRepository<ViewedProduct, Integer> {
     
-    List<ViewedProduct> findByUser_UserIDOrderByLastViewedAtDesc(Integer userId);
+    List<ViewedProduct> findByUser_IdOrderByLastViewedAtDesc(Integer userId);
     
-    Optional<ViewedProduct> findByUser_UserIDAndProduct_ProductID(Integer userId, Integer productId);
+    Optional<ViewedProduct> findByUser_IdAndProduct_ProductID(Integer userId, Integer productId);
     
     @Query("SELECT vp FROM ViewedProduct vp " +
-           "WHERE vp.user.userID = :userId " +
+           "WHERE vp.user.id = :userId " +
            "ORDER BY vp.lastViewedAt DESC")
     Page<ViewedProduct> findRecentlyViewedProducts(@Param("userId") Integer userId, Pageable pageable);
 }

@@ -13,10 +13,10 @@ import com.alotra.entity.location.Address;
 @Repository
 public interface AddressRepository extends JpaRepository<Address, Integer> {
 
-	List<Address> findByUser_UserIDOrderByIsDefaultDescCreatedAtDesc(Integer userId);
+	List<Address> findByUser_IdOrderByIsDefaultDescCreatedAtDesc(Integer userId);
 
-	Optional<Address> findByUser_UserIDAndIsDefault(Integer userId, Boolean isDefault);
+	Optional<Address> findByUser_IdAndIsDefault(Integer userId, Boolean isDefault);
 
-	@Query("SELECT a FROM Address a WHERE a.user.userID = :userId AND a.isDefault = true")
-	Optional<Address> findDefaultAddressByUserId(@Param("userId") Integer userId);
+	@Query("SELECT a FROM Address a WHERE a.user.id = :userId AND a.isDefault = true")
+	Optional<Address> findDefaultAddressByUser_Id(@Param("userId") Integer userId);
 }

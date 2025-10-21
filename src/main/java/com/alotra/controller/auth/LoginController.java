@@ -14,31 +14,31 @@ public class LoginController {
         // Nếu user đã đăng nhập thì redirect tới dashboard
         if (authentication != null && authentication.isAuthenticated() 
                 && !authentication.getPrincipal().equals("anonymousUser")) {
-            return "redirect:/dashboard";
+        	return "redirect:/vendor/dashboard";
         }
         return "auth/login";
     }
 
-    @GetMapping("/dashboard")
-    public String dashboard(Authentication authentication, Model model) {
-        // Kiểm tra xem user đã đăng nhập chưa
-        if (authentication == null || !authentication.isAuthenticated() 
-                || authentication.getPrincipal().equals("anonymousUser")) {
-            return "redirect:/login";
-        }
-        
-        // Thêm thông tin user vào model
-        model.addAttribute("username", authentication.getName());
-        model.addAttribute("authorities", authentication.getAuthorities());
-        
-        return "dashboard";
-    }
+//    @GetMapping("/dashboard")
+//    public String dashboard(Authentication authentication, Model model) {
+//        // Kiểm tra xem user đã đăng nhập chưa
+//        if (authentication == null || !authentication.isAuthenticated() 
+//                || authentication.getPrincipal().equals("anonymousUser")) {
+//            return "redirect:/login";
+//        }
+//        
+//        // Thêm thông tin user vào model
+//        model.addAttribute("username", authentication.getName());
+//        model.addAttribute("authorities", authentication.getAuthorities());
+//        
+//        return "dashboard";
+//    }
 
     @GetMapping("/")
     public String home(Authentication authentication) {
         if (authentication != null && authentication.isAuthenticated() 
                 && !authentication.getPrincipal().equals("anonymousUser")) {
-            return "redirect:/dashboard";
+        	return "redirect:/vendor/dashboard";
         }
         return "redirect:/login";
     }

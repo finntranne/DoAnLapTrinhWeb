@@ -10,5 +10,5 @@ import com.alotra.entity.cart.Cart;
 @Repository
 public interface CartRepository extends JpaRepository<Cart, Integer> {
     
-    Optional<Cart> findByUser_UserID(Integer userId);
+    Optional<Cart> findByUser_Id(Integer userId);
 }

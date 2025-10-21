@@ -17,7 +17,7 @@ public interface CloudinaryAssetRepository extends JpaRepository<CloudinaryAsset
     Optional<CloudinaryAsset> findByPublicId(String publicId);
     
     // Tìm theo user
-    List<CloudinaryAsset> findByUploadedBy_UserIDOrderByUploadedAtDesc(Integer userId);
+    List<CloudinaryAsset> findByUploadedBy_IdOrderByUploadedAtDesc(Integer userId);
     
     // Tìm theo resource type
     List<CloudinaryAsset> findByResourceTypeOrderByUploadedAtDesc(String resourceType);

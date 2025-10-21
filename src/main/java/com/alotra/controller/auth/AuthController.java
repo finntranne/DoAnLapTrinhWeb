@@ -347,7 +347,7 @@ public class AuthController {
                 "username", user.getUsername(),
                 "email", user.getEmail(),
                 "fullName", user.getFullName(),
-                "redirectUrl", "/dashboard"
+                "redirectUrl", "vendor/dashboard"
             ));
 
         } catch (Exception e) {

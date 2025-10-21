@@ -350,7 +350,7 @@ public class NotificationService {
      */
     private void sendPushNotification(Integer userId, String title, String message, 
                                      String type, Integer relatedEntityId) {
-        List<DeviceToken> tokens = deviceTokenRepository.findByUser_UserIDAndIsActiveTrue(userId);
+        List<DeviceToken> tokens = deviceTokenRepository.findByUser_IdAndIsActiveTrue(userId);
 
         if (tokens.isEmpty()) {
             log.debug("No active device tokens found for user {}", userId);

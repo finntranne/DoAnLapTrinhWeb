@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{vendor/layouts/vendor-layout}" lang="vi">
+<head>
+<meta charset="UTF-8">
+<title
+	th:text="${action == 'create' ? 'Thêm sản phẩm mới' : 'Chỉnh sửa sản phẩm'}">Form
+	Sản phẩm</title>
+
+<style>
+.preview-images {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin-top: 10px;
+}
+
+.preview-images img {
+	width: 100px;
+	height: 100px;
+	object-fit: cover;
+	border: 2px solid #dee2e6;
+	border-radius: 5px;
+}
+
+.preview-images .primary-badge {
+	position: absolute;
+	top: 5px;
+	right: 5px;
+	background: #28a745;
+	color: white;
+	padding: 2px 8px;
+	border-radius: 3px;
+	font-size: 0.75rem;
+}
+
+.existing-image {
+	position: relative;
+	display: inline-block;
+	margin: 5px;
+}
+
+.existing-image img {
+	width: 100px;
+	height: 100px;
+	object-fit: cover;
+	border: 2px solid #dee2e6;
+	border-radius: 5px;
+}
+
+.existing-image .remove-btn {
+	position: absolute;
+	top: -5px;
+	right: -5px;
+}
+</style>
+</head>
+<body>
+
+	<div layout:fragment="content">
+
+		<div
+			class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+			<h1 class="h2">
+				<i class="bi bi-box-seam"></i> <span
+					th:text="${action == 'create' ? 'Thêm sản phẩm mới' : 'Chỉnh sửa sản phẩm'}"></span>
+			</h1>
+			<a href="/vendor/products" class="btn btn-outline-secondary"> <i
+				class="bi bi-arrow-left"></i> Quay lại
+			</a>
+		</div>
+
+		<div class="alert alert-info">
+			<i class="bi bi-info-circle"></i> <strong>Lưu ý:</strong> Tất cả thay
+			đổi về sản phẩm cần được Admin phê duyệt trước khi có hiệu lực.
+		</div>
+
+		<form method="post"
+			th:action="${action == 'create' ? '/vendor/products/create' : '/vendor/products/edit/' + productId}"
+			th:object="${product}" enctype="multipart/form-data">
+
+			<div class="row">
+				<div class="col-md-8">
+					<div class="card mb-4">
+						<div class="card-header">
+							<i class="bi bi-info-circle"></i> Thông tin cơ bản
+						</div>
+						<div class="card-body">
+							<div class="mb-3">
+								<label for="productName" class="form-label"> Tên sản
+									phẩm <span class="text-danger">*</span>
+								</label> <input type="text" class="form-control" id="productName"
+									th:field="*{productName}"
+									th:classappend="${#fields.hasErrors('productName')} ? 'is-invalid' : ''"
+									required>
+								<div class="invalid-feedback"
+									th:if="${#fields.hasErrors('productName')}"
+									th:errors="*{productName}"></div>
+							</div>
+
+							<div class="mb-3">
+								<label for="categoryId" class="form-label"> Danh mục <span
+									class="text-danger">*</span>
+								</label> <select class="form-select" id="categoryId"
+									th:field="*{categoryId}" required>
+									<option value="">-- Chọn danh mục --</option>
+									<option th:each="category : ${categories}"
+										th:value="${category.categoryID}"
+										th:text="${category.categoryName}"></option>
+								</select>
+								<div class="invalid-feedback"
+									th:if="${#fields.hasErrors('categoryId')}"
+									th:errors="*{categoryId}"></div>
+							</div>
+
+							<div class="mb-3">
+								<label for="description" class="form-label">Mô tả sản
+									phẩm</label>
+								<textarea class="form-control" id="description"
+									th:field="*{description}" rows="5"
+									placeholder="Nhập mô tả chi tiết về sản phẩm..."></textarea>
+								<div class="form-text">Mô tả chi tiết giúp khách hàng hiểu
+									rõ hơn về sản phẩm</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="card mb-4">
+						<div class="card-header">
+							<i class="bi bi-list-check"></i> Biến thể sản phẩm
+						</div>
+						<div class="card-body">
+							<div id="variantsContainer">
+								<!-- Existing variants -->
+								<div th:each="variant, iterStat : *{variants}"
+									class="variant-item border rounded p-3 mb-3 position-relative">
+									<button type="button"
+										class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2"
+										onclick="removeVariant(this)" th:if="${iterStat.index > 0}">
+										<i class="bi bi-trash"></i>
+									</button>
+									<div class="row g-3">
+										<div class="col-md-3">
+											<label class="form-label">Kích cỡ <span
+												class="text-danger">*</span></label> <select class="form-select"
+												th:field="*{variants[__${iterStat.index}__].sizeId}"
+												required>
+												<option value="">Chọn size</option>
+												<option th:each="size : ${sizes}" th:value="${size.sizeID}"
+													th:text="${size.sizeName}"></option>
+											</select>
+										</div>
+										<div class="col-md-3">
+											<label class="form-label">Giá (VNĐ) <span
+												class="text-danger">*</span></label> <input type="number"
+												class="form-control"
+												th:field="*{variants[__${iterStat.index}__].price}" min="0"
+												step="1000" required>
+										</div>
+										<div class="col-md-3">
+											<label class="form-label">Số lượng <span
+												class="text-danger">*</span></label> <input type="number"
+												class="form-control"
+												th:field="*{variants[__${iterStat.index}__].stock}" min="0"
+												required>
+										</div>
+										<div class="col-md-3">
+											<label class="form-label">SKU</label> <input type="text"
+												class="form-control"
+												th:field="*{variants[__${iterStat.index}__].sku}"
+												placeholder="Mã SKU">
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<button type="button" class="btn btn-outline-primary btn-sm"
+								onclick="addVariant()">
+								<i class="bi bi-plus-circle"></i> Thêm biến thể
+							</button>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-4">
+					<div class="card mb-4">
+						<div class="card-header">
+							<i class="bi bi-image"></i> Hình ảnh sản phẩm
+						</div>
+						<div class="card-body">
+							<!-- Existing images (for edit mode) -->
+							<div
+								th:if="${action == 'edit' and existingImages != null and !existingImages.isEmpty()}"
+								class="mb-3">
+								<label class="form-label">Hình ảnh hiện tại</label>
+								<div class="d-flex flex-wrap gap-2">
+									<div th:each="image : ${existingImages}" class="existing-image">
+										<img th:src="${image.imageURL}" alt="Product Image"> <span
+											th:if="${image.isPrimary}" class="primary-badge">Chính</span>
+									</div>
+								</div>
+								<div class="form-text">
+									<i class="bi bi-info-circle"></i> Upload hình mới để thay thế
+									(tùy chọn)
+								</div>
+							</div>
+
+							<div class="mb-3">
+								<label for="images" class="form-label"> Chọn hình ảnh <span
+									th:if="${action == 'create'}" class="text-danger">*</span>
+								</label> <input type="file" class="form-control" id="images"
+									name="images" accept="image/*" multiple
+									onchange="previewImages(event)"
+									th:required="${action == 'create'}">
+								<div class="form-text">Chọn nhiều hình ảnh (tối đa 5). Ảnh
+									đầu tiên sẽ là ảnh chính.</div>
+							</div>
+
+							<div id="imagePreviewContainer" class="preview-images"></div>
+
+							<div class="mb-3">
+								<label for="primaryImageIndex" class="form-label">Ảnh
+									chính</label> <select class="form-select" id="primaryImageIndex"
+									name="primaryImageIndex">
+									<option value="0">Ảnh thứ 1</option>
+								</select>
+							</div>
+						</div>
+					</div>
+
+					<div class="card">
+						<div class="card-body">
+							<div class="d-grid gap-2">
+								<button type="submit" class="btn btn-primary">
+									<i class="bi bi-send"></i> Gửi yêu cầu phê duyệt
+								</button>
+								<a href="/vendor/products" class="btn btn-outline-secondary">
+									<i class="bi bi-x-circle"></i> Hủy bỏ
+								</a>
+							</div>
+
+							<div class="alert alert-warning mt-3 mb-0">
+								<small> <i class="bi bi-info-circle"></i> Sau khi gửi,
+									Admin sẽ xem xét và phê duyệt yêu cầu của bạn.
+								</small>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</form>
+
+		<script th:inline="javascript">
+        /*<![CDATA[*/
+        
+        const sizes = /*[[${sizes}]]*/ [];
+        let variantCount = /*[[${product.variants != null ? product.variants.size() : 1}]]*/ 1;
+        
+        console.log('Sizes loaded:', sizes);
+        console.log('Initial variant count:', variantCount);
+        
+        function addVariant() {
+            const container = document.getElementById('variantsContainer');
+            
+            if (!container) {
+                console.error('Container not found!');
+                return;
+            }
+            
+            let optionsHTML = '<option value="">Chọn size</option>';
+            sizes.forEach(size => {
+                optionsHTML += `<option value="${size.sizeID}">${size.sizeName}</option>`;
+            });
+        
+            const variantHTML = `
+                <div class="variant-item border rounded p-3 mb-3 position-relative">
+                    <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2" 
+                            onclick="removeVariant(this)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Kích cỡ <span class="text-danger">*</span></label>
+                            <select class="form-select" name="variants[${variantCount}].sizeId" required>
+                                ${optionsHTML}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Giá (VNĐ) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" name="variants[${variantCount}].price"
+                                   min="0" step="1000" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Số lượng <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" name="variants[${variantCount}].stock"
+                                   min="0" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">SKU</label>
+                            <input type="text" class="form-control" name="variants[${variantCount}].sku"
+                                   placeholder="Mã SKU">
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', variantHTML);
+            variantCount++;
+            console.log('Variant added, new count:', variantCount);
+        }
+        
+        function removeVariant(button) {
+            if (confirm('Bạn có chắc muốn xóa biến thể này?')) {
+                button.closest('.variant-item').remove();
+            }
+        }
+        
+        function previewImages(event) {
+            const container = document.getElementById('imagePreviewContainer');
+            const primarySelect = document.getElementById('primaryImageIndex');
+            const files = event.target.files;
+            
+            container.innerHTML = '';
+            primarySelect.innerHTML = '';
+            
+            if (files.length > 5) {
+                alert('Chỉ được chọn tối đa 5 ảnh!');
+                event.target.value = '';
+                return;
+            }
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    const imgWrapper = document.createElement('div');
+                    imgWrapper.className = 'position-relative';
+                    
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'img-thumbnail';
+                    
+                    if (i === 0) {
+                        const badge = document.createElement('span');
+                        badge.className = 'primary-badge';
+                        badge.textContent = 'Chính';
+                        imgWrapper.appendChild(badge);
+                    }
+                    
+                    imgWrapper.appendChild(img);
+                    container.appendChild(imgWrapper);
+                };
+                
+                reader.readAsDataURL(file);
+                
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `Ảnh thứ ${i + 1}`;
+                if (i === 0) option.selected = true;
+                primarySelect.appendChild(option);
+            }
+        }
+        
+        document.getElementById('primaryImageIndex')?.addEventListener('change', function(e) {
+            const container = document.getElementById('imagePreviewContainer');
+            const images = container.querySelectorAll('.position-relative');
+            
+            images.forEach((wrapper, index) => {
+                const badge = wrapper.querySelector('.primary-badge');
+                if (badge) badge.remove();
+                
+                if (index == e.target.value) {
+                    const newBadge = document.createElement('span');
+                    newBadge.className = 'primary-badge';
+                    newBadge.textContent = 'Chính';
+                    wrapper.appendChild(newBadge);
+                }
+            });
+        });
+        
+        // Log on page load
+        console.log('Form initialized');
+        
+        /*]]>*/
+    </script>
+
+	</div>
+</body>
+</html>
