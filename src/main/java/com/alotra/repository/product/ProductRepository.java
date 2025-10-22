@@ -48,4 +48,17 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
            "AND (:categoryId IS NULL OR p.category.categoryID = :categoryId) " +
            "ORDER BY p.averageRating DESC, p.totalReviews DESC")
     Page<Product> findTopRatedProducts(@Param("categoryId") Integer categoryId, Pageable pageable);
+
+    @Query("SELECT p FROM Product p WHERE p.shop.shopId = :shopId " +
+            "AND (:status IS NULL OR p.status = :status) " +
+            // *** ADD CATEGORY FILTER ***
+            "AND (:categoryId IS NULL OR p.category.categoryID = :categoryId) " +
+            "AND (:search IS NULL OR LOWER(p.productName) LIKE LOWER(CONCAT('%', :search, '%')))")
+     Page<Product> searchShopProducts(
+             @Param("shopId") Integer shopId,
+             @Param("status") Byte status,
+             // *** ADD categoryId PARAMETER ***
+             @Param("categoryId") Integer categoryId,
+             @Param("search") String search,
+             Pageable pageable);
 }

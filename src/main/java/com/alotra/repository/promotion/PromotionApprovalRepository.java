@@ -32,4 +32,8 @@ public interface PromotionApprovalRepository extends JpaRepository<PromotionAppr
     
     @Query("SELECT COUNT(pa) FROM PromotionApproval pa WHERE pa.status = 'Pending'")
     Long countAllPending();
+    
+    List<PromotionApproval> findByPromotion_PromotionIdAndStatus(Integer promotionId, String status);
+    
+    Optional<PromotionApproval> findTopByPromotion_PromotionIdOrderByRequestedAtDesc(Integer promotionId);
 }

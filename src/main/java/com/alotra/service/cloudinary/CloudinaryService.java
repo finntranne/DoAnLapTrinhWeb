@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -99,6 +100,62 @@ public class CloudinaryService {
 		} catch (IOException e) {
 			log.error("Error uploading image to Cloudinary", e);
 			throw new RuntimeException("Failed to upload image: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * Upload image to Cloudinary, save asset record, and return details.
+	 *
+	 * @param file   MultipartFile to upload
+	 * @param folder Folder name in Cloudinary (e.g., "products", "avatars")
+	 * @param userId Optional User ID who uploaded
+	 * @return Map containing "public_id" and "secure_url"
+	 * @throws IOException              If upload fails
+	 * @throws IllegalArgumentException If file validation fails
+	 */
+	public Map<String, String> uploadImageAndReturnDetails(MultipartFile file, String folder, Integer userId)
+			throws IOException {
+		validateImageFile(file); // Reuse existing validation
+
+		String publicId = generatePublicId(folder); // Reuse public ID generation
+
+		// Upload parameters (same as before)
+		Map<String, Object> uploadParams = ObjectUtils.asMap("public_id", publicId, "folder", "alotra/" + folder,
+				"resource_type", "image", "overwrite", false, "quality", "auto:good", "fetch_format", "auto");
+
+		try {
+			// Perform the upload
+			Map uploadResult = cloudinary.uploader().upload(file.getBytes(), uploadParams);
+
+			// Extract results from Cloudinary's response
+			String imageUrl = (String) uploadResult.get("secure_url");
+			String fullPublicId = (String) uploadResult.get("public_id"); // This includes the folder path
+
+			if (imageUrl == null || fullPublicId == null) {
+				log.error("Cloudinary upload failed or did not return expected values. Result: {}", uploadResult);
+				throw new IOException("Cloudinary upload failed to return URL or Public ID.");
+			}
+
+			// Save asset record to your database
+			saveAssetRecord(fullPublicId, imageUrl, "image", userId); // Reuse saving logic
+
+			log.info("Image uploaded successfully: URL={}, PublicID={}", imageUrl, fullPublicId);
+
+			// Prepare the result map to return
+			Map<String, String> resultDetails = new HashMap<>();
+			resultDetails.put("public_id", fullPublicId);
+			resultDetails.put("secure_url", imageUrl);
+
+			return resultDetails;
+
+		} catch (IOException e) {
+			log.error("IOException during Cloudinary upload for publicId base {}: {}", publicId, e.getMessage(), e);
+			throw e; // Re-throw IOException so the calling service can handle it
+		} catch (Exception e) {
+			// Catch other potential runtime errors during upload
+			log.error("Unexpected error during Cloudinary upload for publicId base {}: {}", publicId, e.getMessage(),
+					e);
+			throw new RuntimeException("Unexpected error uploading image: " + e.getMessage(), e);
 		}
 	}
 

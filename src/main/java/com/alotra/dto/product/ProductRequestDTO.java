@@ -32,10 +32,13 @@ public class ProductRequestDTO {
     private List<MultipartFile> images;
 
     private List<String> existingImageUrls;
+    
     private Integer primaryImageIndex;
 
     @NotNull(message = "Vui lòng thêm ít nhất một biến thể sản phẩm")
     @Size(min = 1, message = "Phải có ít nhất một biến thể sản phẩm")
     @Valid
     private List<ProductVariantDTO> variants;
+    
+    private List<String> newImageUrls;
 }

@@ -48,5 +48,4 @@ public class ProductApproval {
     
     private LocalDateTime reviewedAt;
     
-    // Getters and Setters được tự động tạo bởi Lombok
 }

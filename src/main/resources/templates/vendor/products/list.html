@@ -23,47 +23,70 @@
 		<div th:if="${success}"
 			class="alert alert-success alert-dismissible fade show" role="alert">
 			<i class="bi bi-check-circle"></i> <span th:text="${success}"></span>
-			<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+			<button type="button" class="btn-close" data-bs-dismiss="alert"
+				aria-label="Close"></button>
 		</div>
-		
+
 		<div th:if="${warning}"
 			class="alert alert-warning alert-dismissible fade show" role="alert">
 			<i class="bi bi-exclamation-triangle"></i> <span th:text="${warning}"></span>
-			<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+			<button type="button" class="btn-close" data-bs-dismiss="alert"
+				aria-label="Close"></button>
 		</div>
 		<div th:if="${error}"
 			class="alert alert-danger alert-dismissible fade show" role="alert">
 			<i class="bi bi-exclamation-triangle"></i> <span th:text="${error}"></span>
-			<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+			<button type="button" class="btn-close" data-bs-dismiss="alert"
+				aria-label="Close"></button>
 		</div>
 		<div class="card mb-4">
 			<div class="card-body">
-				<form method="get" action="/vendor/products" class="row g-3">
-					<div class="col-md-4">
+				<form method="get" action="/vendor/products"
+					class="row g-3 align-items-end">
+					<div class="col-md-4 col-lg-3">
 						<label class="form-label">Tìm kiếm</label> <input type="text"
 							name="search" class="form-control" th:value="${search}"
 							placeholder="Tên sản phẩm...">
 					</div>
-					<div class="col-md-3">
+					<div class="col-md-3 col-lg-2">
 						<label class="form-label">Trạng thái</label> <select name="status"
 							class="form-select">
 							<option value="">Tất cả</option>
-							<option value="1" th:selected="${status == 1}">Đang hoạt
-								động</option>
-							<option value="0" th:selected="${status == 0}">Không
+							<option value="1" th:selected="${status != null and status == 1}">Đang
+								hoạt động</option>
+							<option value="0" th:selected="${status != null and status == 0}">Không
 								hoạt động</option>
 						</select>
 					</div>
-					<div class="col-md-2 d-flex align-items-end">
-						<button type="submit" class="btn btn-primary w-100">
-							<i class="bi bi-search"></i> Tìm kiếm
+					<div class="col-md-3 col-lg-3">
+						<label for="categoryId" class="form-label">Danh mục</label> <select
+							class="form-select" id="categoryId" name="categoryId">
+							<option value="">-- Tất cả danh mục --</option>
+							<option th:each="category : ${categories}"
+								th:value="${category.categoryID}"
+								th:text="${category.categoryName}"
+								th:selected="${categoryId != null and category.categoryID == categoryId}">
+							</option>
+						</select>
+					</div>
+					<div class="col-md-2 col-lg-4 d-flex">
+						<button type="submit" class="btn btn-primary me-2">
+							<i class="bi bi-search"></i> Lọc
 						</button>
+						<a th:href="@{/vendor/products}" class="btn btn-outline-secondary">
+							<i class="bi bi-arrow-clockwise"></i> Đặt lại
+						</a>
 					</div>
 				</form>
 			</div>
 		</div>
 
 		<div class="card">
+			<div class="card-header">
+				<h5 class="card-title mb-0">
+					<i class="bi bi-list-ul me-2"></i>Danh sách sản phẩm
+				</h5>
+			</div>
 			<div class="card-body">
 				<div class="table-responsive">
 					<table class="table table-hover align-middle">
@@ -104,13 +127,16 @@
 								<td><i class="bi bi-eye"></i> <span
 									th:text="${product.viewCount}"></span></td>
 								<td><span class="badge"
-									th:classappend="${product.status == 'Active' ? 'bg-success' : 'bg-secondary'}"
+									th:classappend="${product.status == 'Đang hoạt động' ? 'bg-success' : 'bg-secondary'}"
 									th:text="${product.status}"></span></td>
-								<td><span class="badge bg-warning"
-									th:if="${product.approvalStatus != null}"
-									th:text="${product.approvalStatus}"></span><span
+								<td><span class="badge bg-warning text-dark"
+									th:if="${product.approvalStatus != null and #strings.startsWith(product.approvalStatus, 'Đang chờ:')}"
+									th:text="${product.approvalStatus}"> </span> <span
+									class="badge bg-danger"
+									th:if="${product.approvalStatus != null and #strings.startsWith(product.approvalStatus, 'Bị từ chối:')}"
+									th:text="${product.approvalStatus}"> </span> <span
 									class="badge bg-success"
-									th:if="${product.approvalStatus == null}">Đã duyệt</span></td>
+									th:if="${product.approvalStatus == null}"> Đã duyệt </span></td>
 								<td>
 									<div class="btn-group" role="group">
 										<a

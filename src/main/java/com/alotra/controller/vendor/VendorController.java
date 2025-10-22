@@ -2,6 +2,7 @@ package com.alotra.controller.vendor;
 
 import com.alotra.dto.product.ProductRequestDTO;
 import com.alotra.dto.product.ProductStatisticsDTO;
+import com.alotra.dto.promotion.PromotionStatisticsDTO;
 import com.alotra.dto.promotion.PromotionRequestDTO;
 import com.alotra.dto.response.ApprovalResponseDTO;
 import com.alotra.dto.shop.ShopDashboardDTO;
@@ -102,21 +103,29 @@ public class VendorController {
 
 	@GetMapping("/products")
 	public String listProducts(@AuthenticationPrincipal MyUserDetails userDetails,
-			@RequestParam(required = false) Byte status, @RequestParam(required = false) String search,
-			@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size, Model model,
+			@RequestParam(required = false) Byte status,
+			// *** ADD categoryId PARAMETER ***
+			@RequestParam(required = false) Integer categoryId, @RequestParam(required = false) String search,
+			@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "5") int size, Model model,
 			RedirectAttributes redirectAttributes) {
 
 		try {
 			Integer shopId = getShopIdOrThrow(userDetails);
 			Pageable pageable = PageRequest.of(page, size);
 
-			Page<ProductStatisticsDTO> products = vendorService.getShopProducts(shopId, status, search, pageable);
+			// *** PASS categoryId TO SERVICE ***
+			Page<ProductStatisticsDTO> products = vendorService.getShopProducts(shopId, status, categoryId, search,
+					pageable);
 
 			model.addAttribute("products", products);
 			model.addAttribute("currentPage", page);
 			model.addAttribute("totalPages", products.getTotalPages());
 			model.addAttribute("status", status);
 			model.addAttribute("search", search);
+			// *** ADD categoryId BACK TO MODEL ***
+			model.addAttribute("categoryId", categoryId);
+			// *** ADD CATEGORIES LIST TO MODEL ***
+			model.addAttribute("categories", vendorService.getAllCategoriesSimple()); // Use Simple DTO
 
 			return "vendor/products/list";
 
@@ -345,13 +354,13 @@ public class VendorController {
 	@GetMapping("/promotions")
 	public String listPromotions(@AuthenticationPrincipal MyUserDetails userDetails,
 			@RequestParam(required = false) Byte status, @RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "20") int size, Model model, RedirectAttributes redirectAttributes) {
+			@RequestParam(defaultValue = "5") int size, Model model, RedirectAttributes redirectAttributes) {
 
 		try {
 			Integer shopId = getShopIdOrThrow(userDetails);
 			Pageable pageable = PageRequest.of(page, size);
 
-			Page<Promotion> promotions = vendorService.getShopPromotions(shopId, status, pageable);
+			Page<PromotionStatisticsDTO> promotions = vendorService.getShopPromotions(shopId, status, pageable);
 
 			model.addAttribute("promotions", promotions);
 			model.addAttribute("currentPage", page);
@@ -411,6 +420,83 @@ public class VendorController {
 			log.error("Error creating promotion", e);
 			redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra khi tạo khuyến mãi");
 			return "redirect:/vendor/promotions/create";
+		}
+	}
+
+	@GetMapping("/promotions/edit/{id}")
+	public String showEditPromotionForm(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
+			Model model, RedirectAttributes redirectAttributes) {
+
+		try {
+			Integer shopId = getShopIdOrThrow(userDetails);
+
+			Promotion promotion = vendorService.getPromotionDetail(shopId, id);
+			PromotionRequestDTO dto = vendorService.convertPromotionToDTO(promotion);
+
+			model.addAttribute("promotion", dto);
+			model.addAttribute("action", "edit");
+			model.addAttribute("promotionId", id);
+
+			// Format dates for datetime-local input
+			if (dto.getStartDate() != null) {
+				model.addAttribute("formattedStartDate", dto.getStartDate().toString().substring(0, 16)); // yyyy-MM-ddTHH:mm
+			}
+			if (dto.getEndDate() != null) {
+				model.addAttribute("formattedEndDate", dto.getEndDate().toString().substring(0, 16));
+			}
+
+			return "vendor/promotions/form";
+
+		} catch (IllegalStateException e) {
+			redirectAttributes.addFlashAttribute("error", e.getMessage());
+			return "redirect:/shop/register";
+		} catch (Exception e) {
+			log.error("Error loading promotion for edit", e);
+			redirectAttributes.addFlashAttribute("error", e.getMessage());
+			return "redirect:/vendor/promotions";
+		}
+	}
+
+	@PostMapping("/promotions/edit/{id}")
+	public String updatePromotion(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
+			@Valid @ModelAttribute("promotion") PromotionRequestDTO request, BindingResult result, Model model,
+			RedirectAttributes redirectAttributes) {
+
+		if (result.hasErrors()) {
+			log.error("Validation errors: {}", result.getAllErrors());
+			model.addAttribute("action", "edit");
+			model.addAttribute("promotionId", id);
+			return "vendor/promotions/form";
+		}
+
+		try {
+			Integer shopId = getShopIdOrThrow(userDetails);
+			Integer userId = getUserIdOrThrow(userDetails);
+
+			log.info("Updating promotion request - Promotion ID: {}, Shop ID: {}, User ID: {}", id, shopId, userId);
+
+			request.setPromotionId(id);
+			vendorService.requestPromotionUpdate(shopId, request, userId);
+
+			redirectAttributes.addFlashAttribute("success",
+					"Yêu cầu cập nhật khuyến mãi đã được gửi. Vui lòng chờ admin phê duyệt.");
+
+			return "redirect:/vendor/promotions";
+
+		} catch (IllegalStateException e) {
+			log.error("Auth error: {}", e.getMessage());
+			redirectAttributes.addFlashAttribute("error", e.getMessage());
+			return "redirect:/shop/register";
+		} catch (Exception e) {
+			log.error("Error updating promotion", e);
+
+			if (e.getMessage() != null && e.getMessage().contains("đã có yêu cầu đang chờ phê duyệt")) {
+				redirectAttributes.addFlashAttribute("warning", e.getMessage());
+				return "redirect:/vendor/promotions";
+			} else {
+				redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+				return "redirect:/vendor/promotions/edit/" + id;
+			}
 		}
 	}
 

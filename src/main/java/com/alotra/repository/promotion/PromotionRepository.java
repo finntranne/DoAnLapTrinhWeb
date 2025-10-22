@@ -46,4 +46,15 @@ public interface PromotionRepository extends JpaRepository<Promotion, Integer> {
         @Param("shopId") Integer shopId, 
         @Param("now") LocalDateTime now
     );
+    
+    @Query("SELECT p FROM Promotion p WHERE p.createdByShopID.shopId = :shopId " +
+            "AND (:status IS NULL OR " + // Nếu status là null, bỏ qua điều kiện lọc status
+            "(:status = 1 AND p.status = 1 AND p.endDate >= :now) OR " + // status=1: Đang hoạt động (Status=1 VÀ Chưa hết hạn)
+            "(:status = 0 AND p.status = 0) OR " +                      // status=0: Chưa kích hoạt (Status=0)
+            "(:status = 2 AND p.status = 1 AND p.endDate < :now))")    // status=2: Đã kết thúc (Status=1 VÀ Đã hết hạn)
+     Page<Promotion> findShopPromotionsFiltered(
+             @Param("shopId") Integer shopId,
+             @Param("status") Byte status, // Giá trị status từ controller (null, 0, 1, 2)
+             @Param("now") LocalDateTime now, // Thời gian hiện tại để so sánh EndDate
+             Pageable pageable);
 }

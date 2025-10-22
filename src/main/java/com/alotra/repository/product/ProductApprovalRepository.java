@@ -35,5 +35,7 @@ public interface ProductApprovalRepository extends JpaRepository<ProductApproval
 	
 	// Tìm approval theo productId và status (không cần actionType)
     List<ProductApproval> findByProduct_ProductIDAndStatus(Integer productId, String status);
+    
+    Optional<ProductApproval> findTopByProduct_ProductIDOrderByRequestedAtDesc(Integer productId);
 
 }

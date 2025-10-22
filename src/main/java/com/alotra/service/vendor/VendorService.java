@@ -6,6 +6,7 @@ import com.alotra.dto.product.ProductStatisticsDTO;
 import com.alotra.dto.product.ProductVariantDTO;
 import com.alotra.dto.product.SimpleCategoryDTO;
 import com.alotra.dto.product.SimpleSizeDTO;
+import com.alotra.dto.promotion.PromotionStatisticsDTO;
 import com.alotra.dto.promotion.PromotionRequestDTO;
 import com.alotra.dto.response.ApprovalResponseDTO;
 import com.alotra.dto.shop.ShopDashboardDTO;
@@ -115,53 +116,58 @@ public class VendorService {
 
 	// ==================== PRODUCT MANAGEMENT ====================
 
-	public Page<ProductStatisticsDTO> getShopProducts(Integer shopId, Byte status, String search, Pageable pageable) {
-		Page<Product> products = productRepository.searchShopProducts(shopId, status, search, pageable);
+	public Page<ProductStatisticsDTO> getShopProducts(Integer shopId, Byte status, Integer categoryId, String search,
+			Pageable pageable) {
+		// *** PASS categoryId TO REPOSITORY ***
+		Page<Product> products = productRepository.searchShopProducts(shopId, status, categoryId, search, pageable);
 
+		// The rest of the mapping logic remains the same
 		return products.map(product -> {
 			ProductStatisticsDTO dto = new ProductStatisticsDTO();
+			// ... (Gán các thuộc tính khác như cũ)
 			dto.setProductId(product.getProductID());
 			dto.setProductName(product.getProductName());
 			dto.setSoldCount(product.getSoldCount());
 			dto.setAverageRating(product.getAverageRating());
 			dto.setTotalReviews(product.getTotalReviews());
 			dto.setViewCount(product.getViewCount());
-			dto.setStatus(product.getStatus() == 1 ? "Active" : "Inactive");
-
-			// Lấy primary image
+			// Use DTO status directly
+			dto.setStatus(product.getStatus() == 1 ? "Đang hoạt động" : "Không hoạt động"); // Updated status text
 			product.getImages().stream().filter(ProductImage::getIsPrimary).findFirst()
 					.ifPresent(img -> dto.setPrimaryImageUrl(img.getImageURL()));
-
-			// Lấy giá thấp nhất
 			product.getVariants().stream().map(ProductVariant::getPrice).min(BigDecimal::compareTo)
 					.ifPresent(dto::setMinPrice);
 
-			// Kiểm tra trạng thái phê duyệt - Tìm approval mới nhất với status Pending
-			List<ProductApproval> pendingApprovals = productApprovalRepository
-					.findByProduct_ProductIDAndStatus(product.getProductID(), "Pending");
+			Optional<ProductApproval> latestApprovalOpt = productApprovalRepository
+					.findTopByProduct_ProductIDOrderByRequestedAtDesc(product.getProductID());
 
-			if (!pendingApprovals.isEmpty()) {
-				// Lấy approval mới nhất
-				ProductApproval approval = pendingApprovals.stream()
-						.max(Comparator.comparing(ProductApproval::getRequestedAt)).get();
+			if (latestApprovalOpt.isPresent()) {
+				ProductApproval latestApproval = latestApprovalOpt.get();
+				String currentStatus = latestApproval.getStatus();
 
-				String actionTypeText = "";
-				switch (approval.getActionType()) {
-				case "CREATE":
-					actionTypeText = "Tạo mới";
-					break;
-				case "UPDATE":
-					actionTypeText = "Cập nhật";
-					break;
-				case "DELETE":
-					actionTypeText = "Xóa";
-					break;
-				default:
-					actionTypeText = approval.getActionType();
+				if ("Pending".equals(currentStatus) || "Rejected".equals(currentStatus)) {
+					String actionTypeText = "";
+					switch (latestApproval.getActionType()) {
+					case "CREATE":
+						actionTypeText = "Tạo mới";
+						break;
+					case "UPDATE":
+						actionTypeText = "Cập nhật";
+						break;
+					case "DELETE":
+						actionTypeText = "Xóa";
+						break;
+					default:
+						actionTypeText = latestApproval.getActionType();
+					}
+
+					if ("Pending".equals(currentStatus)) {
+						dto.setApprovalStatus("Đang chờ: " + actionTypeText);
+					} else {
+						dto.setApprovalStatus("Bị từ chối: " + actionTypeText);
+					}
 				}
-				dto.setApprovalStatus("Đang chờ: " + actionTypeText);
 			}
-
 			return dto;
 		});
 	}
@@ -178,7 +184,7 @@ public class VendorService {
 	}
 
 	public void requestProductCreation(Integer shopId, ProductRequestDTO request, Integer userId)
-			throws JsonProcessingException {
+			throws JsonProcessingException { // Thêm throws Exception nếu uploadImageAndReturnDetails có thể ném lỗi I/O
 
 		Shop shop = shopRepository.findById(shopId).orElseThrow(() -> new RuntimeException("Shop not found"));
 
@@ -197,22 +203,28 @@ public class VendorService {
 
 		log.info("Product entity created with ID: {}", product.getProductID());
 
-		// Upload và lưu hình ảnh
+		// *** START SỬA ĐỔI PHẦN UPLOAD ẢNH ***
 		if (request.getImages() != null && !request.getImages().isEmpty()) {
-			boolean hasValidImage = false;
-			for (MultipartFile file : request.getImages()) {
-				if (file != null && !file.isEmpty()) {
-					hasValidImage = true;
-					break;
-				}
-			}
+			boolean hasValidImage = request.getImages().stream().anyMatch(file -> file != null && !file.isEmpty());
 
 			if (hasValidImage) {
+				log.info("Processing images for new product ID: {}", product.getProductID());
 				for (int i = 0; i < request.getImages().size(); i++) {
 					MultipartFile file = request.getImages().get(i);
 					if (file != null && !file.isEmpty()) {
 						try {
-							String imageUrl = cloudinaryService.uploadImage(file);
+							// *** THAY ĐỔI LỜI GỌI: Sử dụng uploadImageAndReturnDetails và chỉ định folder
+							// "products" ***
+							Map<String, String> uploadResult = cloudinaryService.uploadImageAndReturnDetails(file,
+									"products", userId);
+							String imageUrl = uploadResult.get("secure_url");
+							// String publicId = uploadResult.get("public_id"); // Lấy publicId nếu cần lưu
+
+							if (imageUrl == null) {
+								log.error("Cloudinary upload did not return URL for image at index {}", i);
+								throw new RuntimeException("Lỗi khi upload hình ảnh: Không nhận được URL.");
+							}
+							// *** KẾT THÚC THAY ĐỔI LỜI GỌI ***
 
 							ProductImage productImage = new ProductImage();
 							productImage.setProduct(product);
@@ -223,16 +235,28 @@ public class VendorService {
 							productImageRepository.save(productImage);
 
 							log.info("Image uploaded and saved: {}", imageUrl);
-						} catch (Exception e) {
-							log.error("Error uploading image at index {}: {}", i, e.getMessage());
+
+						} catch (Exception e) { // Bắt Exception chung (bao gồm IOException và RuntimeException)
+							log.error("Error uploading image at index {}: {}", i, e.getMessage(), e);
+							// Ném lại lỗi để transaction rollback
 							throw new RuntimeException("Lỗi khi upload hình ảnh: " + e.getMessage());
 						}
 					}
 				}
+			} else {
+				log.warn("Image list provided but contains no valid files for product ID: {}", product.getProductID());
+				// Cân nhắc: Có nên throw lỗi nếu ảnh là bắt buộc không? Dựa vào logic trước đó
+				// thì có.
+				throw new RuntimeException("Vui lòng upload ít nhất một hình ảnh hợp lệ.");
 			}
+		} else {
+			// Logic validation ở Controller đã kiểm tra, nhưng thêm log ở đây để chắc chắn
+			log.warn("No images provided for new product request.");
+			throw new RuntimeException("Vui lòng upload ít nhất một hình ảnh.");
 		}
+		// *** END SỬA ĐỔI PHẦN UPLOAD ẢNH ***
 
-		// Tạo variants
+		// Tạo variants (Giữ nguyên logic cũ)
 		if (request.getVariants() != null && !request.getVariants().isEmpty()) {
 			for (ProductVariantDTO variantDTO : request.getVariants()) {
 				ProductVariant variant = new ProductVariant();
@@ -251,11 +275,13 @@ public class VendorService {
 			throw new RuntimeException("Sản phẩm phải có ít nhất một biến thể");
 		}
 
-		// Tạo yêu cầu phê duyệt
+		// Tạo yêu cầu phê duyệt (Giữ nguyên logic cũ)
 		ProductApproval approval = new ProductApproval();
 		approval.setProduct(product);
 		approval.setActionType("CREATE");
 		approval.setStatus("Pending");
+		// Chuyển DTO thành JSON (DTO này không chứa newImageUrls vì không cần cho
+		// CREATE)
 		approval.setChangeDetails(objectMapper.writeValueAsString(request));
 		approval.setRequestedBy(
 				userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found")));
@@ -265,12 +291,11 @@ public class VendorService {
 
 		log.info("Product approval created with ID: {}", approval.getApprovalId());
 
-		// Gửi thông báo cho admin
+		// Gửi thông báo cho admin (Giữ nguyên logic cũ)
 		try {
 			notificationService.notifyAdminsAboutNewApproval("PRODUCT", product.getProductID());
 		} catch (Exception e) {
 			log.error("Error sending notification: {}", e.getMessage());
-			// Không throw exception vì approval đã được lưu thành công
 		}
 
 		log.info("Product creation requested - Product ID: {}, Shop ID: {}, Approval ID: {}", product.getProductID(),
@@ -278,7 +303,7 @@ public class VendorService {
 	}
 
 	public void requestProductUpdate(Integer shopId, ProductRequestDTO request, Integer userId)
-			throws JsonProcessingException {
+			throws JsonProcessingException { // Add potential Exception from upload
 
 		Product product = productRepository.findById(request.getProductId())
 				.orElseThrow(() -> new RuntimeException("Product not found"));
@@ -287,7 +312,6 @@ public class VendorService {
 			throw new RuntimeException("Unauthorized: Product does not belong to this shop");
 		}
 
-		// Kiểm tra xem có yêu cầu pending nào không
 		List<ProductApproval> existingApprovals = productApprovalRepository
 				.findByProduct_ProductIDAndStatus(product.getProductID(), "Pending");
 
@@ -295,28 +319,75 @@ public class VendorService {
 			throw new RuntimeException("Đã có yêu cầu đang chờ phê duyệt cho sản phẩm này");
 		}
 
-		// Xử lý upload hình ảnh mới (nếu có)
-		if (request.getImages() != null && !request.getImages().isEmpty()) {
-			boolean hasValidImage = false;
+		// *** START IMAGE UPDATE HANDLING ***
+		List<String> uploadedImageUrls = new ArrayList<>();
+		// List<String> uploadedImagePublicIds = new ArrayList<>(); // Optional
+
+		// Check if new images were actually submitted
+		boolean newImagesSubmitted = request.getImages() != null && !request.getImages().isEmpty()
+				&& request.getImages().stream().anyMatch(f -> f != null && !f.isEmpty());
+
+		if (newImagesSubmitted) {
+			log.info("Processing new images for product update ID: {}", request.getProductId());
 			for (MultipartFile file : request.getImages()) {
 				if (file != null && !file.isEmpty()) {
-					hasValidImage = true;
-					break;
+					try {
+						// Assuming uploadImage returns Map<String, String>
+						// Adjust if your service returns something else (e.g., just the URL)
+						Map<String, String> uploadResult = cloudinaryService.uploadImageAndReturnDetails(file,
+								"products", userId); // Use a
+						// method
+						// returning
+						// details
+						String imageUrl = uploadResult.get("secure_url");
+						// String publicId = uploadResult.get("public_id"); // Optional
+
+						if (imageUrl != null) {
+							uploadedImageUrls.add(imageUrl);
+							// uploadedImagePublicIds.add(publicId); // Optional
+							log.info("Uploaded new image: {}", imageUrl);
+						} else {
+							log.warn("Cloudinary upload did not return a URL for one of the files.");
+						}
+
+					} catch (Exception e) {
+						log.error("Error uploading a new image during product update: {}", e.getMessage(), e);
+						// Decide: Throw exception to stop, or just log and continue without the failed
+						// image?
+						// Throwing is safer to ensure consistency.
+						throw new RuntimeException("Lỗi khi upload hình ảnh mới: " + e.getMessage());
+					}
+				} else {
+					// Handle potential null/empty entries if the list allows them
+					// Or ensure the list passed from the controller is clean
 				}
 			}
-
-			if (hasValidImage) {
-				// Lưu thông tin hình ảnh mới vào changeDetails để admin xem xét
-				log.info("New images detected for product update, will be processed after approval");
+			// Populate the DTO fields ONLY IF new images were processed
+			if (!uploadedImageUrls.isEmpty()) {
+				request.setNewImageUrls(uploadedImageUrls);
+				// request.setNewImagePublicIds(uploadedImagePublicIds); // Optional
+			} else {
+				// If upload resulted in no URLs (e.g., all failed, or empty files submitted)
+				// Ensure the fields are null or empty list so JSON doesn't contain them
+				// accidentally
+				request.setNewImageUrls(null);
+				// request.setNewImagePublicIds(null);
+				log.warn("New images were submitted, but none were successfully uploaded or returned URLs.");
 			}
+		} else {
+			// No new image files submitted, ensure fields are null/empty
+			request.setNewImageUrls(null);
+			// request.setNewImagePublicIds(null);
+			log.info("No new image files submitted for product update ID: {}", request.getProductId());
 		}
+		// *** END IMAGE UPDATE HANDLING ***
 
-		// Tạo yêu cầu phê duyệt
+		// Create approval request - NOW the DTO contains new image info (if any)
 		ProductApproval approval = new ProductApproval();
 		approval.setProduct(product);
 		approval.setActionType("UPDATE");
 		approval.setStatus("Pending");
-		approval.setChangeDetails(objectMapper.writeValueAsString(request));
+		approval.setChangeDetails(objectMapper.writeValueAsString(request)); // Serialize the UPDATED DTO
 		approval.setRequestedBy(
 				userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found")));
 		approval.setRequestedAt(LocalDateTime.now());
@@ -325,7 +396,6 @@ public class VendorService {
 
 		log.info("Product approval created with ID: {}", approval.getApprovalId());
 
-		// Gửi thông báo
 		try {
 			notificationService.notifyAdminsAboutNewApproval("PRODUCT", product.getProductID());
 		} catch (Exception e) {
@@ -431,8 +501,90 @@ public class VendorService {
 
 	// ==================== PROMOTION MANAGEMENT ====================
 
-	public Page<Promotion> getShopPromotions(Integer shopId, Byte status, Pageable pageable) {
-		return promotionRepository.findShopPromotionsByStatus(shopId, status, pageable);
+	public Page<PromotionStatisticsDTO> getShopPromotions(Integer shopId, Byte status, Pageable pageable) {
+
+		// *** ĐÃ SỬA: Gọi phương thức repository mới và truyền LocalDateTime.now() ***
+		LocalDateTime now = LocalDateTime.now();
+		Page<Promotion> promotions = promotionRepository.findShopPromotionsFiltered(shopId, status, now, pageable);
+		// *** KẾT THÚC SỬA ***
+
+		// Phần map sang PromotionListDTO giữ nguyên như trước
+		return promotions.map(promotion -> {
+			String approvalStatus = null;
+			String activityStatus;
+
+			Optional<PromotionApproval> latestApprovalOpt = promotionApprovalRepository
+					.findTopByPromotion_PromotionIdOrderByRequestedAtDesc(promotion.getPromotionId());
+
+			if (latestApprovalOpt.isPresent()) {
+				PromotionApproval latestApproval = latestApprovalOpt.get();
+				String currentDbStatus = latestApproval.getStatus();
+
+				if ("Pending".equals(currentDbStatus) || "Rejected".equals(currentDbStatus)) {
+					String actionTypeText = "";
+					switch (latestApproval.getActionType()) {
+					case "CREATE":
+						actionTypeText = "Tạo mới";
+						break;
+					case "UPDATE":
+						actionTypeText = "Cập nhật";
+						break;
+					case "DELETE":
+						actionTypeText = "Xóa";
+						break;
+					default:
+						actionTypeText = latestApproval.getActionType();
+					}
+
+					if ("Pending".equals(currentDbStatus)) {
+						approvalStatus = "Đang chờ: " + actionTypeText;
+					} else {
+						approvalStatus = "Bị từ chối: " + actionTypeText;
+					}
+				}
+			}
+
+			// Tính toán Trạng thái Hoạt động (Dựa vào Status và EndDate)
+			// Logic này vẫn đúng vì nó tính toán sau khi đã lọc từ DB
+			if (promotion.getStatus() == 0) {
+				activityStatus = "Không hoạt động";
+			} else if (promotion.getEndDate().isBefore(now)) { // So sánh với 'now'
+				activityStatus = "Đã kết thúc";
+			} else {
+				activityStatus = "Đang hoạt động";
+			}
+
+			return new PromotionStatisticsDTO(promotion, approvalStatus, activityStatus);
+		});
+	}
+
+	public Promotion getPromotionDetail(Integer shopId, Integer promotionId) {
+		Promotion promotion = promotionRepository.findById(promotionId)
+				.orElseThrow(() -> new RuntimeException("Promotion not found"));
+
+		if (!promotion.getCreatedByShopID().getShopId().equals(shopId)) {
+			throw new RuntimeException("Unauthorized: Promotion does not belong to this shop");
+		}
+
+		return promotion;
+	}
+
+	public PromotionRequestDTO convertPromotionToDTO(Promotion promotion) {
+		PromotionRequestDTO dto = new PromotionRequestDTO();
+
+		dto.setPromotionId(promotion.getPromotionId());
+		dto.setPromotionName(promotion.getPromotionName());
+		dto.setDescription(promotion.getDescription());
+		dto.setPromoCode(promotion.getPromoCode());
+		dto.setDiscountType(promotion.getDiscountType());
+		dto.setDiscountValue(promotion.getDiscountValue());
+		dto.setMaxDiscountAmount(promotion.getMaxDiscountAmount());
+		dto.setMinOrderValue(promotion.getMinOrderValue());
+		dto.setStartDate(promotion.getStartDate());
+		dto.setEndDate(promotion.getEndDate());
+		dto.setUsageLimit(promotion.getUsageLimit());
+
+		return dto;
 	}
 
 	public void requestPromotionCreation(Integer shopId, PromotionRequestDTO request, Integer userId)
@@ -488,12 +640,12 @@ public class VendorService {
 			throw new RuntimeException("Unauthorized: Promotion does not belong to this shop");
 		}
 
-		// Kiểm tra pending request
-		Optional<PromotionApproval> existingApproval = promotionApprovalRepository
-				.findByPromotion_PromotionIdAndStatusAndActionType(promotion.getPromotionId(), "Pending", "UPDATE");
+		// *** ĐÃ SỬA: Kiểm tra bất kỳ yêu cầu pending nào (giống Product) ***
+		List<PromotionApproval> existingApprovals = promotionApprovalRepository
+				.findByPromotion_PromotionIdAndStatus(promotion.getPromotionId(), "Pending");
 
-		if (existingApproval.isPresent()) {
-			throw new RuntimeException("There is already a pending update request for this promotion");
+		if (!existingApprovals.isEmpty()) {
+			throw new RuntimeException("Đã có yêu cầu đang chờ phê duyệt cho khuyến mãi này");
 		}
 
 		// Tạo yêu cầu phê duyệt
@@ -521,6 +673,14 @@ public class VendorService {
 			throw new RuntimeException("Unauthorized: Promotion does not belong to this shop");
 		}
 
+		// *** ĐÃ THÊM: Kiểm tra pending requests (giống Product) ***
+		List<PromotionApproval> existingApprovals = promotionApprovalRepository
+				.findByPromotion_PromotionIdAndStatus(promotionId, "Pending");
+
+		if (!existingApprovals.isEmpty()) {
+			throw new RuntimeException("Đã có yêu cầu đang chờ phê duyệt cho khuyến mãi này");
+		}
+
 		// Tạo yêu cầu phê duyệt
 		PromotionApproval approval = new PromotionApproval();
 		approval.setPromotion(promotion);
@@ -538,7 +698,6 @@ public class VendorService {
 	}
 
 	// ==================== ORDER MANAGEMENT ====================
-
 	public Page<ShopOrderDTO> getShopOrders(Integer shopId, String status, Pageable pageable) {
 		Page<Order> orders = orderRepository.findShopOrdersByStatus(shopId, status, pageable);
 
