@@ -15,6 +15,7 @@ import com.alotra.entity.user.Role;
 import com.alotra.entity.user.User;
 import com.alotra.repository.user.UserRepository;
 
+
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
@@ -26,12 +27,12 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
-        User user = userRepository.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail)
+    	User user = userRepository.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail)
                 .orElseThrow(() ->
                         new UsernameNotFoundException("User not found with username or email: " + usernameOrEmail));
 
         return new org.springframework.security.core.userdetails.User(
-                user.getEmail(),
+        		usernameOrEmail,
                 user.getPassword(),
                 mapRolesToAuthorities(user.getRoles())
         );

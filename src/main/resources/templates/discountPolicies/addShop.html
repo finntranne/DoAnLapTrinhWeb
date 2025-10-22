@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{layout.html}">
+
+<head>
+<title>Thêm cửa hàng vào chiết khấu</title>
+</head>
+
+<body>
+	<main class="app-main">
+		<div layout:fragment="content">
+			<div class="container mt-4">
+
+				<!-- Header + nút quay lại -->
+				<div class="d-flex justify-content-between align-items-center mb-3">
+					<h3 class="fw-bold mb-0">Thêm cửa hàng vào chiết khấu</h3>
+					<a th:href="@{'/admin/discountPolicies/detail/' + ${policyId}}"
+						class="btn btn-outline-secondary rounded-pill shadow-sm"> <i
+						class="bi bi-arrow-left-circle me-1"></i> Quay lại
+					</a>
+				</div>
+
+				<!-- Form thêm shop -->
+				<form
+					th:action="@{/admin/discountPolicies/{id}/addShop(id=${policyId})}"
+					method="post">
+					<div class="table-responsive shadow-sm rounded">
+						<table class="table table-striped table-hover align-middle">
+							<thead class="table-success">
+								<tr>
+									<th scope="col" class="text-center"><input type="checkbox"
+										id="selectAll" class="form-check-input"></th>
+									<th class="text-center">Tên shop</th>
+									<th class="text-center">Chủ shop</th>
+									<th class="text-center">Số điện thoại</th>
+									<th class="text-center">Địa chỉ</th>
+									<th class="text-center">Ngày tạo shop</th>
+								</tr>
+							</thead>
+
+							<tbody>
+								<tr th:each="shop, iterStat : ${shops}">
+									<!-- Checkbox chọn shop -->
+									<td class="text-center"><input type="checkbox"
+										name="shopIds" th:value="${shop.shopId}"
+										class="form-check-input selectItem"></td>
+
+									<td th:text="${shop.shopName}"></td>
+									<td
+										th:text="${shop.owner != null ? shop.owner.fullname : 'Không có dữ liệu'}"></td>
+									<td th:text="${shop.phone}"></td>
+									<td th:text="${shop.address}"></td>
+									<td
+										th:text="${#temporals.format(shop.createdAt, 'dd/MM/yyyy')}"></td>
+
+
+
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<!-- Nút thêm -->
+					<div class="mt-3 d-flex justify-content-between align-items-center">
+						<div>
+							<button type="submit" class="btn btn-success rounded-pill">
+								<i class="bi bi-plus-circle-fill me-1"></i> Thêm cửa hàng được
+								chọn
+							</button>
+						</div>
+						<div>
+							<span class="text-muted fst-italic small"> Tổng số cửa
+								hàng khả dụng: <span th:text="${#lists.size(shops)}"></span>
+							</span>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</main>
+
+	<th:block layout:fragment="scripts">
+		<script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const selectAll = document.getElementById("selectAll");
+            const checkboxes = document.querySelectorAll(".selectItem");
+
+            if (selectAll && checkboxes.length > 0) {
+                // 1. Khi click vào checkbox "Chọn tất cả"
+                selectAll.addEventListener("change", function () {
+                    checkboxes.forEach(cb => {
+                        cb.checked = this.checked;
+                    });
+                });
+
+                // 2. Lắng nghe sự kiện trên từng checkbox con
+                checkboxes.forEach(cb => {
+                    cb.addEventListener("change", function () {
+                        // Kiểm tra xem tất cả các checkbox con có được chọn hay không
+                        const allChecked = Array.from(checkboxes).every(item => item.checked);
+                        // Cập nhật lại trạng thái của checkbox "Chọn tất cả"
+                        selectAll.checked = allChecked;
+                    });
+                });
+            }
+        });
+    </script>
+	</th:block>
+
+
+</body>
+</html>

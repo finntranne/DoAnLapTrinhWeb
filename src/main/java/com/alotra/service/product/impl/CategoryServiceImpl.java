@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -68,6 +69,15 @@ public class CategoryServiceImpl implements CategoryService{
 	public Category updateCategory(Integer id, Category cate) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public Page<Category> searchCategories(String keyword, int page) {
+		Pageable pageable = PageRequest.of(page - 1, 10);
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return categoryRepository.findAll(pageable);
+        }
+        return categoryRepository.findByCategoryNameContaining(keyword, pageable);
 	}
 
 	

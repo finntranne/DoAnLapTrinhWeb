@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{layout.html}">
+<head>
+<title>Chi tiết sản phẩm</title>
+
+<style>
+/* Carousel images: aspect ratio Height : Width = 2 : 3 (portrait) */
+#productImages .carousel-item img {
+	width: 100%;
+	aspect-ratio: 2/3; /* height : width = 2 : 3 */
+	object-fit: cover; /* crop vừa khung, giữ tỉ lệ */
+	object-position: center; /* canh giữa */
+	border-radius: 1rem;
+	background-color: #f8f9fa;
+	display: block;
+}
+
+/* Nếu muốn giới hạn chiều cao tối đa trên màn lớn */
+#productImages .carousel-item img {
+	max-height: 80vh; /* tuỳ chỉnh nếu cần */
+}
+
+/* Thumbnails theo cùng tỉ lệ (portrait) */
+.img-thumbnail {
+	width: 60px;
+	height: 90px; /* 60 : 90 = 2 : 3 */
+	object-fit: cover;
+	border-radius: 8px;
+	cursor: pointer;
+	transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.img-thumbnail:hover {
+	transform: scale(1.05);
+	border-color: #0d6efd;
+}
+</style>
+
+
+
+
+</style>
+</head>
+
+<body>
+	<main class="app-main">
+		<div layout:fragment="content">
+			<div class="container mt-4">
+
+				<!-- Tiêu đề trang -->
+				<div class="d-flex justify-content-between align-items-center mb-4">
+					<h3 class="fw-bold mb-0">
+						<i class="bi bi-info-circle-fill text-primary me-2"></i> Chi tiết
+						sản phẩm
+					</h3>
+				</div>
+
+				<!-- Hai thẻ card nằm cạnh nhau -->
+				<div class="row justify-content-center g-4">
+
+					<!-- Card thứ nhất -->
+					<div class="col-md-6">
+						<div class="card border-0 shadow-sm rounded-3 overflow-hidden p-4">
+							<h4 class="fw-bold mb-3 text-dark"
+								th:text="${product.productName}"></h4>
+							<p class="text-muted mb-3">
+								<strong>Mô tả:</strong> <span th:text="${product.description}"></span>
+							</p>
+							<p class="mb-2">
+								<strong>Danh mục:</strong> 
+								<span th:text="${product.category.categoryName}"></span>
+							</p>
+							<p class="mb-2">
+								<strong>Shop:</strong>
+								<span th:text="${product.shop.shopName}"></span>
+							</p>
+							
+							<p class="mb-2 mt-3">
+								<strong>Kích cỡ & Giá:</strong>
+							</p>
+							
+							<table class="table table-sm table-hover table-bordered align-middle w-auto ms-2 shadow-sm rounded-2">
+								<thead class="table-light">
+									<tr>
+										<th>Size</th>
+										<th>Giá</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td class="fw-semi">S</td>
+										<td class="text-danger">20.000₫</td>
+									</tr>
+									<tr>
+										<td class="fw-semi">M</td>
+										<td class="text-danger">25.000₫</td>
+									</tr>
+									<tr>
+										<td class="fw-semi">L</td>
+										<td class="text-danger">30.000₫</td>
+									</tr>
+								</tbody>
+							</table>
+
+
+
+						</div>
+
+						<div class="row">
+							<div class="col-12 col-sm-6 col-md-6 mt-3">
+								<div class="info-box">
+									<span class="info-box-icon text-bg-success shadow-sm"> <i
+										class="bi bi-cart-fill"></i>
+									</span>
+
+									<div class="info-box-content">
+										<span class="info-box-text">Số lượng đã bán</span> <span
+											class="info-box-number fs-4 fw-bold"
+											th:text="${product.soldCount}"></span>
+									</div>
+								</div>
+							</div>
+
+							<div class="col-12 col-sm-6 col-md-6 mt-3">
+								<div class="info-box">
+									<span class="info-box-icon text-bg-primary shadow-sm"> <i
+										class="bi bi-chat-dots-fill"></i>
+									</span>
+
+									<div class="info-box-content">
+										<span class="info-box-text">Tổng số đánh giá</span> <span
+											class="info-box-number fs-4 fw-bold"
+											th:text="${product.totalReviews}"></span>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-12 col-sm-6 col-md-6 mt-3">
+								<div class="info-box">
+									<span class="info-box-icon text-bg-danger shadow-sm"> <i
+										class="bi bi-eye-fill"></i>
+									</span>
+
+									<div class="info-box-content">
+										<span class="info-box-text">Số lượt xem</span> <span
+											class="info-box-number fs-4 fw-bold"
+											th:text="${product.viewCount}"></span>
+									</div>
+								</div>
+							</div>
+
+							<div class="col-12 col-sm-6 col-md-6 mt-3">
+								<div class="info-box">
+									<span class="info-box-icon text-bg-warning shadow-sm"> <i
+										class="bi bi-star-fill text-white"></i>
+									</span>
+
+									<div class="info-box-content">
+										<span class="info-box-text">Điểm đánh giá</span> <span
+											class="info-box-number fs-4 fw-bold"
+											th:text="${product.averageRating}"></span>
+									</div>
+								</div>
+							</div>
+						</div>
+
+					</div>
+
+					<!-- Card thứ hai -->
+					<div class="col-md-6">
+						<div class="card border-0 shadow-sm rounded-3 p-4">
+							<h4 class="fw-bold mb-3 text-dark">Hình ảnh sản phẩm</h4>
+
+							<!-- Slider ảnh sản phẩm -->
+							<div id="productImages" class="carousel slide"
+								data-bs-ride="carousel">
+								<div class="carousel-inner rounded-4">
+
+									<!-- Ảnh đầu tiên -->
+									<div class="carousel-item active">
+										<img th:src="@{${primaryImage.imageUrl}}"
+											class="d-block w-100 rounded-4" alt="Ảnh chính">
+									</div>
+
+									
+								</div>
+
+								
+
+							</div>
+						</div>
+					</div>
+
+
+
+				</div>
+
+			</div>
+		</div>
+	</main>
+	<script
+		src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+	<th:block layout:fragment="scripts">
+		<script>
+			document
+					.addEventListener(
+							'DOMContentLoaded',
+							function() {
+								const carousel = document
+										.querySelector('#productImages');
+								const counter = document
+										.querySelector('#imageCounter');
+								const totalItems = carousel
+										.querySelectorAll('.carousel-item').length;
+								const bsCarousel = new bootstrap.Carousel(
+										carousel);
+
+								let currentIndex = 1;
+								counter.innerHTML = `${currentIndex} / ${totalItems}`;
+
+								carousel
+										.addEventListener(
+												'slid.bs.carousel',
+												function(event) {
+													currentIndex = event.to + 1; // vì event.to bắt đầu từ 0
+													counter.innerHTML = `${currentIndex} / ${totalItems}`;
+												});
+							});
+		</script>
+	</th:block>
+</body>
+</html>

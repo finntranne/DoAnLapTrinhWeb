@@ -10,6 +10,7 @@ import com.alotra.entity.user.User;
 import com.alotra.repository.user.UserRepository;
 import com.alotra.service.user.MyUserService;
 
+
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
 
@@ -17,10 +18,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     private UserRepository userRepository;
 
     @Override
-    public UserDetails loadUserByUsername(String username)
+    public UserDetails loadUserByUsername(String input)
             throws UsernameNotFoundException {
 
-        User user = userRepository.getUserByUsername(username);
+    	User user = userRepository.getUserByUsernameOrEmail(input);
 
         if (user == null) {
             throw new UsernameNotFoundException("Could not find user");

@@ -196,7 +196,7 @@ public class AuthController {
     }
 
 
-    @PostMapping("/forgot-password/send-otp")
+    @PostMapping("/send-otp")
     public ResponseEntity<?> sendOtp(@RequestBody ForgotPasswordRequestDto dto) {
         Optional<User> userOpt = userRepository.findByEmail(dto.getEmail());
         if (userOpt.isEmpty()) {
@@ -219,37 +219,8 @@ public class AuthController {
         ));
     }
 
-
-    @PostMapping("/forgot-password/verify-otp")
-    public ResponseEntity<?> verifyOtp(@RequestBody ForgotPasswordOtpDto dto) {
-        Optional<User> userOpt = userRepository.findByEmail(dto.getEmail());
-        if (userOpt.isEmpty()) {
-            return new ResponseEntity<>(Map.of(
-                    "errorCode", "USER_NOT_FOUND",
-                    "message", "Người dùng không tồn tại!"
-            ), HttpStatus.BAD_REQUEST);
-        }
-
-        User user = userOpt.get();
-
-        if (user.getCodeOTP() == null || !user.getCodeOTP().equals(dto.getOtp())) {
-            return new ResponseEntity<>(Map.of(
-                    "errorCode", "INVALID_OTP",
-                    "message", "Mã OTP không hợp lệ hoặc đã hết hạn!"
-            ), HttpStatus.BAD_REQUEST);
-        }
-
-        // OTP đúng → cho phép reset password
-        user.setCodeOTP(null); // xóa OTP
-        userRepository.save(user);
-
-        return ResponseEntity.ok(Map.of(
-                "message", "Xác thực OTP thành công!"
-        ));
-    }
-
   
-    @PostMapping("/forgot-password/reset")
+    @PostMapping("/reset")
     public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordDto dto) {
         Optional<User> userOpt = userRepository.findByEmail(dto.getEmail());
         if (userOpt.isEmpty()) {

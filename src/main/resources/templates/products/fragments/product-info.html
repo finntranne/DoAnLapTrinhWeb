@@ -1,0 +1,58 @@
+<!-- templates/products/fragments/product-info.html -->
+<div class="product-info card border-0 shadow-sm rounded-4">
+  <div class="card-body">
+    <h4 class="fw-bold mb-3" th:text="${product.productName}"></h4>
+
+    <p class="text-muted mb-3">
+      <strong>Mô tả:</strong><br>
+      <span th:text="${product.description}"></span>
+    </p>
+
+    <div class="row g-3 mb-4">
+      <div class="col-md-6">
+        <p class="mb-2">
+          <strong>Danh mục:</strong>
+          <span class="text-primary fw-semibold" th:text="${product.category.categoryName}"></span>
+        </p>
+      </div>
+
+      <div class="col-md-6">
+        <p class="mb-2">
+          <strong>Shop:</strong>
+          <a th:href="@{'/admin/products/shop/' + ${product.shop.shopId}}"
+             class="fw-semibold text-decoration-none text-success"
+             th:text="${product.shop.shopName}"></a>
+        </p>
+      </div>
+
+      <div class="col-md-6">
+        <p class="mb-2">
+          <strong>Trạng thái:</strong>
+          <span th:text="${product.status == 0 ? 'Chờ duyệt' : (product.status == 1 ? 'Đã duyệt' : 'Bị từ chối')}"></span>
+        </p>
+      </div>
+
+      <div class="col-md-6">
+        <p class="mb-2">
+          <strong>Đánh giá:</strong>
+          <span th:text="${product.averageRating}"></span> / 5
+          <small class="text-muted">(<span th:text="${product.totalReviews}"></span> lượt)</small>
+        </p>
+      </div>
+
+      <div class="col-md-6">
+        <p class="mb-2">
+          <strong>Lượt xem:</strong>
+          <span th:text="${product.viewCount}"></span>
+        </p>
+      </div>
+
+      <div class="col-md-6">
+        <p class="mb-2">
+          <strong>Đã bán:</strong>
+          <span th:text="${product.soldCount}"></span>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

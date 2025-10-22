@@ -12891,7 +12891,7 @@ textarea.form-control-lg {
 }
 
 .app-sidebar {
-    background-color: #95cc6f !important; /* Màu xanh lam đậm */
+    background-color: #198754 !important; /* Màu xanh lam đậm */
 }
 
 
@@ -13780,7 +13780,7 @@ body:not(.app-loaded) .app-footer {
 [data-bs-theme=dark].app-sidebar,
 [data-bs-theme=dark] .app-sidebar {
   --lte-sidebar-hover-bg: rgba(255, 255, 255, 0.1);
-  --lte-sidebar-color: #ebffd7;
+  --lte-sidebar-color: #fff;
   --lte-sidebar-hover-color: #fff;
   --lte-sidebar-active-color: #fff;
   --lte-sidebar-menu-active-bg: rgba(255, 255, 255, 0.1);

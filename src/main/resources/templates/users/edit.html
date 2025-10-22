@@ -70,11 +70,12 @@
                                 </select>
                             </div>
 
+                            <!-- Vai trò - đổi từ checkbox sang radio -->
                             <div class="col-md-12">
                                 <label class="form-label fw-bold">Vai trò</label>
                                 <div class="d-flex flex-wrap gap-3 mt-1">
                                     <div class="form-check" th:each="role : ${allRoles}">
-                                        <input class="form-check-input" type="checkbox" name="roleIds"
+                                        <input class="form-check-input" type="radio" name="roleId"
                                                th:value="${role.roleid}"
                                                th:id="'role-' + ${role.roleid}"
                                                th:checked="${#lists.contains(user.roles.![roleid], role.roleid)}">
@@ -87,9 +88,7 @@
                     </div>
 
                     <div class="card-footer d-flex justify-content-between align-items-center">
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#resetPasswordModal">
-                            <i class="bi bi-key-fill"></i> Đặt lại mật khẩu
-                        </button>
+                       
                         <div>
                             <a th:href="@{/admin/users}" class="btn btn-secondary">
                                 <i class="bi bi-arrow-left"></i> Quay lại
@@ -105,34 +104,6 @@
     </div>
 </main>
 
-<div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-labelledby="resetPasswordModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="resetPasswordModalLabel">Đặt lại mật khẩu cho <span class="fw-bold" th:text="${user.username}"></span></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form th:action="@{/admin/users/reset-password}" method="post" id="resetPasswordForm">
-                <div class="modal-body">
-                    <input type="hidden" name="userId" th:value="${user.user_id}" />
-                    <div class="mb-3">
-                        <label for="newPassword" class="form-label">Mật khẩu mới</label>
-                        <input type="password" class="form-control" id="newPassword" name="newPassword" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="confirmPassword" class="form-label">Xác nhận mật khẩu mới</label>
-                        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
-                    </div>
-                    <div id="passwordError" class="text-danger d-none">Mật khẩu xác nhận không khớp.</div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                    <button type="submit" class="btn btn-primary">Lưu mật khẩu mới</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
 <div layout:fragment="scripts">
     <script>
@@ -156,10 +127,10 @@
 
         resetPasswordForm.addEventListener('submit', function(event) {
             if (newPassword.value !== confirmPassword.value) {
-                event.preventDefault(); // Ngăn form submit
-                passwordError.classList.remove('d-none'); // Hiển thị thông báo lỗi
+                event.preventDefault();
+                passwordError.classList.remove('d-none');
             } else {
-                passwordError.classList.add('d-none'); // Ẩn thông báo lỗi
+                passwordError.classList.add('d-none');
             }
         });
     </script>

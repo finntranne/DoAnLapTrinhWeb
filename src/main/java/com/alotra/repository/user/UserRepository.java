@@ -16,13 +16,12 @@ import com.alotra.entity.user.User;
 @Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
 
-    @Query("SELECT u FROM User u WHERE u.username = :username")
-    public User getUserByUsername(@Param("username") String username);
+	@Query("SELECT u FROM User u WHERE u.email = :input OR u.username = :input")
+    public User getUserByUsernameOrEmail(@Param("input") String input);
     
+    Optional<User> findByUsernameOrEmail(String username, String email);
 
     Optional<User> findByEmail(String email);
-
-    Optional<User> findByUsernameOrEmail(String username, String email);
 
     Optional<User> findByUsername(String username);
 

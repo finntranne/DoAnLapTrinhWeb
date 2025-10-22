@@ -32,7 +32,7 @@ public class WebSecurityConfig {
 
     @Bean
     public UserDetailsService userDetailsService() {
-        return new UserDetailsServiceImpl();  // hoặc return userDetailsService;
+    	return userDetailsService;  // hoặc return userDetailsService;
     }
 
     @Bean
@@ -99,13 +99,13 @@ public class WebSecurityConfig {
         return http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers(
-                    "/", "/dashboard", "/api/**", "/css/**", "/js/**", "/images/**", "/assets/**", "/admin/**"
-                ).permitAll()
-                .anyRequest().authenticated()
-            )
-            .formLogin(login -> login.loginPage("/login").permitAll())
-            .logout(logout -> logout.permitAll())
+            	    .requestMatchers("/login", "/api/auth/**", "/css/**", "/js/**", "/images/**", "/assets/**", "/admin/**").permitAll()
+            	    .anyRequest().authenticated()
+            	)
+
+            .formLogin(form -> form.disable()) // 🚫 Tắt form login mặc định
+            .logout(logout -> logout.disable()) // 🚫 Tắt logout redirect HTML
+
             .exceptionHandling(handling -> handling.accessDeniedPage("/403"))
             .build();
     }

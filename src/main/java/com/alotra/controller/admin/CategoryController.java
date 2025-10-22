@@ -72,7 +72,7 @@ public class CategoryController {
         return "categories/edit";
     }
     
-	 @GetMapping("/delete/{id}")
+	@GetMapping("/delete/{id}")
     public String delete(@PathVariable("id") Integer id,
                          @RequestParam(value = "page", defaultValue = "1") int page,
                          RedirectAttributes redirectAttributes) {
@@ -84,6 +84,19 @@ public class CategoryController {
         }
         return "redirect:/admin/categories?page=" + page;
     } 
-   
+	
+	@GetMapping("/search")
+	public String searchCategories(ModelMap model,
+             @RequestParam(required = false) String keyword,
+             @RequestParam(defaultValue = "1") int page) {
+		Page<Category> pageData = categoryService.searchCategories(keyword, page);
+		
+		model.addAttribute("categories", pageData.getContent());
+		model.addAttribute("currentPage", page);
+		model.addAttribute("totalPages", pageData.getTotalPages());
+		model.addAttribute("keyword", keyword);
+		
+		return "categories/search"; // file search.html
+	}
 
 }

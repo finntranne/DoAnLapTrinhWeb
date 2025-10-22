@@ -22,6 +22,7 @@ public interface CategoryService {
     // ===== SEARCH =====
     List<Category> findByCategoryNameContaining(String categoryname);
     Page<Category> findByCategoryNameContaining(String categoryname, Pageable pageable);
+    Page<Category> searchCategories(String keyword, int page);
 
     // ===== EXTRA =====
     Optional<Category> findByCategoryName(String categoryname);

@@ -327,3 +327,38 @@ body{
     flex-direction: column;
     align-items: flex-start;
 }
+
+.message-box {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  min-width: 300px;
+  max-width: 90%;
+  padding: 14px 18px;
+  border-radius: 8px;
+  font-size: 15px;
+  text-align: center;
+  z-index: 9999;
+  opacity: 0;
+  transition: all 0.4s ease;
+}
+
+.message-box.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.message-box.success {
+  background-color: #d1f7d6;
+  color: #216e39;
+  border: 1px solid #216e39;
+}
+
+.message-box.error {
+  background-color: #ffd6d6;
+  color: #9b1c1c;
+  border: 1px solid #9b1c1c;
+}
+
+

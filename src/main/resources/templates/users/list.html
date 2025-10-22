@@ -31,8 +31,8 @@
 
             <!-- Bảng danh sách -->
             <div class="table-responsive shadow-sm rounded">
-                <table class="table table-striped align-middle mb-0">
-                    <thead class="table-dark">
+                <table class="table table-striped table-hover align-middle">
+					<thead class="table-success">
                         <tr>
                         	<th scope="col">STT</th>
                             <th scope="col">ID</th>
@@ -57,27 +57,27 @@
 
 							</td>
 
-                            <td th:text="${user.username}" class="fw-semibold"></td>
+                            <td th:text="${user.username}"></td>
                             <td th:text="${user.email}"></td>
 
                             <!-- Vai trò -->
                            <td>
-  <div class="d-flex flex-wrap gap-2">
-    <span th:each="r : ${user.roles}"
-          class="badge d-inline-flex align-items-center gap-1 px-3 py-2 rounded-pill fw-semibold border"
-          th:classappend="
-              ${r.rolename == 'ADMIN'} ? 'bg-danger-subtle text-danger border-danger-subtle' :
-              (${r.rolename == 'USER'} ? 'bg-primary-subtle text-primary border-primary-subtle' :
-              (${r.rolename == 'VENDOR'} ? 'bg-warning-subtle text-warning border-warning-subtle' :
-              'bg-secondary-subtle text-secondary border-secondary-subtle'))
-          ">
-      <i th:class="${r.rolename == 'ADMIN'} ? 'bi bi-shield-lock-fill' :
-                   (${r.rolename == 'USER'} ? 'bi bi-person-fill' :
-                   (${r.rolename == 'VENDOR'} ? 'bi bi-shop' : 'bi bi-question-circle') )"></i>
-      <span th:text="${r.rolename}"></span>
-    </span>
-  </div>
-</td>
+							  <div class="d-flex flex-wrap gap-2">
+							    <span th:each="r : ${user.roles}"
+							          class="badge d-inline-flex align-items-center gap-1 px-3 py-2 rounded-pill fw-semibold border"
+							          th:classappend="
+							              ${r.rolename == 'ADMIN'} ? 'bg-danger-subtle text-danger border-danger-subtle' :
+							              (${r.rolename == 'USER'} ? 'bg-primary-subtle text-primary border-primary-subtle' :
+							              (${r.rolename == 'VENDOR'} ? 'bg-warning-subtle text-warning border-warning-subtle' :
+							              'bg-secondary-subtle text-secondary border-secondary-subtle'))
+							          ">
+							      <i th:class="${r.rolename == 'ADMIN'} ? 'bi bi-shield-lock-fill' :
+							                   (${r.rolename == 'USER'} ? 'bi bi-person-fill' :
+							                   (${r.rolename == 'VENDOR'} ? 'bi bi-shop' : 'bi bi-question-circle') )"></i>
+							      <span th:text="${r.rolename}"></span>
+							    </span>
+							  </div>
+							</td>
 
 
                             <!-- Trạng thái -->

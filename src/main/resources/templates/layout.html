@@ -235,7 +235,8 @@
             <img
               th:src="@{/images/logo.png}"
               alt="Alotra Logo"
-              class="brand-image"
+              class="brand-image" 
+     
             />
             <span class="brand-text fw-light">ALOTRA</span>
             </a>
@@ -274,10 +275,19 @@
 			        <p>Danh mục</p>
 			    </a>
 			</li>
-             
+			
+			
+             <li class="nav-item"
+			    th:classappend="${activeMenu == 'products'} ? 'active' : ''">
+			    <a th:href="@{/admin/products}" th:classappend="${activeMenu == 'products'} ? 'active' : ''" class="nav-link">
+			        <i class="nav-icon bi bi-box-seam"></i>
+			        <p>Sản phẩm</p>
+			    </a>
+			</li>
 
-              <li class="nav-item">
-                <a th:href="@{/generate/theme.html}" class="nav-link">
+              <li class="nav-item"
+              	  th:classappend="${activeMenu == 'discountPolicies'} ? 'active' : ''">
+                <a th:href="@{/admin/discountPolicies}" th:classappend="${activeMenu == 'discountPolicies'} ? 'active' : ''" class="nav-link">
                   <i class="nav-icon bi bi-cash-coin"></i>
                   <p>Chiết khấu</p>
                 </a>
@@ -295,36 +305,7 @@
                 </a>
               </li>
 
-              <li class="nav-item">
-                <a th:href="@{/dashboard.html}" class="nav-link">
-                   <i class="nav-icon bi bi-house-door-fill"></i>
-                  <p>Trang chủ Shop</p>
-                </a>
-              </li>
-              <li class="nav-item">
-                <a th:href="@{/generate/theme.html}" class="nav-link">
-                  <i class="nav-icon bi bi-box-seam"></i>
-                  <p>Sản phẩm</p>
-                </a>
-              </li>
-             <li class="nav-item">
-                <a th:href="@{/generate/theme.html}" class="nav-link">
-                  <i class="nav-icon bi bi-receipt-cutoff"></i>
-                  <p>Đơn hàng</p>
-                </a>
-              </li>
-              <li class="nav-item">
-                <a th:href="@{/generate/theme.html}" class="nav-link">
-                  <i class="nav-icon bi bi-gift-fill"></i>
-                  <p>Khuyến mãi</p>
-                </a>
-              </li>
-              <li class="nav-item">
-                <a th:href="@{/generate/theme.html}" class="nav-link">
-                  <i class="nav-icon bi bi-graph-up-arrow"></i>
-                  <p>Doanh thu</p>
-                </a>
-              </li>
+             
            
             </ul>
             </nav>
@@ -332,6 +313,7 @@
         </aside>
       <main class="app-main" layout:fragment="content">
         </main>
+        <th:block layout:fragment="scripts"></th:block>
       <footer class="app-footer">
         <div class="float-end d-none d-sm-inline">Anything you want</div>
         <strong>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout.html}">
+
+<head>
+    <title>Thêm chính sách chiết khấu</title>
+</head>
+
+<body>
+<main class="app-main">
+    <div layout:fragment="content">
+        <div class="container mt-4">
+
+            <!-- Card thêm chiết khấu -->
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-header bg-success text-white rounded-top-4">
+                    <h5 class="mb-0">
+                        <i class="bi bi-percent"></i> Thêm chính sách chiết khấu mới
+                    </h5>
+                </div>
+
+                <div class="card-body p-4">
+                    <form th:action="@{/admin/discountPolicies/save}" th:object="${discountPolicy}" method="post">
+
+                        <!-- Tên chính sách -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Tên chính sách</label>
+                            <input type="text" class="form-control" th:field="*{policyName}"
+                                   placeholder="Nhập tên chính sách chiết khấu" required>
+                        </div>
+
+                        <!-- Mô tả -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Mô tả</label>
+                            <textarea class="form-control" th:field="*{description}" rows="3"
+                                      placeholder="Nhập mô tả (nếu có)"></textarea>
+                        </div>
+
+                        <!-- Giá trị chiết khấu -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Giá trị chiết khấu (%)</label>
+                            <input type="number" class="form-control" th:field="*{discountValue}"
+                                   min="0" max="100" step="0.1" placeholder="Nhập phần trăm chiết khấu" required>
+                        </div>
+
+                        <!-- Ngày bắt đầu và kết thúc -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Ngày bắt đầu</label>
+                                <input type="date" class="form-control" th:field="*{startDate}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Ngày kết thúc</label>
+                                <input type="date" class="form-control" th:field="*{endDate}">
+                            </div>
+                        </div>
+
+                        <!-- Trạng thái -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Trạng thái</label>
+                            <select class="form-select" th:field="*{status}">
+                                <option value="1">Hoạt động</option>
+                                <option value="0">Tạm khóa</option>
+                            </select>
+                        </div>
+
+                        <!-- Nút hành động -->
+                        <div class="d-flex justify-content-end gap-2">
+                            <a th:href="@{/admin/discountPolicies}" 
+                               class="btn btn-outline-secondary rounded-pill shadow-sm">
+                                <i class="bi bi-arrow-left-circle"></i> Quay lại
+                            </a>
+
+                            <button type="submit" class="btn btn-success rounded-pill shadow-sm">
+                                <i class="bi bi-plus-circle"></i> Thêm mới
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</main>
+</body>
+</html>
