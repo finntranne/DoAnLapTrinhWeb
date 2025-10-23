@@ -24,4 +24,5 @@ public class ApprovalResponseDTO {
     private String rejectionReason;
     private String requestedByName;
     private String reviewedByName;
+    private String entityName;
 }

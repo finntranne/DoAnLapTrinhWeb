@@ -14,9 +14,12 @@ import com.alotra.entity.promotion.Promotion;
 import com.alotra.security.MyUserDetails;
 import com.alotra.service.vendor.VendorService;
 import com.fasterxml.jackson.core.JsonProcessingException;
+
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,8 +31,12 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Controller
@@ -82,8 +89,8 @@ public class VendorController {
 			ShopDashboardDTO dashboard = vendorService.getShopDashboard(shopId);
 			model.addAttribute("dashboard", dashboard);
 
-			// Lấy pending approvals
-			List<ApprovalResponseDTO> pendingApprovals = vendorService.getPendingApprovals(shopId);
+			List<ApprovalResponseDTO> pendingApprovals = vendorService.getPendingApprovals(shopId, null, null);
+
 			model.addAttribute("pendingApprovals", pendingApprovals);
 
 			return "vendor/dashboard";
@@ -604,9 +611,11 @@ public class VendorController {
 		try {
 			Integer shopId = getShopIdOrThrow(userDetails);
 
+			// Fetch data (defaulting logic is inside service if needed)
 			List<ShopRevenueDTO> revenues = vendorService.getShopRevenue(shopId, startDate, endDate);
 
 			model.addAttribute("revenues", revenues);
+			// Pass raw dates back for the form
 			model.addAttribute("startDate", startDate);
 			model.addAttribute("endDate", endDate);
 
@@ -615,27 +624,165 @@ public class VendorController {
 		} catch (IllegalStateException e) {
 			redirectAttributes.addFlashAttribute("error", e.getMessage());
 			return "redirect:/shop/register";
+		} catch (Exception e) {
+			log.error("Error loading revenue page", e);
+			redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra khi tải trang doanh thu.");
+			return "redirect:/vendor/dashboard";
+		}
+	}
+
+	// *** START NEW EXPORT METHOD ***
+	@GetMapping("/revenue/export")
+	public void exportRevenueToExcel(@AuthenticationPrincipal MyUserDetails userDetails,
+			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
+			HttpServletResponse response) {
+
+		log.info("Exporting revenue to Excel for shopId: {}, startDate: {}, endDate: {}",
+				(userDetails != null ? userDetails.getShopId() : "N/A"), startDate, endDate);
+
+		try {
+			Integer shopId = getShopIdOrThrow(userDetails);
+
+			// 1️⃣ Lấy dữ liệu
+			List<ShopRevenueDTO> revenues = vendorService.getShopRevenue(shopId, startDate, endDate);
+			log.info("Fetched {} revenue records for export.", revenues.size());
+
+			// 2️⃣ Tạo Workbook & Sheet
+			Workbook workbook = new XSSFWorkbook();
+			Sheet sheet = workbook.createSheet("Doanh thu");
+
+			// 3️⃣ Header Row
+			Row headerRow = sheet.createRow(0);
+			String[] headers = { "Ngày", "Số đơn hàng", "Doanh thu (Gross)", "Phí (Commission)", "Thực nhận (Net)" };
+
+			CellStyle headerStyle = workbook.createCellStyle();
+			Font headerFont = workbook.createFont();
+			headerFont.setBold(true);
+			headerStyle.setFont(headerFont);
+			headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+			headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+			headerStyle.setAlignment(HorizontalAlignment.CENTER);
+
+			for (int i = 0; i < headers.length; i++) {
+				Cell cell = headerRow.createCell(i);
+				cell.setCellValue(headers[i]);
+				cell.setCellStyle(headerStyle);
+			}
+
+			// 4️⃣ Dòng dữ liệu
+			int rowNum = 1;
+			DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+			CreationHelper createHelper = workbook.getCreationHelper();
+
+			CellStyle currencyCellStyle = workbook.createCellStyle();
+			currencyCellStyle.setDataFormat(createHelper.createDataFormat().getFormat("#,##0\" ₫\""));
+
+			for (ShopRevenueDTO revenue : revenues) {
+				Row row = sheet.createRow(rowNum++);
+
+				row.createCell(0).setCellValue(revenue.getDate().format(dateFormatter));
+				row.createCell(1).setCellValue(revenue.getTotalOrders());
+
+				Cell grossCell = row.createCell(2);
+				grossCell.setCellValue(revenue.getOrderAmount().doubleValue());
+				grossCell.setCellStyle(currencyCellStyle);
+
+				Cell commissionCell = row.createCell(3);
+				commissionCell.setCellValue(revenue.getCommissionAmount().doubleValue());
+				commissionCell.setCellStyle(currencyCellStyle);
+
+				Cell netCell = row.createCell(4);
+				netCell.setCellValue(revenue.getNetRevenue().doubleValue());
+				netCell.setCellStyle(currencyCellStyle);
+			}
+
+			// 5️⃣ Tổng cộng
+			Row totalRow = sheet.createRow(rowNum);
+			Font totalFont = workbook.createFont();
+			totalFont.setBold(true);
+
+			CellStyle totalStyle = workbook.createCellStyle();
+			totalStyle.setFont(totalFont);
+			totalStyle.setDataFormat(currencyCellStyle.getDataFormat());
+
+			Cell totalLabelCell = totalRow.createCell(1);
+			totalLabelCell.setCellValue("Tổng cộng:");
+			totalLabelCell.setCellStyle(headerStyle);
+
+			double totalGross = revenues.stream().mapToDouble(r -> r.getOrderAmount().doubleValue()).sum();
+			double totalCommission = revenues.stream().mapToDouble(r -> r.getCommissionAmount().doubleValue()).sum();
+			double totalNet = revenues.stream().mapToDouble(r -> r.getNetRevenue().doubleValue()).sum();
+
+			Cell totalGrossCell = totalRow.createCell(2);
+			totalGrossCell.setCellValue(totalGross);
+			totalGrossCell.setCellStyle(totalStyle);
+
+			Cell totalCommissionCell = totalRow.createCell(3);
+			totalCommissionCell.setCellValue(totalCommission);
+			totalCommissionCell.setCellStyle(totalStyle);
+
+			Cell totalNetCell = totalRow.createCell(4);
+			totalNetCell.setCellValue(totalNet);
+			totalNetCell.setCellStyle(totalStyle);
+
+			// 6️⃣ Auto-size cột
+			for (int i = 0; i < headers.length; i++) {
+				sheet.autoSizeColumn(i);
+			}
+
+			// 7️⃣ Gửi file về client
+			String filename = "BaoCaoDoanhThu_"
+					+ LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmm")) + ".xlsx";
+			response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+			response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+
+			workbook.write(response.getOutputStream());
+			workbook.close();
+
+			log.info("Successfully exported revenue data to Excel file: {}", filename);
+
+		} catch (IllegalStateException e) {
+			log.error("Authentication/Authorization error during export: {}", e.getMessage(), e);
+			response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+		} catch (IOException e) {
+			log.error("IOException during Excel export: {}", e.getMessage(), e);
+			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		} catch (Exception e) {
+			log.error("Unexpected error during Excel export", e);
+			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
 	}
 
 	// ==================== APPROVAL STATUS ====================
 
 	@GetMapping("/approvals")
-	public String viewApprovals(@AuthenticationPrincipal MyUserDetails userDetails, Model model,
-			RedirectAttributes redirectAttributes) {
+	public String viewApprovals(@AuthenticationPrincipal MyUserDetails userDetails,
+			// *** ADD FILTER PARAMETERS ***
+			@RequestParam(required = false) String entityType, @RequestParam(required = false) String actionType,
+			Model model, RedirectAttributes redirectAttributes) {
 
 		try {
 			Integer shopId = getShopIdOrThrow(userDetails);
 
-			List<ApprovalResponseDTO> approvals = vendorService.getPendingApprovals(shopId);
+			// *** PASS FILTERS TO SERVICE ***
+			List<ApprovalResponseDTO> approvals = vendorService.getPendingApprovals(shopId, entityType, actionType);
 
 			model.addAttribute("approvals", approvals);
+			// *** ADD FILTERS BACK TO MODEL ***
+			model.addAttribute("entityType", entityType);
+			model.addAttribute("actionType", actionType);
 
 			return "vendor/approvals";
 
 		} catch (IllegalStateException e) {
 			redirectAttributes.addFlashAttribute("error", e.getMessage());
 			return "redirect:/shop/register";
+		} catch (Exception e) {
+			log.error("Error loading approvals page", e);
+			redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra khi tải trang phê duyệt.");
+			return "redirect:/vendor/dashboard"; // Redirect to dashboard on general error
 		}
 	}
 }

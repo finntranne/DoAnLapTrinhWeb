@@ -47,6 +47,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -775,20 +776,30 @@ public class VendorService {
 	// ==================== REVENUE MANAGEMENT ====================
 
 	public List<ShopRevenueDTO> getShopRevenue(Integer shopId, LocalDateTime startDate, LocalDateTime endDate) {
-		if (startDate == null) {
-			startDate = LocalDateTime.now().minusMonths(1);
-		}
-		if (endDate == null) {
+		// Nếu không có filter, mặc định lấy 14 ngày gần nhất
+		if (startDate == null && endDate == null) {
+			endDate = LocalDateTime.now();
+			startDate = endDate.minusDays(14).withHour(0).withMinute(0).withSecond(0);
+			log.info("No date filter provided, using default: last 14 days from {} to {}", startDate, endDate);
+		} else if (startDate == null) {
+			// Nếu chỉ có endDate, lấy 14 ngày trước endDate
+			startDate = endDate.minusDays(14).withHour(0).withMinute(0).withSecond(0);
+		} else if (endDate == null) {
+			// Nếu chỉ có startDate, lấy đến hiện tại
 			endDate = LocalDateTime.now();
 		}
 
+		log.info("Fetching revenue for shop {} from {} to {}", shopId, startDate, endDate);
+
 		List<ShopRevenue> revenues = shopRevenueRepository.findByShopIdAndDateRange(shopId, startDate, endDate);
+
+		log.info("Found {} revenue records", revenues.size());
 
 		// Group by date
 		Map<LocalDateTime, List<ShopRevenue>> groupedByDate = revenues.stream()
 				.collect(Collectors.groupingBy(sr -> sr.getRecordedAt().toLocalDate().atStartOfDay()));
 
-		return groupedByDate.entrySet().stream().map(entry -> {
+		List<ShopRevenueDTO> result = groupedByDate.entrySet().stream().map(entry -> {
 			ShopRevenueDTO dto = new ShopRevenueDTO();
 			dto.setDate(entry.getKey());
 			dto.setTotalOrders((long) entry.getValue().size());
@@ -800,50 +811,65 @@ public class VendorService {
 					entry.getValue().stream().map(ShopRevenue::getNetRevenue).reduce(BigDecimal.ZERO, BigDecimal::add));
 			return dto;
 		}).sorted(Comparator.comparing(ShopRevenueDTO::getDate).reversed()).collect(Collectors.toList());
+
+		log.info("Grouped into {} days", result.size());
+
+		return result;
 	}
 
 	// ==================== APPROVAL STATUS ====================
 
-	public List<ApprovalResponseDTO> getPendingApprovals(Integer shopId) {
-		List<ApprovalResponseDTO> approvals = new ArrayList<>();
+	public List<ApprovalResponseDTO> getPendingApprovals(Integer shopId, String entityTypeFilter,
+			String actionTypeFilter) {
+		List<ApprovalResponseDTO> allApprovals = new ArrayList<>();
 
-		// Product approvals
+		// 1. Fetch ALL pending product approvals
 		List<ProductApproval> productApprovals = productApprovalRepository
 				.findByProduct_Shop_ShopIdAndStatusOrderByRequestedAtDesc(shopId, "Pending");
 
 		for (ProductApproval pa : productApprovals) {
 			ApprovalResponseDTO dto = new ApprovalResponseDTO();
 			dto.setApprovalId(pa.getApprovalId());
-			dto.setEntityType("PRODUCT");
+			dto.setEntityType("PRODUCT"); // Set type explicitly
 			dto.setEntityId(pa.getProduct().getProductID());
 			dto.setActionType(pa.getActionType());
 			dto.setStatus(pa.getStatus());
 			dto.setChangeDetails(pa.getChangeDetails());
 			dto.setRequestedAt(pa.getRequestedAt());
 			dto.setRequestedByName(pa.getRequestedBy().getFullName());
-			approvals.add(dto);
+			Optional<Product> productOpt = productRepository.findById(pa.getProduct().getProductID());
+			productOpt.ifPresent(product -> dto.setEntityName(product.getProductName()));
+			allApprovals.add(dto);
 		}
 
-		// Promotion approvals
+		// 2. Fetch ALL pending promotion approvals
 		List<PromotionApproval> promotionApprovals = promotionApprovalRepository
 				.findByPromotion_CreatedByShopID_ShopIdAndStatusOrderByRequestedAtDesc(shopId, "Pending");
 
 		for (PromotionApproval pa : promotionApprovals) {
 			ApprovalResponseDTO dto = new ApprovalResponseDTO();
 			dto.setApprovalId(pa.getApprovalId());
-			dto.setEntityType("PROMOTION");
+			dto.setEntityType("PROMOTION"); // Set type explicitly
 			dto.setEntityId(pa.getPromotion().getPromotionId());
 			dto.setActionType(pa.getActionType());
 			dto.setStatus(pa.getStatus());
 			dto.setChangeDetails(pa.getChangeDetails());
 			dto.setRequestedAt(pa.getRequestedAt());
 			dto.setRequestedByName(pa.getRequestedBy().getFullName());
-			approvals.add(dto);
+			Optional<Promotion> promotionOpt = promotionRepository.findById(pa.getPromotion().getPromotionId());
+			promotionOpt.ifPresent(promo -> dto.setEntityName(promo.getPromotionName()));
+			allApprovals.add(dto);
 		}
 
-		// Sort by requested date
-		approvals.sort(Comparator.comparing(ApprovalResponseDTO::getRequestedAt).reversed());
+		// 3. Filter the combined list using Streams
+		List<ApprovalResponseDTO> filteredApprovals = allApprovals.stream()
+				.filter(dto -> !StringUtils.hasText(entityTypeFilter)
+						|| dto.getEntityType().equalsIgnoreCase(entityTypeFilter)) // Filter by entity type if provided
+				.filter(dto -> !StringUtils.hasText(actionTypeFilter)
+						|| dto.getActionType().equalsIgnoreCase(actionTypeFilter)) // Filter by action type if provided
+				.sorted(Comparator.comparing(ApprovalResponseDTO::getRequestedAt).reversed()) // Sort AFTER filtering
+				.collect(Collectors.toList());
 
-		return approvals;
+		return filteredApprovals; // Return the filtered and sorted list
 	}
 }
