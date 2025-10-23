@@ -3,11 +3,15 @@ package com.alotra.entity.order;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.alotra.entity.promotion.Promotion;
 import com.alotra.entity.user.Customer;
@@ -15,9 +19,11 @@ import com.alotra.entity.user.Employee;
 
 @Entity
 @Table(name = "Orders")
-@Data
+@Getter // <-- Thay thế
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(of = "orderId")
 public class Order {
 
     @Id
@@ -75,4 +81,13 @@ public class Order {
 
     @Column(name = "Notes")
     private String notes;
+    
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Set<OrderItem> items = new HashSet<>();
+
+    // === Thêm hàm trợ giúp (không bắt buộc nhưng nên có) ===
+    public void addItem(OrderItem item) {
+        items.add(item);
+        item.setOrder(this);
+    }
 }

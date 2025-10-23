@@ -8,5 +8,7 @@ public interface CustomerService {
     // Hàm cần thiết để sửa lỗi trong CartController
     Optional<Customer> findByUser(User user);
 
-    // Thêm các hàm khác nếu cần (ví dụ: findById, save, ...)
+    Customer findByEmail(String email);
+    
+    Customer save(Customer customer);
 }

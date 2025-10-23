@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/main :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:text="${pageTitle}">Quản lý địa chỉ</title>
+</head>
+<body>
+<section>
+    <div class="container my-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <div class="card shadow-sm border-0 rounded-3">
+                    <div class="card-body p-4 p-md-5">
+                        
+                        <h3 class="fw-bold mb-4" th:text="${pageTitle}">Thêm địa chỉ mới</h3>
+
+                        <form th:action="@{${formAction}}" th:object="${address}" method="POST">
+                        
+                        <!-- Trường ID ẩn (CHỈ có giá trị khi EDIT) -->
+                            <input type="hidden" th:field="*{addressID}" />
+                            <!-- Trường origin ẩn (Nếu bạn vẫn cần) -->
+                            <input type="hidden" name="origin" th:value="${origin}" />
+                            
+                            <div class="mb-3">
+                                <label for="recipientName" class="form-label">Họ và tên người nhận</label>
+                                <input type="text" class="form-control" id="recipientName" 
+                                       th:field="*{recipientName}" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="phoneNumber" class="form-label">Số điện thoại</label>
+                                <input type="tel" class="form-control" id="phoneNumber" 
+                                       th:field="*{phoneNumber}" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="fullAddress" class="form-label">Địa chỉ chi tiết</label>
+                                <input type="text" class="form-control" id="fullAddress" 
+                                       th:field="*{fullAddress}" 
+                                       placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/TP" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="addressName" class="form-label">Loại địa chỉ</label>
+                                <input type="text" class="form-control" id="addressName" 
+                                       th:field="*{addressName}" 
+                                       placeholder="Ví dụ: Nhà riêng, Công ty, ...">
+                            </div>
+
+                            <div class="form-check mb-4">
+                                <input class="form-check-input" type="checkbox" id="isDefault" 
+                                       th:field="*{default}">
+                                <label class="form-check-label" for="isDefault">
+                                    Đặt làm địa chỉ mặc định
+                                </label>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg">Lưu địa chỉ</button>
+                                <a th:href="@{/checkout}" class="btn btn-outline-secondary">Hủy</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>

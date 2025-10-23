@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/main :: layout(~{::title}, ~{::section})}">
+<head>
+    <title>Sổ Địa Chỉ - AloTra</title>
+</head>
+<body>
+<section>
+    <nav class="breadcrumb-nav">
+        <div class="container">
+            <ol class="breadcrumb mb-0 py-3">
+                <li class="breadcrumb-item"><a th:href="@{/}" class="text-decoration-none"><i class="fa-solid fa-home me-1"></i>Trang chủ</a></li>
+                <li class="breadcrumb-item"><a th:href="@{/user/profile}" class="text-decoration-none">Hồ sơ của tôi</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Sổ địa chỉ</li>
+            </ol>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="fw-bold mb-0">Sổ Địa Chỉ</h1>
+            <a th:href="@{/user/addresses/new(origin='address_list')}" class="btn btn-primary">
+                <i class="fa-solid fa-plus me-2"></i>Thêm địa chỉ mới
+            </a>
+        </div>
+
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fa-solid fa-check-circle me-2"></i> <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fa-solid fa-exclamation-triangle me-2"></i> <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div th:if="${addresses == null or #lists.isEmpty(addresses)}" class="text-center py-5 border rounded-3 bg-light">
+            <i class="fa-solid fa-map-location-dot fa-4x text-muted mb-3"></i>
+            <h4 class="text-muted">Bạn chưa có địa chỉ nào được lưu.</h4>
+            <p class="text-muted">Thêm địa chỉ mới để đặt hàng nhanh hơn!</p>
+            <a th:href="@{/user/addresses/new}" class="btn btn-primary mt-2">
+                <i class="fa-solid fa-plus me-1"></i>Thêm ngay
+            </a>
+        </div>
+
+        <div th:unless="${addresses == null or #lists.isEmpty(addresses)}" class="row">
+            <div th:each="addr : ${addresses}" class="col-md-6">
+                <div class="address-card">
+                    <div class="address-card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="fw-bold fs-6">
+                                <span th:text="${addr.recipientName}"></span>
+                                <span th:if="${addr.isDefault()}" class="badge bg-success ms-2 default-badge">Mặc định</span>
+                            </div>
+                        </div>
+                        <div class="text-muted small mb-1">
+                            <i class="fa-solid fa-phone me-1"></i> <span th:text="${addr.phoneNumber}"></span>
+                        </div>
+                        <div class="text-muted small">
+                            <i class="fa-solid fa-location-dot me-1"></i> <span th:text="${addr.fullAddress}"></span>
+                        </div>
+                    </div>
+                    <div class="address-card-footer d-flex justify-content-between align-items-center">
+                        <div>
+                            <form th:if="${!addr.isDefault()}" th:action="@{/user/addresses/set-default/{id}(id=${addr.addressID})}" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-link action-link text-primary p-0">Đặt làm mặc định</button>
+                            </form>
+                        </div>
+                        <div>
+                            <a th:href="@{/user/addresses/edit/{id}(id=${addr.addressID})}" class="action-link text-secondary">Sửa</a>
+                            <form th:action="@{/user/addresses/delete/{id}(id=${addr.addressID})}" method="POST" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa địa chỉ này?');">
+                                <button type="submit" class="btn btn-link action-link text-danger p-0">Xóa</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>

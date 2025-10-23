@@ -38,7 +38,7 @@ public class CartItem {
 
     // === QUAN HỆ VỚI TOPPING ĐÃ CHỌN ===
     // Một món hàng có thể có nhiều topping được chọn
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
         name = "CartItemToppings", // Bảng trung gian lưu topping đã chọn cho món hàng
         joinColumns = @JoinColumn(name = "CartItemID"),

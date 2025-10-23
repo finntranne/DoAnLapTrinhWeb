@@ -88,7 +88,14 @@ public class WebSecurityConfig {
                 .requestMatchers("/admin/**").hasAuthority("ADMIN")
                 
                 // Chỉ USER (hoặc CUSTOMER) mới có thể vào trang cá nhân, giỏ hàng...
-                .requestMatchers("/profile/**", "/cart/**", "/orders/**", "products/**").hasAuthority("USER")
+                .requestMatchers("/profile/**", "/cart/**", "/orders/**", "products/**","checkout/**").hasAuthority("USER")
+               
+                .requestMatchers("/checkout").authenticated()
+                .requestMatchers("/place-order").authenticated()
+                .requestMatchers("/user/addresses/**").authenticated() // <-- THÊM DÒNG NÀY
+                .requestMatchers("/user/orders/**").authenticated()
+                .requestMatchers("/cart/buy-now").authenticated()
+                .requestMatchers("/user/profile/**").authenticated()
 
                 // --- TẤT CẢ CÁC REQUEST CÒN LẠI ---
                 // Bất kỳ yêu cầu nào chưa được định nghĩa ở trên đều yêu cầu phải đăng nhập

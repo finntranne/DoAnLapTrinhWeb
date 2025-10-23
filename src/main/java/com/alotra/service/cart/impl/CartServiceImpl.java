@@ -196,4 +196,41 @@ public class CartServiceImpl implements CartService {
             return 0; // Chưa có giỏ hàng thì số lượng là 0
         }
     }
+    
+    @Override
+    public BigDecimal getSubtotal(Customer customer) {
+        // 1. Tìm giỏ hàng của khách
+    	Cart cart = cartRepository.findByCustomer(customer).orElse(null);
+        if (cart == null || cart.getItems() == null || cart.getItems().isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        
+     // 2. Tính tổng tiền (bao gồm cả variant và topping)
+        return cart.getItems().stream()
+                   .map(item -> {
+                       // Bắt đầu với giá của variant (size)
+                       BigDecimal itemPrice = item.getVariant().getPrice();
+                       
+                       // Cộng thêm giá của tất cả topping đã chọn
+                       for (com.alotra.entity.product.Topping topping : item.getSelectedToppings()) {
+                           itemPrice = itemPrice.add(topping.getAdditionalPrice());
+                       }
+                       
+                       // Nhân với số lượng
+                       return itemPrice.multiply(new BigDecimal(item.getQuantity()));
+                   })
+                   .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    @Override
+    @Transactional // Quan trọng: Đảm bảo xóa an toàn
+    public void clearCart(Customer customer) {
+    	Cart cart = cartRepository.findByCustomer(customer).orElse(null);
+        if (cart != null && cart.getItems() != null) {
+            // Xóa tất cả CartItem liên kết với giỏ hàng này
+            cartItemRepository.deleteAll(cart.getItems());
+            cart.getItems().clear();
+            cartRepository.save(cart);
+        }
+    }
 }

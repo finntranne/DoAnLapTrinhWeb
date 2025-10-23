@@ -6,6 +6,7 @@ import com.alotra.entity.user.Customer;
 import com.alotra.entity.user.User;
 import com.alotra.repository.cart.CartRepository;
 import com.alotra.service.cart.CartService;
+import com.alotra.service.product.CategoryService;
 import com.alotra.service.user.CustomerService;
 import com.alotra.service.user.UserService;    // Cần có Service này
 
@@ -43,6 +44,8 @@ public class CartController {
     private UserService userService;
     @Autowired private CustomerService customerService;
     @Autowired private CartRepository cartRepository;
+    @Autowired
+    private CategoryService categoryService;
     
  // --- Hàm trợ giúp lấy số lượng giỏ hàng ---
     private int getCurrentCartItemCount() {
@@ -120,6 +123,7 @@ public class CartController {
         model.addAttribute("cartItems", cartItems);
         model.addAttribute("subtotal", subtotal);
         model.addAttribute("cartItemCount", getCurrentCartItemCount());
+        model.addAttribute("categories", categoryService.findAll());
         // Bạn có thể thêm các tính toán khác như giảm giá, phí ship, tổng cộng ở đây
 
         return "cart/cart"; // Trả về file view cart.html trong thư mục templates/cart
@@ -231,6 +235,40 @@ public class CartController {
         } catch (Exception e) {
             System.err.println("Lỗi cập nhật số lượng: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Lỗi máy chủ nội bộ."));
+        }
+    }
+    
+    @PostMapping("/cart/buy-now")
+    public String buyNow(@RequestParam("productId") Integer productId, // Vẫn cần để xử lý lỗi
+                         @RequestParam("variantId") Integer variantId,
+                         @RequestParam("quantity") Integer quantity,
+                         @RequestParam(name = "toppingIds", required = false) List<Integer> toppingIds,
+                         RedirectAttributes redirectAttributes) {
+
+        // --- Lấy thông tin khách hàng đang đăng nhập (Giống hệt addToCart) ---
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            return "redirect:/login"; // Bắt buộc đăng nhập
+        }
+        String username = auth.getName();
+        User currentUser = userService.findByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Không tìm thấy người dùng"));
+        Customer currentCustomer = customerService.findByUser(currentUser)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Không tìm thấy hồ sơ khách hàng"));
+        // ---------------------------------------------
+
+        try {
+            // 1. Gọi service để thêm item vào giỏ (Logic giống hệt addToCart)
+            cartService.addItemToCart(currentCustomer, variantId, quantity, toppingIds);
+
+            // 2. Chuyển hướng NGAY LẬP TỨC đến trang checkout
+            return "redirect:/checkout"; // <-- Khác biệt chính là ở đây
+
+        } catch (Exception e) {
+            // Nếu có lỗi khi thêm vào giỏ, quay lại trang sản phẩm và báo lỗi
+            System.err.println("Lỗi Mua Ngay (thêm vào giỏ): " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "Lỗi khi chuẩn bị mua ngay: " + e.getMessage());
+            return "redirect:/products/" + productId; // <-- Quay lại trang sản phẩm nếu lỗi
         }
     }
 }

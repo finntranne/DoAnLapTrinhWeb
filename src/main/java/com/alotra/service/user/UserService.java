@@ -8,4 +8,6 @@ public interface UserService {
     Optional<User> findByUsername(String username);
 
     // (Thêm các hàm quản lý User khác nếu cần: save, findById, etc.)
+    
+    public User save(User user);
 }

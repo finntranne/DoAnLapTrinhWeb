@@ -7,7 +7,6 @@
 </head>
 <body>
 <section>
-    <!-- Breadcrumb Navigation -->
     <nav class="breadcrumb-nav bg-light py-2">
         <div class="container">
             <ol class="breadcrumb mb-0">
@@ -18,14 +17,18 @@
     </nav>
 
     <div class="container my-5">
-        <!-- Page Header -->
         <div class="mb-4">
             <h1 class="fw-bold mb-2">
                 <i class="fa-solid fa-shopping-cart text-primary me-2"></i>Giỏ Hàng Của Bạn
             </h1>
         </div>
+        
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fa-solid fa-exclamation-triangle me-2"></i>
+            <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
 
-        <!-- Empty Cart State -->
         <div th:if="${cartItems == null or #lists.isEmpty(cartItems)}" class="empty-cart-container text-center py-5">
             <div class="empty-cart-icon mb-4">
                 <i class="fa-solid fa-cart-shopping fa-5x"></i>
@@ -37,137 +40,148 @@
             </a>
         </div>
 
-        <!-- Cart with Items -->
-        <div th:unless="${cartItems == null or #lists.isEmpty(cartItems)}" class="row g-4">
-            <!-- Cart Items Column -->
-            <div class="col-lg-8">
-                <div class="card shadow-sm border-0 rounded-3">
-                    <div class="card-header bg-white border-0 py-3">
-                        <h5 class="mb-0 fw-bold">Sản phẩm trong giỏ</h5>
-                    </div>
-                    <div class="card-body p-0">
-                        <div th:each="item, iterStat : ${cartItems}" 
-                             class="cart-item p-4" 
-                             th:classappend="${!iterStat.last} ? 'border-bottom' : ''">
-                            <div class="row align-items-center g-3">
-                                <!-- Product Image -->
-                                <div class="col-md-2 col-3">
-                                    <div class="product-image-wrapper">
-                                        <img th:if="${item.variant.product.productImages != null and not #lists.isEmpty(item.variant.product.productImages)}"
-                                             th:src="${item.variant.product.productImages[0].imageUrl}"
-                                             th:alt="${item.variant.product.productName}">
-                                        <img th:unless="${item.variant.product.productImages != null and not #lists.isEmpty(item.variant.product.productImages)}"
-                                             th:src="@{/images/placeholder.png}"
-                                             alt="Placeholder">
-                                    </div>
-                                </div>
+        <div th:unless="${cartItems == null or #lists.isEmpty(cartItems)}">
+            <form th:action="@{/cart/select-for-checkout}" method="POST" id="cartForm" class="row g-4">
+                
+                <div class="col-lg-8">
+                    <div class="card shadow-sm border-0 rounded-3">
+                        <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0 fw-bold">Sản phẩm trong giỏ</h5>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)">
+                                <label class="form-check-label" for="selectAllCheckbox">
+                                    Chọn tất cả
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="card-body p-0">
+                            <div th:each="item, iterStat : ${cartItems}" 
+                                 class="cart-item p-4" 
+                                 th:classappend="${!iterStat.last} ? 'border-bottom' : ''"
+                                 th:with="itemPrice=${item.variant.price}, 
+                                          toppingSum=${#aggregates.sum(item.selectedToppings.![additionalPrice])}, 
+                                          toppingPrice=${toppingSum ?: T(java.math.BigDecimal).ZERO},
+                                          lineTotal=${(itemPrice + toppingPrice) * item.quantity}"
+                                 th:data-line-total="${lineTotal}"> <div class="row align-items-center g-3">
+                                
+                                    <div class="col-1 d-flex justify-content-center align-items-center">
+                                        <input class="form-check-input cart-item-checkbox" type="checkbox" 
+                                               name="selectedItemIds"
+                                               th:value="${item.cartItemId}" 
+                                               th:id="'select-' + ${item.cartItemId}"
+                                               onchange="updateCartSummary()"
+                                               checked> </div>
 
-                                <!-- Product Info -->
-                                <div class="col-md-4 col-9">
-                                    <h6 class="mb-2 fw-bold" th:text="${item.variant.product.productName}"></h6>
-                                    <div class="product-meta">
-                                        <span class="badge bg-light text-dark me-1">
-                                            <i class="fa-solid fa-expand me-1"></i>
-                                            <span th:text="${item.variant.size.sizeName}"></span>
-                                        </span>
-                                        <div th:if="${not #lists.isEmpty(item.selectedToppings)}" class="mt-2">
-                                            <small class="text-muted">
-                                                <i class="fa-solid fa-plus-circle me-1"></i>
-                                                <span th:text="${#strings.listJoin(item.selectedToppings.![toppingName], ', ')}"></span>
-                                            </small>
+                                    <div class="col-md-2 col-2">
+                                        <div class="product-image-wrapper">
+                                            <img th:if="${item.variant.product.productImages != null and not #lists.isEmpty(item.variant.product.productImages)}"
+                                                 th:src="${item.variant.product.productImages[0].imageUrl}"
+                                                 th:alt="${item.variant.product.productName}">
+                                            <img th:unless="${item.variant.product.productImages != null and not #lists.isEmpty(item.variant.product.productImages)}"
+                                                 th:src="@{/images/placeholder.png}"
+                                                 alt="Placeholder">
                                         </div>
                                     </div>
-                                </div>
 
-                                <!-- Quantity Selector -->
-                                <div class="col-md-3 col-6">
-                                    <label class="form-label small text-muted mb-2">Số lượng</label>
-                                    <div class="input-group quantity-selector-cart">
-                                        <button class="btn btn-outline-secondary" type="button" 
-                                                th:onclick="|updateQuantity('${item.cartItemId}', -1)|">
-                                            <i class="fa-solid fa-minus"></i>
-                                        </button>
-                                        <input type="text" class="form-control text-center" 
-                                               th:value="${item.quantity}" 
-                                               th:id="'quantity-' + ${item.cartItemId}" 
-                                               readonly>
-                                        <button class="btn btn-outline-secondary" type="button" 
-                                                th:onclick="|updateQuantity('${item.cartItemId}', 1)|">
-                                            <i class="fa-solid fa-plus"></i>
-                                        </button>
+                                    <div class="col-md-3 col-9">
+                                        <h6 class="mb-2 fw-bold" th:text="${item.variant.product.productName}"></h6>
+                                        <div class="product-meta">
+                                            <span class="badge bg-light text-dark me-1">
+                                                <i class="fa-solid fa-expand me-1"></i>
+                                                <span th:text="${item.variant.size.sizeName}"></span>
+                                            </span>
+                                            <div th:if="${not #lists.isEmpty(item.selectedToppings)}" class="mt-2">
+                                                <small class="text-muted">
+                                                    <i class="fa-solid fa-plus-circle me-1"></i>
+                                                    <span th:text="${#strings.listJoin(item.selectedToppings.![toppingName], ', ')}"></span>
+                                                </small>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <!-- Price -->
-                                <div class="col-md-2 col-4 text-end">
-                                    <label class="form-label small text-muted mb-2 d-block">Thành tiền</label>
-                                    <span class="fw-bold text-danger fs-5" 
-                                          th:with="itemPrice=${item.variant.price}, 
-                                                   toppingSum=${#aggregates.sum(item.selectedToppings.![additionalPrice])}, 
-                                                   toppingPrice=${toppingSum ?: T(java.math.BigDecimal).ZERO}"
-                                          th:text="${#numbers.formatDecimal((itemPrice + toppingPrice) * item.quantity, 0, 'POINT', 0, 'COMMA')} + 'đ'">
-                                    </span>
-                                </div>
+                                    <div class="col-md-3 col-6">
+                                        <label class="form-label small text-muted mb-2">Số lượng</label>
+                                        <div class="input-group quantity-selector-cart">
+                                            <button class="btn btn-outline-secondary" type="button" 
+                                                    th:onclick="|updateQuantity('${item.cartItemId}', -1)|">
+                                                <i class="fa-solid fa-minus"></i>
+                                            </button>
+                                            <input type="text" class="form-control text-center" 
+                                                   th:value="${item.quantity}" 
+                                                   th:id="'quantity-' + ${item.cartItemId}" 
+                                                   readonly>
+                                            <button class="btn btn-outline-secondary" type="button" 
+                                                    th:onclick="|updateQuantity('${item.cartItemId}', 1)|">
+                                                <i class="fa-solid fa-plus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
 
-                                <!-- Remove Button -->
-                                <div class="col-md-1 col-2 text-end">
-                                    <form th:action="@{/cart/remove/{itemId}(itemId=${item.cartItemId})}" 
-                                          method="post" class="d-inline">
-                                        <button type="submit" 
+                                    <div class="col-md-2 col-4 text-end">
+                                        <label class="form-label small text-muted mb-2 d-block">Thành tiền</label>
+                                        <span class="fw-bold text-danger fs-5" 
+                                              th:text="${#numbers.formatDecimal(lineTotal, 0, 'POINT', 0, 'COMMA')} + 'đ'">
+                                        </span>
+                                    </div>
+
+                                    <div class="col-md-1 col-2 text-end">
+                                        <button type="button" 
                                                 class="btn btn-sm btn-outline-danger rounded-circle" 
-                                                onclick="return confirm('Bạn có chắc muốn xóa sản phẩm này?');"
+                                                th:onclick="|removeItem('${item.cartItemId}')|"
                                                 title="Xóa sản phẩm">
                                             <i class="fa-solid fa-trash"></i>
                                         </button>
-                                    </form>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Order Summary Column -->
-            <div class="col-lg-4">
-                <div class="summary-card card shadow-sm border-0 rounded-3 position-sticky" style="top: 20px;">
-                    <div class="card-body p-4">
-                        <h5 class="card-title mb-4">
-                            <i class="fa-solid fa-receipt me-2"></i>Thông tin đơn hàng
-                        </h5>
-                        
-                        <ul class="list-group list-group-flush mb-4">
-                            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                                <span class="text-white-50">Tạm tính</span>
-                                <span class="fw-semibold" th:text="${#numbers.formatDecimal(subtotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                                <span class="text-white-50">Phí vận chuyển</span>
-                                <span class="fw-semibold">Miễn phí</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center py-3 border-top border-white border-opacity-25">
-                                <span class="fs-5 fw-bold">Tổng cộng</span>
-                                <span class="price-highlight" th:text="${#numbers.formatDecimal(subtotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
-                            </li>
-                        </ul>
+                <div class="col-lg-4">
+                    <div class="summary-card card shadow-sm border-0 rounded-3 position-sticky" style="top: 20px;">
+                        <div class="card-body p-4">
+                            <h5 class="card-title mb-4">
+                                <i class="fa-solid fa-receipt me-2"></i>Thông tin đơn hàng
+                            </h5>
+                            
+                            <ul class="list-group list-group-flush mb-4">
+                                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                                    <span class="text-white-50">Tạm tính</span>
+                                    <span class="fw-semibold" id="cart-subtotal"
+                                          th:text="${#numbers.formatDecimal(subtotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                                    <span class="text-white-50">Phí vận chuyển</span>
+                                    <span class="fw-semibold">Miễn phí</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center py-3 border-top border-white border-opacity-25">
+                                    <span class="fs-5 fw-bold">Tổng cộng</span>
+                                    <span class="price-highlight" id="cart-total"
+                                          th:text="${#numbers.formatDecimal(subtotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                                </li>
+                            </ul>
 
-                        <div class="d-grid gap-3">
-                            <a href="/checkout" class="btn btn-light btn-lg py-3 fw-bold">
-                                <i class="fa-solid fa-credit-card me-2"></i>Tiến hành thanh toán
-                            </a>
-                            <a th:href="@{/}" class="btn btn-outline-light">
-                                <i class="fa-solid fa-arrow-left me-2"></i>Tiếp tục mua sắm
-                            </a>
-                        </div>
+                            <div class="d-grid gap-3">
+                                <button type="submit" class="btn btn-light btn-lg py-3 fw-bold">
+                                    <i class="fa-solid fa-credit-card me-2"></i>Tiến hành thanh toán
+                                </button>
+                                <a th:href="@{/}" class="btn btn-outline-light">
+                                    <i class="fa-solid fa-arrow-left me-2"></i>Tiếp tục mua sắm
+                                </a>
+                            </div>
 
-                        <div class="mt-4 pt-3 border-top border-white border-opacity-25">
-                            <small class="text-white-50 d-flex align-items-start">
-                                <i class="fa-solid fa-shield-halved me-2 mt-1"></i>
-                                <span>Thanh toán an toàn và bảo mật</span>
-                            </small>
+                            <div class="mt-4 pt-3 border-top border-white border-opacity-25">
+                                <small class="text-white-50 d-flex align-items-start">
+                                    <i class="fa-solid fa-shield-halved me-2 mt-1"></i>
+                                    <span>Thanh toán an toàn và bảo mật</span>
+                                </small>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
 

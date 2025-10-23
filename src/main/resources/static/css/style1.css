@@ -2,6 +2,9 @@
     :root {
         --primary-color: #73A580; /* Màu xanh matcha chủ đạo */
         --primary-color-rgb: 115, 165, 128;
+        --primary-color-darker: #5c8466; /* Slightly darker shade for hover/borders */
+    --primary-color-lighter: #e3efe7; /* Lighter shade for backgrounds */
+    --primary-text-color: #ffffff; /* Text color on primary background */
     }
     body {
         background-color: #f8f9fa;
@@ -1631,3 +1634,298 @@
     color: var(--primary-dark) !important;
     border: 1px solid var(--primary-light);
 }
+
+
+.profile-header {
+    /* Use the primary color */
+    background: var(--primary-color);
+    color: var(--primary-text-color); /* Ensure text is readable */
+    padding: 2.5rem 0;
+    margin-bottom: 2rem;
+    border-radius: 0 0 20px 20px;
+}
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    /* Use primary color for the letter */
+    color: var(--primary-color);
+    font-weight: bold;
+    border: 5px solid rgba(255, 255, 255, 0.5); /* Lighter border */
+    margin: 0 auto 1rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.profile-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.profile-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+
+.profile-card-header {
+    /* Use a neutral or lighter primary background */
+    background-color: #f8f9fa;
+    /* Or use a lighter primary color: background-color: var(--primary-color-lighter); */
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #dee2e6; /* Standard border */
+}
+
+.profile-card-header h5 {
+    margin: 0;
+    font-weight: 600;
+    /* Use primary color for icon/text if desired */
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.profile-card-body {
+    padding: 1.5rem;
+}
+
+.form-label {
+    font-weight: 500;
+    color: #4a5568;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.form-control, .form-select {
+    border: 1px solid #ced4da; /* Standard Bootstrap border */
+    border-radius: 8px; /* Slightly less rounded */
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+}
+
+.form-control:focus, .form-select:focus {
+    /* Use primary color for focus */
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(115, 165, 128, 0.25); /* Adjusted shadow color */
+    outline: none;
+}
+
+.form-control:disabled, .form-control[readonly] {
+    background-color: #e9ecef; /* Standard disabled background */
+    border-color: #ced4da;
+    color: #6c757d;
+}
+
+/* Update primary button */
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--primary-text-color);
+    padding: 0.75rem 2.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(115, 165, 128, 0.2); /* Adjusted shadow */
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-color-darker);
+    border-color: var(--primary-color-darker);
+    color: var(--primary-text-color);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(115, 165, 128, 0.3); /* Adjusted shadow */
+}
+
+.btn-outline-secondary {
+    border: 1px solid #6c757d; /* Standard secondary outline */
+    color: #6c757d;
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+/* Update Quick Actions */
+.quick-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    flex-direction: column; /* Stack vertically */
+}
+
+.quick-action-btn {
+    /* flex: 1; */ /* Remove flex-grow for vertical stack */
+    /* min-width: 200px; */ /* Not needed for vertical */
+    padding: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    text-decoration: none;
+    color: #4a5568;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: white;
+}
+
+.quick-action-btn:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(115, 165, 128, 0.15); /* Adjusted shadow */
+}
+
+.quick-action-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    /* Use primary color for icon background */
+    background-color: var(--primary-color);
+    color: var(--primary-text-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+/* Update Info Badge */
+.info-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    /* Use lighter primary for background */
+    background-color: var(--primary-color-lighter);
+    /* Use darker primary for text */
+    color: var(--primary-color-darker);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* Update Address Preview */
+.address-preview {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    /* Use primary color for border */
+    border-left: 4px solid var(--primary-color);
+}
+
+.address-preview .address-label {
+    font-size: 0.85rem;
+    color: #6c757d;
+    font-weight: 500;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.address-preview .address-value {
+    color: #212529;
+    font-weight: 500;
+}
+
+/* Update Stats Item */
+.stats-item {
+    text-align: center;
+    padding: 1rem;
+    background-color: #f8f9fa; /* Simpler background */
+    border-radius: 10px;
+    border: 1px solid #dee2e6;
+}
+
+.stats-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    /* Use primary color */
+    color: var(--primary-color);
+    display: block;
+}
+
+.stats-label {
+    font-size: 0.85rem;
+    color: #4a5568;
+    margin-top: 0.25rem;
+}
+
+/* Keep Alert styles as they are theme-independent (success/danger) */
+.alert {
+    border-radius: 12px;
+    border: none;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.alert-success {
+    /* Keep original green gradient or change if needed */
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    color: #065f46;
+}
+
+.alert-danger {
+     /* Keep original red gradient or change if needed */
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #991b1b;
+}
+
+.breadcrumb-nav {
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+}
+
+/* Responsive (Keep as is, mostly layout changes) */
+@media (max-width: 768px) {
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+        font-size: 2.5rem;
+    }
+
+    /* Keep quick actions stacked on mobile */
+    .quick-action-btn {
+        min-width: unset;
+    }
+
+    .profile-header {
+        padding: 1.5rem 0;
+    }
+}
+
+.address-card {
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            transition: box-shadow 0.3s ease;
+        }
+        .address-card:hover {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .address-card-body { padding: 1.5rem; }
+        .address-card-footer {
+            background-color: #f8f9fa;
+            padding: 0.75rem 1.5rem;
+            border-top: 1px solid #dee2e6;
+        }
+        .default-badge { font-size: 0.8em; }
+        .action-link {
+            font-size: 0.9em;
+            text-decoration: none;
+            margin-left: 0.75rem;
+        }
+        .btn-link { padding: 0; vertical-align: baseline; } /* For button forms */

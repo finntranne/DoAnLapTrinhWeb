@@ -20,5 +20,16 @@ public class CustomerServiceImpl implements CustomerService {
         return customerRepository.findByUser(user);
     }
 
-    // Implement các hàm khác nếu bạn định nghĩa trong interface
+    @Override
+    public Customer findByEmail(String email) {
+
+        return customerRepository.findByEmail(email).orElse(null);
+        
+}
+    
+    @Override // Add Override annotation
+    public Customer save(Customer customer) {
+        // You might add validation or other logic here later
+        return customerRepository.save(customer);
+    }
 }

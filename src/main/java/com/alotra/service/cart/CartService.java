@@ -18,4 +18,8 @@ public interface CartService {
     CartItem updateItemQuantity(Customer customer, Long cartItemId, int newQuantity);
     
     int getCartItemCount(Customer customer);
+    
+    BigDecimal getSubtotal(Customer customer);
+    
+    void clearCart(Customer customer);
 }

@@ -44,5 +44,9 @@ public class UserServiceImpl implements UserDetailsService, UserService {
         return userRepository.findByUsername(username);
     }
 
-    // (Implement các hàm khác của UserService nếu có)
+	@Override
+	public User save(User user) {
+	    return userRepository.save(user);
+	}
+
 }
