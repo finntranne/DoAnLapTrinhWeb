@@ -29,4 +29,8 @@ public class ProductService {
     public Optional<ProductSaleDTO> findProductSaleDataById(Integer id) {
         return productRepository.findProductSaleDataById(id);
     }
+    
+    public Page<ProductSaleDTO> findProductSaleDataByKeyword(String keyword, Pageable pageable){
+    	return productRepository.findProductSaleDataByKeyword(keyword, pageable);
+    }
 }

@@ -21,12 +21,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -105,5 +107,52 @@ public class ProductController {
         model.addAttribute("isHomePage", false);
 
         return "product/detail"; // Trả về file view mới
+    }
+    
+    @GetMapping("/search")
+    public String searchProducts(
+            @RequestParam(name = "keyword", required = false, defaultValue = "") String keyword,
+            @RequestParam(name = "page", defaultValue = "0") int page, // ⚠️ ĐỔI THÀNH 0-indexed
+            @RequestParam(name = "sort", required = false, defaultValue = "priceDesc") String sort,
+            Model model) {
+
+        try {
+            model.addAttribute("cartItemCount", getCurrentCartItemCount());
+            model.addAttribute("categories", categoryService.findAll());
+        } catch (Exception e) { /* Handle or ignore */ }
+
+        int pageSize = 2; // Recommended: 3 rows x 5 columns
+
+        // === CREATE SORT OBJECT ===
+        Sort sortOrder;
+        switch (sort) {
+            case "nameAsc":
+                sortOrder = Sort.by("productName").ascending(); 
+                break;
+            case "nameDesc":
+                sortOrder = Sort.by("productName").descending();
+                break;
+            case "priceAsc":
+                sortOrder = Sort.by("basePrice").ascending(); 
+                break;
+            case "priceDesc":
+            default:
+                sortOrder = Sort.by("basePrice").descending(); 
+                sort = "priceDesc"; 
+                break;
+        }
+
+        Pageable pageable = PageRequest.of(page, pageSize, sortOrder); // page đã là 0-indexed
+
+        Page<ProductSaleDTO> salePage = productService.findProductSaleDataByKeyword(keyword, pageable);
+
+        // Pass data to View
+        model.addAttribute("sales", salePage);
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("currentSort", sort);
+        model.addAttribute("totalItems", salePage.getTotalElements());
+        model.addAttribute("isHomePage", false);
+
+        return "shop/search_results";
     }
 }

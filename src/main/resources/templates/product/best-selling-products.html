@@ -20,63 +20,88 @@
     <div class="container my-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="mb-0">Sản Phẩm Bán Chạy</h2>
+            
+            <!-- Updated Sort Options -->
             <div class="sort-options">
-    <span>Sắp xếp:</span>
-    <a th:href="@{${baseUrl}(sort='nameAsc')}" th:classappend="${currentSort == 'nameAsc'} ? 'active'">A → Z</a>
-    <a th:href="@{${baseUrl}(sort='nameDesc')}" th:classappend="${currentSort == 'nameDesc'} ? 'active'">Z → A</a>
-    <a th:href="@{${baseUrl}(sort='priceAsc')}" th:classappend="${currentSort == 'priceAsc'} ? 'active'">Giá tăng dần</a>
-    <a th:href="@{${baseUrl}(sort='priceDesc')}" th:classappend="${currentSort == 'priceDesc'} ? 'active'">Giá giảm dần</a>
-</div>
+                <span>Sắp xếp:</span>
+                <a th:href="@{/products/best-selling(sort='bestSelling')}" 
+                   th:classappend="${currentSort == 'bestSelling'} ? 'active'">Bán chạy nhất</a>
+                <a th:href="@{/products/best-selling(sort='nameAsc')}" 
+                   th:classappend="${currentSort == 'nameAsc'} ? 'active'">A → Z</a>
+                <a th:href="@{/products/best-selling(sort='nameDesc')}" 
+                   th:classappend="${currentSort == 'nameDesc'} ? 'active'">Z → A</a>
+                <a th:href="@{/products/best-selling(sort='priceAsc')}" 
+                   th:classappend="${currentSort == 'priceAsc'} ? 'active'">Giá tăng dần</a>
+                <a th:href="@{/products/best-selling(sort='priceDesc')}" 
+                   th:classappend="${currentSort == 'priceDesc'} ? 'active'">Giá giảm dần</a>
+            </div>
         </div>
 
         <div class="my-5">
-    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-4" th:if="${bestSellingProductPage != null and not #lists.isEmpty(bestSellingProductPage)}">
-        
-        <div class="col" th:each="sale : ${bestSellingProductPage.content}">
-            <div class="product-card h-100">
-                <a th:href="@{'/products/' + ${sale.product.productId}}" class="product-card-link">
-                    <div th:if="${sale.discountPercentage != null and sale.discountPercentage > 0}" class="discount-badge" th:text="'-' + ${sale.discountPercentage} + '%'"></div>
-                    
-                    <img th:if="${not #lists.isEmpty(sale.product.productImages)}" th:src="${sale.product.productImages[0].imageUrl}" class="card-img-top" th:alt="${sale.product.productName}">
-                    <img th:unless="${not #lists.isEmpty(sale.product.productImages)}" th:src="@{/images/placeholder.png}" class="card-img-top" th:alt="${sale.product.productName}">
-                </a>
+            <!-- Product Grid -->
+            <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-4" 
+                 th:if="${bestSellingProductPage != null and not bestSellingProductPage.empty}">
+                
+                <div class="col" th:each="sale : ${bestSellingProductPage.content}">
+                    <div class="product-card h-100">
+                        <a th:href="@{'/products/' + ${sale.product.productId}}" class="product-card-link">
+                            <div th:if="${sale.discountPercentage != null and sale.discountPercentage > 0}" 
+                                 class="discount-badge" 
+                                 th:text="'-' + ${sale.discountPercentage} + '%'"></div>
+                            
+                            <img th:if="${not #lists.isEmpty(sale.product.productImages)}" 
+                                 th:src="${sale.product.productImages[0].imageUrl}" 
+                                 class="card-img-top" 
+                                 th:alt="${sale.product.productName}">
+                            <img th:unless="${not #lists.isEmpty(sale.product.productImages)}" 
+                                 th:src="@{/images/placeholder.png}" 
+                                 class="card-img-top" 
+                                 th:alt="${sale.product.productName}">
+                        </a>
 
-                <div class="card-body">
-                    <p class="product-brand mb-1">ALOTRA</p>
-                    <h5 class="product-title" th:text="${sale.product.productName}">Tên sản phẩm</h5>
-                    
-                    <div class="product-price" th:if="${not #lists.isEmpty(sale.product.productVariants)}">
-                        <th:block th:with="originalPrice=${sale.product.productVariants[0].price}">
-                            <div th:if="${sale.discountPercentage != null and sale.discountPercentage > 0}">
-                                <span th:text="${#numbers.formatDecimal(originalPrice * (100 - sale.discountPercentage) / 100, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
-                                <span class="original-price" th:text="${#numbers.formatDecimal(originalPrice, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                        <div class="card-body">
+                            <p class="product-brand mb-1">ALOTRA</p>
+                            <h5 class="product-title" th:text="${sale.product.productName}">Tên sản phẩm</h5>
+                            
+                            <div class="product-price" th:if="${not #lists.isEmpty(sale.product.productVariants)}">
+                                <th:block th:with="originalPrice=${sale.product.productVariants[0].price}">
+                                    <div th:if="${sale.discountPercentage != null and sale.discountPercentage > 0}">
+                                        <span th:text="${#numbers.formatDecimal(originalPrice * (100 - sale.discountPercentage) / 100, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                                        <span class="original-price" 
+                                              th:text="${#numbers.formatDecimal(originalPrice, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                                    </div>
+                                    <div th:unless="${sale.discountPercentage != null and sale.discountPercentage > 0}">
+                                        <span th:text="${#numbers.formatDecimal(originalPrice, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                                    </div>
+                                </th:block>
                             </div>
-                            <div th:unless="${sale.discountPercentage != null and sale.discountPercentage > 0}">
-                                <span th:text="${#numbers.formatDecimal(originalPrice, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                        </div>
+
+                        <div class="product-card-footer">
+                            <div class="sold-progress-bar">
+                                <div class="sold-progress" 
+                                     th:with="sold=${sale.totalSold ?: 0}" 
+                                     th:style="'width: ' + (${sold} > 500 ? 100 : ${sold} * 100 / 500) + '%'"></div>
+                                <span class="sold-text" th:text="${sale.totalSold ?: 0} + ' đã bán'"></span>
                             </div>
-                        </th:block>
+                            <button class="btn-add-to-cart">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
+            </div>
+            
+            <!-- Empty State -->
+            <div class="text-center" th:if="${bestSellingProductPage == null or bestSellingProductPage.empty}">
+                <p>Hiện chưa có sản phẩm bán chạy nào.</p>
+            </div>
 
-                <div class="product-card-footer">
-                    <div class="sold-progress-bar">
-    <div class="sold-progress" th:with="sold=${sale.totalSold ?: 0}" 
-         th:style="'width: ' + (${sold} > 500 ? 100 : ${sold} * 100 / 500) + '%'"></div>
-    <span class="sold-text" th:text="${sale.totalSold ?: 0} + ' đã bán'"></span>
-</div>
-                    <button class="btn-add-to-cart">
-                        <i class="fa-solid fa-plus"></i>
-                    </button>
-                </div>
+            <!-- Updated Pagination -->
+            <div class="mt-5" 
+                 th:replace="~{fragments/pagination :: pagination(page=${bestSellingProductPage}, keyword=${null}, sort=${currentSort}, categoryId=${null})}">
             </div>
         </div>
-    </div>
-        
-        <div class="text-center" th:if="${bestSellingProductPage == null or bestSellingProductPage.empty}">
-            <p>Hiện chưa có sản phẩm bán chạy nào.</p>
-        </div>
-
-        <div class="mt-5" th:replace="~{fragments/pagination :: pagination(${bestSellingProductPage})}"></div>
     </div>
 </section>
 </body>

@@ -1,19 +1,26 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <body>
-<nav th:fragment="pagination(page)" th:if="${page.totalPages > 1}" aria-label="Page navigation" class="pagination-wrapper">
+<nav th:fragment="pagination(page, keyword, sort, categoryId)" 
+     th:if="${page.totalPages > 1}" 
+     aria-label="Page navigation" 
+     class="pagination-wrapper">
     <ul class="pagination pagination-modern justify-content-center">
-        
+
         <!-- Nút First -->
         <li class="page-item" th:classappend="${page.first} ? 'disabled'">
-            <a class="page-link page-first" th:href="@{''(page=0)}" title="Trang đầu">
+            <a class="page-link page-first" 
+               th:href="${categoryId != null} ? @{/categories/{id}(id=${categoryId}, page=0, sort=${sort})} : @{''(page=0, keyword=${keyword}, sort=${sort})}"
+               title="Trang đầu">
                 <i class="fa-solid fa-angles-left"></i>
             </a>
         </li>
-        
+
         <!-- Nút Previous -->
         <li class="page-item" th:classappend="${page.first} ? 'disabled'">
-            <a class="page-link page-prev" th:href="@{''(page=${page.number - 1})}" title="Trang trước">
+            <a class="page-link page-prev" 
+               th:href="${categoryId != null} ? @{/categories/{id}(id=${categoryId}, page=${page.number - 1}, sort=${sort})} : @{''(page=${page.number - 1}, keyword=${keyword}, sort=${sort})}"
+               title="Trang trước">
                 <i class="fa-solid fa-angle-left"></i>
             </a>
         </li>
@@ -24,54 +31,63 @@
             totalPages=${page.totalPages},
             startPage=${currentPage > 2 ? currentPage - 2 : 0},
             endPage=${currentPage < totalPages - 3 ? currentPage + 2 : totalPages - 1}">
-            
+
             <!-- Trang đầu + ... nếu cần -->
             <th:block th:if="${startPage > 0}">
                 <li class="page-item">
-                    <a class="page-link" th:href="@{''(page=0)}">1</a>
+                    <a class="page-link" 
+                       th:href="${categoryId != null} ? @{/categories/{id}(id=${categoryId}, page=0, sort=${sort})} : @{''(page=0, keyword=${keyword}, sort=${sort})}">1</a>
                 </li>
                 <li class="page-item disabled" th:if="${startPage > 1}">
                     <span class="page-link page-dots">...</span>
                 </li>
             </th:block>
-            
+
             <!-- Các trang ở giữa -->
             <li th:each="i : ${#numbers.sequence(startPage, endPage)}"
-                class="page-item" 
+                class="page-item"
                 th:classappend="${i == currentPage} ? 'active'">
-                <a class="page-link" th:href="@{''(page=${i})}" th:text="${i + 1}"></a>
+                <a class="page-link" 
+                   th:href="${categoryId != null} ? @{/categories/{id}(id=${categoryId}, page=${i}, sort=${sort})} : @{''(page=${i}, keyword=${keyword}, sort=${sort})}"
+                   th:text="${i + 1}"></a>
             </li>
-            
+
             <!-- ... + Trang cuối nếu cần -->
             <th:block th:if="${endPage < totalPages - 1}">
                 <li class="page-item disabled" th:if="${endPage < totalPages - 2}">
                     <span class="page-link page-dots">...</span>
                 </li>
                 <li class="page-item">
-                    <a class="page-link" th:href="@{''(page=${totalPages - 1})}" th:text="${totalPages}"></a>
+                    <a class="page-link" 
+                       th:href="${categoryId != null} ? @{/categories/{id}(id=${categoryId}, page=${totalPages - 1}, sort=${sort})} : @{''(page=${totalPages - 1}, keyword=${keyword}, sort=${sort})}"
+                       th:text="${totalPages}"></a>
                 </li>
             </th:block>
         </th:block>
 
         <!-- Nút Next -->
         <li class="page-item" th:classappend="${page.last} ? 'disabled'">
-            <a class="page-link page-next" th:href="@{''(page=${page.number + 1})}" title="Trang sau">
+            <a class="page-link page-next" 
+               th:href="${categoryId != null} ? @{/categories/{id}(id=${categoryId}, page=${page.number + 1}, sort=${sort})} : @{''(page=${page.number + 1}, keyword=${keyword}, sort=${sort})}"
+               title="Trang sau">
                 <i class="fa-solid fa-angle-right"></i>
             </a>
         </li>
-        
+
         <!-- Nút Last -->
         <li class="page-item" th:classappend="${page.last} ? 'disabled'">
-            <a class="page-link page-last" th:href="@{''(page=${page.totalPages - 1})}" title="Trang cuối">
+            <a class="page-link page-last" 
+               th:href="${categoryId != null} ? @{/categories/{id}(id=${categoryId}, page=${page.totalPages - 1}, sort=${sort})} : @{''(page=${page.totalPages - 1}, keyword=${keyword}, sort=${sort})}"
+               title="Trang cuối">
                 <i class="fa-solid fa-angles-right"></i>
             </a>
         </li>
     </ul>
-    
+
     <!-- Thông tin trang -->
     <div class="pagination-info text-center mt-3">
         <span class="text-muted">
-            Trang <strong th:text="${page.number + 1}">1</strong> 
+            Trang <strong th:text="${page.number + 1}">1</strong>
             / <strong th:text="${page.totalPages}">10</strong>
             <span class="mx-2">|</span>
             Tổng <strong th:text="${page.totalElements}">100</strong> kết quả

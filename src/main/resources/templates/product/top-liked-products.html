@@ -19,15 +19,21 @@
     
     <div class="container my-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="mb-0">Sản Phẩm Yêu Thích</h2>
-            <div class="sort-options">
-    <span>Sắp xếp:</span>
-    <a th:href="@{${baseUrl}(sort='nameAsc')}" th:classappend="${currentSort == 'nameAsc'} ? 'active'">A → Z</a>
-    <a th:href="@{${baseUrl}(sort='nameDesc')}" th:classappend="${currentSort == 'nameDesc'} ? 'active'">Z → A</a>
-    <a th:href="@{${baseUrl}(sort='priceAsc')}" th:classappend="${currentSort == 'priceAsc'} ? 'active'">Giá tăng dần</a>
-    <a th:href="@{${baseUrl}(sort='priceDesc')}" th:classappend="${currentSort == 'priceDesc'} ? 'active'">Giá giảm dần</a>
+    <h2 class="mb-0">Sản Phẩm Yêu Thích</h2>
+    <div class="sort-options">
+        <span>Sắp xếp:</span>
+        <a th:href="@{/products/top-liked(sort='topLiked')}"
+           th:classappend="${currentSort == 'topLiked' or currentSort == null} ? 'active'">Yêu thích nhất</a>
+        <a th:href="@{/products/top-liked(sort='nameAsc')}"
+           th:classappend="${currentSort == 'nameAsc'} ? 'active'">A → Z</a>
+        <a th:href="@{/products/top-liked(sort='nameDesc')}"
+           th:classappend="${currentSort == 'nameDesc'} ? 'active'">Z → A</a>
+        <a th:href="@{/products/top-liked(sort='priceAsc')}"
+           th:classappend="${currentSort == 'priceAsc'} ? 'active'">Giá tăng dần</a>
+        <a th:href="@{/products/top-liked(sort='priceDesc')}"
+           th:classappend="${currentSort == 'priceDesc'} ? 'active'">Giá giảm dần</a>
+    </div>
 </div>
-        </div>
 
         <div>
             <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-4" 
@@ -84,7 +90,9 @@
                 <p>Hiện chưa có sản phẩm yêu thích nào.</p>
             </div>
 
-            <div class="mt-5" th:replace="~{fragments/pagination :: pagination(${topLikedProductPage})}"></div>
+            <div class="mt-5" 
+                 th:replace="~{fragments/pagination :: pagination(page=${topLikedProductPage}, keyword=${null}, sort=${currentSort}, categoryId=${null})}">
+            </div>
         </div>
     </div>
 </section>

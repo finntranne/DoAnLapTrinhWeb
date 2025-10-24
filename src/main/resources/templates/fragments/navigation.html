@@ -14,14 +14,13 @@
             </button>
 
             <div class="collapse navbar-collapse" id="mainNavbar">
-                <div class="search-bar mx-auto my-2 my-lg-0">
+                <form class="search-bar mx-auto my-2 my-lg-0" th:action="@{/search}" method="GET">
                     <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Tìm kiếm sản phẩm...">
-                        <button class="btn btn-light" type="button">
-                            <i class="fa fa-search text-muted"></i>
+                        <input type="text" class="form-control" placeholder="Tìm kiếm sản phẩm..." 
+                               name="keyword" th:value="${keyword}"> <button class="btn btn-light" type="submit"> <i class="fa fa-search text-muted"></i>
                         </button>
                     </div>
-                </div>
+                </form>
 
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item">
@@ -138,14 +137,13 @@
                 </div>
                 
                 <!-- Search Bar -->
-                <div class="sticky-search-bar">
+                <form class="sticky-search-bar" th:action="@{/search}" method="GET">
                     <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Tìm kiếm sản phẩm...">
-                        <button class="btn-search" type="button">
-                            <i class="fa fa-search"></i>
+                        <input type="text" class="form-control" placeholder="Tìm kiếm sản phẩm..."
+                               name="keyword" th:value="${keyword}"> <button class="btn-search" type="submit"> <i class="fa fa-search"></i>
                         </button>
                     </div>
-                </div>
+                </form>
             </div>
             
             <!-- RIGHT SIDE -->

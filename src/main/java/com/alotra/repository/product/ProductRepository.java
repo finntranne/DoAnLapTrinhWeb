@@ -56,4 +56,18 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
      "FROM Product p " +
      "WHERE p.productId = :id") // <-- Lọc theo ID
  Optional<ProductSaleDTO> findProductSaleDataById(@Param("id") Integer id);
+	
+	@Query(value = "SELECT new com.alotra.model.ProductSaleDTO(" +
+            "p, " +
+            "CAST(COALESCE(p.soldCount, 0) AS long), " +
+            "(SELECT MAX(pp.discountPercentage) " +
+            " FROM PromotionProduct pp JOIN pp.promotion pr " +
+            " WHERE pp.product = p AND pr.startDate <= CURRENT_TIMESTAMP AND pr.endDate >= CURRENT_TIMESTAMP)" +
+     ") " +
+     "FROM Product p " +
+     // Thêm điều kiện tìm kiếm
+     "WHERE LOWER(p.productName) LIKE LOWER(CONCAT('%', :keyword, '%'))",
+     
+     countQuery = "SELECT COUNT(p) FROM Product p WHERE LOWER(p.productName) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    Page<ProductSaleDTO> findProductSaleDataByKeyword(@Param("keyword") String keyword, Pageable pageable);
 }

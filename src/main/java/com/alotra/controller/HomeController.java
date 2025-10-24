@@ -41,11 +41,10 @@ public class HomeController {
     
     @Autowired private CartService cartService;
     
-    @Autowired @Qualifier("userServiceImpl") private UserService userService; // Giữ nguyên
+    @Autowired @Qualifier("userServiceImpl") private UserService userService;
     
-    @Autowired private CustomerService customerService; // Giữ nguyên
+    @Autowired private CustomerService customerService;
 
-    // ... (Class Banner giữ nguyên) ...
     public static class Banner {
         private String imageUrl;
         private String altText;
@@ -54,12 +53,11 @@ public class HomeController {
         public String getAltText() { return altText; }
     }
     
- // --- Hàm trợ giúp lấy số lượng giỏ hàng ---
     private int getCurrentCartItemCount() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
             String username = auth.getName();
-            Optional<User> userOpt = userService.findByUsername(username); // Hoặc findByEmail
+            Optional<User> userOpt = userService.findByUsername(username);
             if (userOpt.isPresent()) {
                 Optional<Customer> customerOpt = customerService.findByUser(userOpt.get());
                 if (customerOpt.isPresent()) {
@@ -67,15 +65,13 @@ public class HomeController {
                 }
             }
         }
-        return 0; // Trả về 0 nếu chưa đăng nhập hoặc có lỗi
+        return 0;
     }
 
     @GetMapping("/")
     public String home(Model model, @RequestParam(defaultValue = "0") int page) {
-        // ... (Code trang chủ giữ nguyên) ...
         model.addAttribute("categories", categoryService.findAll());
         model.addAttribute("isHomePage", true);
-        
         model.addAttribute("cartItemCount", getCurrentCartItemCount());
 
         List<Banner> banners = new ArrayList<>();
@@ -103,123 +99,115 @@ public class HomeController {
         return "home/index";
     }
 
-    // === CẬP NHẬT 5 PHƯƠNG THỨC DƯỚI ĐÂY ===
-
+    // === SẢN PHẨM MỚI ===
     @GetMapping("/products/new")
     public String showNewProductsPage(
             @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "sort", defaultValue = "newest") String sortType, // Thêm
+            @RequestParam(name = "sort", required = false, defaultValue = "newest") String sort,
             Model model) {
         
-        int size = 20; // Sửa size
-        Sort sort = getSort(sortType); // Gọi hàm helper
-        PageRequest pageable = PageRequest.of(page, size, sort);
+        int size = 2; // 3 rows x 5 columns
+        Sort sortOrder = getSort(sort);
+        PageRequest pageable = PageRequest.of(page, size, sortOrder);
 
         model.addAttribute("newestProductPage", productService.findProductSaleDataPaginated(pageable));
         model.addAttribute("categories", categoryService.findAll());
         model.addAttribute("isHomePage", false);
-        
         model.addAttribute("cartItemCount", getCurrentCartItemCount());
-        
-        model.addAttribute("currentSort", sortType); // Thêm
-        model.addAttribute("baseUrl", "/products/new"); // Thêm
+        model.addAttribute("currentSort", sort);
         
         return "product/new-products";
     }
     
+    // === SẢN PHẨM BÁN CHẠY ===
     @GetMapping("/products/best-selling")
     public String showBestSellingProductsPage(
             @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "sort", defaultValue = "bestSelling") String sortType, // Thêm
+            @RequestParam(name = "sort", required = false, defaultValue = "bestSelling") String sort,
             Model model) {
         
-        int size = 20; // Sửa size
-        Sort sort = getSort(sortType); // Gọi hàm helper
-        PageRequest pageable = PageRequest.of(page, size, sort);
+        int size = 2;
+        Sort sortOrder = getSort(sort);
+        PageRequest pageable = PageRequest.of(page, size, sortOrder);
 
         model.addAttribute("bestSellingProductPage", productService.findProductSaleDataPaginated(pageable));
         model.addAttribute("categories", categoryService.findAll());
         model.addAttribute("isHomePage", false);
         model.addAttribute("cartItemCount", getCurrentCartItemCount());
-        
-        model.addAttribute("currentSort", sortType); // Thêm
-        model.addAttribute("baseUrl", "/products/best-selling"); // Thêm
+        model.addAttribute("currentSort", sort);
 
         return "product/best-selling-products";
     }
     
+    // === SẢN PHẨM ĐÁNH GIÁ CAO ===
     @GetMapping("/products/top-rated")
     public String showTopRatedProductsPage(
             @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "sort", defaultValue = "topRated") String sortType, // Thêm
+            @RequestParam(name = "sort", required = false, defaultValue = "topRated") String sort,
             Model model) {
         
-        int size = 20; // Sửa size
-        Sort sort = getSort(sortType); // Gọi hàm helper
-        PageRequest pageable = PageRequest.of(page, size, sort);
+        int size = 2;
+        Sort sortOrder = getSort(sort);
+        PageRequest pageable = PageRequest.of(page, size, sortOrder);
 
         model.addAttribute("topRatedProductPage", productService.findProductSaleDataPaginated(pageable));
         model.addAttribute("categories", categoryService.findAll());
         model.addAttribute("isHomePage", false);
         model.addAttribute("cartItemCount", getCurrentCartItemCount());
-        
-        model.addAttribute("currentSort", sortType); // Thêm
-        model.addAttribute("baseUrl", "/products/top-rated"); // Thêm
+        model.addAttribute("currentSort", sort);
 
         return "product/top-rated-products";
     }
     
+    // === SẢN PHẨM YÊU THÍCH ===
     @GetMapping("/products/top-liked")
     public String showTopLikedProductsPage(
             @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "sort", defaultValue = "topLiked") String sortType, // Thêm
+            @RequestParam(name = "sort", required = false, defaultValue = "topLiked") String sort,
             Model model) {
         
-        int size = 20; // Sửa size
-        Sort sort = getSort(sortType); // Gọi hàm helper
-        PageRequest pageable = PageRequest.of(page, size, sort);
+        int size = 2;
+        Sort sortOrder = getSort(sort);
+        PageRequest pageable = PageRequest.of(page, size, sortOrder);
 
         model.addAttribute("topLikedProductPage", productService.findProductSaleDataPaginated(pageable));
         model.addAttribute("categories", categoryService.findAll());
         model.addAttribute("isHomePage", false);
         model.addAttribute("cartItemCount", getCurrentCartItemCount());
-        
-        model.addAttribute("currentSort", sortType); // Thêm
-        model.addAttribute("baseUrl", "/products/top-liked"); // Thêm
+        model.addAttribute("currentSort", sort);
 
         return "product/top-liked-products";
     }
     
+    // === TRANG DANH MỤC ===
     @GetMapping("/categories/{categoryId}")
     public String showCategoryProductsPage(
             @PathVariable("categoryId") Integer categoryId,
             @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "sort", defaultValue = "newest") String sortType, // Giữ nguyên
+            @RequestParam(name = "sort", required = false, defaultValue = "newest") String sort,
             Model model) {
 
         Category category = categoryService.findById(categoryId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found"));
 
-        Sort sort = getSort(sortType); // Gọi hàm helper
-        int size = 20; // Sửa size
-        Pageable pageable = PageRequest.of(page, size, sort);
+        Sort sortOrder = getSort(sort);
+        int size = 1;
+        Pageable pageable = PageRequest.of(page, size, sortOrder);
         Page<ProductSaleDTO> productPage = productService.findProductSaleDataByCategoryPaginated(category, pageable);
 
         model.addAttribute("productPage", productPage);
         model.addAttribute("currentCategory", category);
         model.addAttribute("categories", categoryService.findAll());
         model.addAttribute("isHomePage", false);
-        model.addAttribute("currentSort", sortType); 
-        model.addAttribute("baseUrl", "/categories/" + categoryId);
+        model.addAttribute("currentSort", sort);
+        model.addAttribute("categoryId", categoryId); // Thêm để pagination biết
         model.addAttribute("cartItemCount", getCurrentCartItemCount());
 
         return "product/category-products";
     }
     
-    
     /**
-     * === HÀM HELPER MỚI ===
-     * Tạo đối tượng Sort dựa trên sortType
+     * Helper method để tạo Sort object
      */
     private Sort getSort(String sortType) {
         switch (sortType) {

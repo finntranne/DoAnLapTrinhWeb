@@ -21,12 +21,18 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="mb-0">Sản Phẩm Mới</h2>
             <div class="sort-options">
-    <span>Sắp xếp:</span>
-    <a th:href="@{${baseUrl}(sort='nameAsc')}" th:classappend="${currentSort == 'nameAsc'} ? 'active'">A → Z</a>
-    <a th:href="@{${baseUrl}(sort='nameDesc')}" th:classappend="${currentSort == 'nameDesc'} ? 'active'">Z → A</a>
-    <a th:href="@{${baseUrl}(sort='priceAsc')}" th:classappend="${currentSort == 'priceAsc'} ? 'active'">Giá tăng dần</a>
-    <a th:href="@{${baseUrl}(sort='priceDesc')}" th:classappend="${currentSort == 'priceDesc'} ? 'active'">Giá giảm dần</a>
-</div>
+                <span>Sắp xếp:</span>
+                <a th:href="@{/products/new(sort='newest')}"
+                   th:classappend="${currentSort == 'newest' or currentSort == null} ? 'active'">Mới nhất</a>
+                <a th:href="@{/products/new(sort='nameAsc')}"
+                   th:classappend="${currentSort == 'nameAsc'} ? 'active'">A → Z</a>
+                <a th:href="@{/products/new(sort='nameDesc')}"
+                   th:classappend="${currentSort == 'nameDesc'} ? 'active'">Z → A</a>
+                <a th:href="@{/products/new(sort='priceAsc')}"
+                   th:classappend="${currentSort == 'priceAsc'} ? 'active'">Giá tăng dần</a>
+                <a th:href="@{/products/new(sort='priceDesc')}"
+                   th:classappend="${currentSort == 'priceDesc'} ? 'active'">Giá giảm dần</a>
+            </div>
         </div>
 
         <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-4" th:if="${newestProductPage != null and not newestProductPage.empty}">
@@ -72,7 +78,9 @@
             <p>Hiện chưa có sản phẩm mới nào.</p>
         </div>
 
-        <div class="mt-5" th:replace="~{fragments/pagination :: pagination(${newestProductPage})}"></div>
+        <div class="mt-5" 
+                 th:replace="~{fragments/pagination :: pagination(page=${newestProductPage}, keyword=${null}, sort=${currentSort}, categoryId=${null})}">
+            </div>
     </div>
 </section>
 </body>
