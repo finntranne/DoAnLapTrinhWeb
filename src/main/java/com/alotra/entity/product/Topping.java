@@ -19,14 +19,14 @@ public class Topping {
     @Column(name = "ToppingID")
     private Integer toppingId;
 
-    @Column(name = "ToppingName", nullable = false, unique = true)
+    @Column(name = "ToppingName", nullable = false, unique = true, columnDefinition = "NVARCHAR(255)")
     private String toppingName;
 
     @Column(name = "AdditionalPrice", nullable = false)
     private BigDecimal additionalPrice;
 
     // --- ADD IMAGE URL ---
-    @Column(name = "ImageUrl") // Allow null if some toppings don't have images
+    @Column(name = "ImageUrl", columnDefinition = "NVARCHAR(2083)") // Allow null if some toppings don't have images
     private String imageUrl;
     // ---------------------
 

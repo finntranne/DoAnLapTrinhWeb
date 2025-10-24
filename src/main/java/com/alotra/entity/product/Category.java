@@ -16,10 +16,10 @@ public class Category {
     @Column(name = "CategoryID") // Sửa lại tên cột
     private Integer categoryId;
 
-    @Column(name = "CategoryName", nullable = false, unique = true) // Sửa lại tên cột
+    @Column(name = "CategoryName", nullable = false, unique = true, columnDefinition = "NVARCHAR(255)") // Sửa lại tên cột
     private String categoryName;
 
-    @Column(name = "Description")
+    @Column(name = "Description", columnDefinition = "NVARCHAR(1000)")
     private String description;
     
     @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)

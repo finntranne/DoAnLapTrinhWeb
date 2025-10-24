@@ -9,6 +9,39 @@
     <div class="container my-5">
         <h1 class="fw-bold mb-4">Lịch sử đơn hàng</h1>
 
+        <ul class="nav nav-pills mb-4">
+            <li class="nav-item">
+                <a class="nav-link" 
+                   th:classappend="${currentStatus == null} ? 'active'" 
+                   th:href="@{/user/orders}">Tất cả</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" 
+                   th:classappend="${currentStatus == 'Pending'} ? 'active'" 
+                   th:href="@{/user/orders(status='Pending')}">Chờ xác nhận</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" 
+                   th:classappend="${currentStatus == 'Processing'} ? 'active'" 
+                   th:href="@{/user/orders(status='Processing')}">Đang xử lý</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" 
+                   th:classappend="${currentStatus == 'Shipping'} ? 'active'" 
+                   th:href="@{/user/orders(status='Shipping')}">Đang giao hàng</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" 
+                   th:classappend="${currentStatus == 'Delivered'} ? 'active'" 
+                   th:href="@{/user/orders(status='Delivered')}">Đã giao</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" 
+                   th:classappend="${currentStatus == 'Cancelled'} ? 'active'" 
+                   th:href="@{/user/orders(status='Cancelled')}">Đã hủy</a>
+            </li>
+        </ul>
+
         <div th:if="${orders == null or #lists.isEmpty(orders)}" class="text-center py-5">
             <i class="fa-solid fa-receipt fa-4x text-muted mb-3"></i>
             <h4 class="text-muted">Bạn chưa có đơn hàng nào.</h4>
@@ -17,6 +50,7 @@
 
         <div th:unless="${orders == null or #lists.isEmpty(orders)}" class="order-list">
             <div th:each="order : ${orders}" class="card shadow-sm border-0 rounded-3 mb-3">
+                
                 <div class="card-header bg-white p-3">
                     <div class="row align-items-center">
                         <div class="col-md-3">
@@ -37,6 +71,7 @@
                         </div>
                     </div>
                 </div>
+                
                 <div class="card-body p-4">
                     <div th:each="item, iter : ${order.items}" th:if="${iter.index < 2}" class="d-flex mb-2">
                         <img th:src="${item.variant.product.productImages[0].imageUrl}" 
@@ -48,6 +83,7 @@
                     </div>
                     <small th:if="${#lists.size(order.items) > 2}" class="text-muted">và một số sản phẩm khác...</small>
                 </div>
+                
                 <div class="card-footer bg-light p-3 d-flex justify-content-between align-items-center">
                     <div>
                         <span class="text-muted">Trạng thái thanh toán:</span>
@@ -56,11 +92,23 @@
                               th:text="${order.paymentStatus == 'Paid'} ? 'Đã thanh toán' : 'Chưa thanh toán'">
                         </span>
                     </div>
-                    <div class="fs-5 fw-bold">
-                        Tổng tiền: 
-                        <span class="text-danger" th:text="${#numbers.formatDecimal(order.grandTotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                    
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="fs-5 fw-bold">
+                            Tổng tiền: 
+                            <span class="text-danger" th:text="${#numbers.formatDecimal(order.grandTotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                        </div>
+                        
+                        <form th:if="${order.orderStatus == 'Pending' or order.orderStatus == 'Processing'}"
+                              th:action="@{/user/orders/cancel/{id}(id=${order.orderId})}" 
+                              method="POST" 
+                              onsubmit="return confirm('Bạn có chắc muốn hủy đơn hàng này?');"
+                              class="d-inline mb-0">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Hủy đơn hàng</button>
+                        </form>
                     </div>
                 </div>
+                
             </div>
         </div>
     </div>

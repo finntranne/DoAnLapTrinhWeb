@@ -3,8 +3,13 @@ package com.alotra.controller;
 import com.alotra.entity.user.Address;
 import com.alotra.entity.user.Customer;
 import com.alotra.entity.user.User;
+import com.alotra.service.cart.CartService;
+import com.alotra.service.product.CategoryService;
 import com.alotra.service.user.CustomerService;
 import com.alotra.service.user.UserService;
+
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -29,6 +34,10 @@ public class UserProfileController {
     @Autowired
     @Qualifier("userServiceImpl")
     private UserService userService;
+    
+    @Autowired private CartService cartService;
+    @Autowired
+    private CategoryService categoryService;
 
     /**
      * Lấy thông tin Customer hiện tại từ Security Context
@@ -43,6 +52,22 @@ public class UserProfileController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Không tìm thấy người dùng"));
         return customerService.findByUser(currentUser)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Không tìm thấy hồ sơ khách hàng"));
+    }
+    
+ // --- Hàm trợ giúp lấy số lượng giỏ hàng ---
+    private int getCurrentCartItemCount() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+            String username = auth.getName();
+            Optional<User> userOpt = userService.findByUsername(username); // Hoặc findByEmail
+            if (userOpt.isPresent()) {
+                Optional<Customer> customerOpt = customerService.findByUser(userOpt.get());
+                if (customerOpt.isPresent()) {
+                    return cartService.getCartItemCount(customerOpt.get());
+                }
+            }
+        }
+        return 0; // Trả về 0 nếu chưa đăng nhập hoặc có lỗi
     }
 
     /**
@@ -65,6 +90,10 @@ public class UserProfileController {
             model.addAttribute("customer", customer);
             model.addAttribute("defaultAddress", defaultAddress);
             model.addAttribute("totalAddresses", customer.getAddresses() != null ? customer.getAddresses().size() : 0);
+            
+            model.addAttribute("cartItemCount", getCurrentCartItemCount());
+            
+            model.addAttribute("categories", categoryService.findAll());
             
             return "user/profile";
             

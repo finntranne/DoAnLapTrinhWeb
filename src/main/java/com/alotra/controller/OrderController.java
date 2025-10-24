@@ -326,7 +326,7 @@ public class OrderController {
 
             // === ĐÃ SỬA: BỔ SUNG LOGIC SET STATUS (FIX LỖI NULL) ===
             if ("Cash".equals(paymentMethod)) {
-                order.setOrderStatus("Processing");
+                order.setOrderStatus("Pending");
                 order.setPaymentStatus("Unpaid");
             } else { // VNPay, Momo...
                 order.setOrderStatus("Pending");

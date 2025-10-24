@@ -23,10 +23,10 @@ public class Promotion {
     @Column(name = "PromotionID")
     private Integer promotionId;
 
-    @Column(name = "PromotionName", nullable = false)
+    @Column(name = "PromotionName", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String promotionName;
 
-    @Column(name = "Description")
+    @Column(name = "Description", columnDefinition = "NVARCHAR(1000)")
     private String description;
 
     @Column(name = "StartDate", nullable = false)

@@ -26,16 +26,16 @@ public class Address {
     @JoinColumn(name = "CustomerID", nullable = false)
     private Customer customer;
 
-    @Column(name = "AddressName", nullable = false, length = 100)
+    @Column(name = "AddressName", nullable = false, columnDefinition = "NVARCHAR(100)")
     private String addressName; // Ví dụ: "Nhà", "Công ty"
 
-    @Column(name = "FullAddress", nullable = false, length = 500)
+    @Column(name = "FullAddress", nullable = false, columnDefinition = "NVARCHAR(500)")
     private String fullAddress; // Địa chỉ chi tiết
 
-    @Column(name = "PhoneNumber", nullable = false, length = 20)
+    @Column(name = "PhoneNumber", nullable = false, columnDefinition = "NVARCHAR(20)")
     private String phoneNumber;
 
-    @Column(name = "RecipientName", nullable = false, length = 255)
+    @Column(name = "RecipientName", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String recipientName; // Tên người nhận tại địa chỉ này
 
     @Column(name = "IsDefault", nullable = false)

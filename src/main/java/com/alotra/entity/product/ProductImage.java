@@ -23,17 +23,11 @@ public class ProductImage {
     @ToString.Exclude
     private Product product;
 
-    @Column(name = "ImageURL", nullable = false)
+    @Column(name = "ImageURL", nullable = false, columnDefinition = "NVARCHAR(2083)")
     private String imageUrl;
 
     @Column(name = "IsPrimary", nullable = false)
     private Boolean isPrimary;
-    
-    // Bỏ các trường không cần thiết cho việc hiển thị ban đầu để đơn giản
-    // @Column(name = "DisplayOrder", nullable = false)
-    // private Integer displayOrder;
-    // @Column(name = "Status", nullable = false)
-    // private Byte status;
 
     @CreationTimestamp // <-- THÊM DÒNG NÀY
     @Column(name = "CreatedAt", nullable = false, updatable = false)

@@ -34,10 +34,6 @@
         <div class="card-body p-4" id="addressListContainer">
             <div th:if="${addresses == null or #lists.isEmpty(addresses)}" id="noAddressMessage">
                 <p class="text-muted">Bạn chưa có địa chỉ nào.</p>
-                
-                <a th:href="@{/user/addresses/new(origin='checkout')}" class="btn btn-sm btn-primary">
-                    <i class="fa-solid fa-plus me-1"></i> Thêm ngay
-                </a>
                 </div>
             
             <div th:each="addr : ${addresses}" class="address-option form-check mb-3 p-3 border rounded-3">

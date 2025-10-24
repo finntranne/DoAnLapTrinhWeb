@@ -27,10 +27,10 @@ public class Customer {
     @JoinColumn(name = "UserID", nullable = false, unique = true)
     private User user;
 
-    @Column(name = "FullName", nullable = false)
+    @Column(name = "FullName", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String fullName;
     
-    @Column(name = "Email", nullable = true, unique = true)
+    @Column(name = "Email", nullable = true, unique = true, columnDefinition = "NVARCHAR(255)")
     private String email;
 
     @Column(name = "Status", nullable = false)

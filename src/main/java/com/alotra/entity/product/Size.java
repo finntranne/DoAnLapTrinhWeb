@@ -12,6 +12,6 @@ public class Size {
     @Column(name = "SizeID") // Sửa lại tên cột
     private Integer sizeId;
     
-    @Column(name = "SizeName", nullable = false, unique = true) // Sửa lại tên cột
+    @Column(name = "SizeName", nullable = false, unique = true, columnDefinition = "NVARCHAR(50)") // Sửa lại tên cột
     private String sizeName;
 }

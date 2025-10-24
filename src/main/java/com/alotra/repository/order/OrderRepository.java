@@ -11,4 +11,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface OrderRepository extends JpaRepository<Order, Integer> {
 	
 	List<Order> findByCustomerOrderByOrderDateDesc(Customer customer);
+	
+	List<Order> findByCustomerAndOrderStatusOrderByOrderDateDesc(Customer customer, String status);
 }

@@ -39,10 +39,10 @@ public class Product {
     @ToString.Exclude
     private Category category;
 
-    @Column(name = "ProductName", nullable = false)
+    @Column(name = "ProductName", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String productName;
 
-    @Column(name = "Description")
+    @Column(name = "Description", columnDefinition = "NVARCHAR(MAX)")
     private String description;
 
     @Column(name = "Status")

@@ -5,6 +5,8 @@ import com.alotra.entity.user.Address;
 import com.alotra.entity.user.Customer;
 import com.alotra.entity.user.User;
 import com.alotra.repository.user.AddressRepository;
+import com.alotra.service.cart.CartService;
+import com.alotra.service.product.CategoryService;
 import com.alotra.service.user.CustomerService;
 import com.alotra.service.user.UserService;
 
@@ -28,6 +30,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/user/addresses") // Tiền tố chung cho quản lý địa chỉ
@@ -39,6 +42,10 @@ public class CustomerAddressController {
     @Autowired
     @Qualifier("userServiceImpl")
     private UserService userService;
+    
+    @Autowired private CartService cartService;
+    @Autowired
+    private CategoryService categoryService;
 
     // === Hàm trợ giúp lấy Customer (Giống OrderController) ===
     private Customer getCurrentCustomer() {
@@ -53,6 +60,22 @@ public class CustomerAddressController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Không tìm thấy hồ sơ khách hàng"));
     }
     
+ // --- Hàm trợ giúp lấy số lượng giỏ hàng ---
+    private int getCurrentCartItemCount() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+            String username = auth.getName();
+            Optional<User> userOpt = userService.findByUsername(username); // Hoặc findByEmail
+            if (userOpt.isPresent()) {
+                Optional<Customer> customerOpt = customerService.findByUser(userOpt.get());
+                if (customerOpt.isPresent()) {
+                    return cartService.getCartItemCount(customerOpt.get());
+                }
+            }
+        }
+        return 0; // Trả về 0 nếu chưa đăng nhập hoặc có lỗi
+    }
+    
     /**
      * HIỂN THỊ DANH SÁCH ĐỊA CHỈ (SỔ ĐỊA CHỈ)
      * Xử lý GET /user/addresses
@@ -63,6 +86,8 @@ public class CustomerAddressController {
             Customer customer = getCurrentCustomer();
             List<Address> addresses = customerAddressRepository.findByCustomer(customer);
             model.addAttribute("addresses", addresses);
+            model.addAttribute("cartItemCount", getCurrentCartItemCount());
+            model.addAttribute("categories", categoryService.findAll());
             return "user/address_list";
         } catch (ResponseStatusException e) {
             return "redirect:/login";
@@ -89,6 +114,9 @@ public class CustomerAddressController {
             
             model.addAttribute("originUrl", "checkout".equals(origin) ? "/checkout" : "/user/addresses");
             model.addAttribute("origin", origin);
+            
+            model.addAttribute("cartItemCount", getCurrentCartItemCount());
+            model.addAttribute("categories", categoryService.findAll());
             
             return "user/address_form"; // Trả về file HTML (sẽ tạo ở Bước 2)
 
@@ -248,8 +276,13 @@ public class CustomerAddressController {
             model.addAttribute("pageTitle", "Chỉnh sửa địa chỉ"); // Đổi tiêu đề
             model.addAttribute("formAction", "/user/addresses/update"); // Action cho form SỬA
             model.addAttribute("originUrl", "/user/addresses"); // Nút Hủy luôn về danh sách
+            
+            model.addAttribute("cartItemCount", getCurrentCartItemCount());
+            model.addAttribute("categories", categoryService.findAll());
 
             return "user/address_form"; // Vẫn dùng chung form view
+            
+            
 
         } catch (ResponseStatusException e) { return "redirect:/login";
         } catch (EntityNotFoundException | AccessDeniedException e) {

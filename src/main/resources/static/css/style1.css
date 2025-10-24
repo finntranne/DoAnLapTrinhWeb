@@ -1929,3 +1929,30 @@
             margin-left: 0.75rem;
         }
         .btn-link { padding: 0; vertical-align: baseline; } /* For button forms */
+        
+        /* === CSS TÙY CHỈNH CHO THANH LỌC ĐƠN HÀNG (KIỂU BO TRÒN) === */
+.nav-pills .nav-link {
+    /* Tùy chỉnh cho các tab không được chọn */
+    color: #333; /* Màu chữ đậm */
+    font-weight: 500;
+    padding: 0.5rem 1.25rem;
+    border-radius: 20px; /* Bo tròn (capsule shape) */
+    background-color: #f0f0f0; /* Nền xám nhạt */
+    margin: 0 4px; /* Tạo khoảng cách giữa các tab */
+    transition: all 0.3s ease;
+}
+
+.nav-pills .nav-link:hover:not(.active) {
+    /* Hiệu ứng khi lướt qua tab chưa chọn */
+    background-color: #e9ecef; /* Xám đậm hơn một chút */
+    transform: translateY(-2px);
+}
+
+.nav-pills .nav-link.active {
+    /* Tùy chỉnh cho tab ĐANG CHỌN */
+    color: white !important;
+    background-color: var(--primary-color) !important; /* Nền màu matcha */
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(115, 165, 128, 0.3); /* Đổ bóng màu matcha */
+    transform: translateY(-2px);
+}
