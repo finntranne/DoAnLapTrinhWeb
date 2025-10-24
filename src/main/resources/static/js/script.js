@@ -56,20 +56,12 @@ function showMessage(message, type = "success") {
 document.addEventListener('DOMContentLoaded', () => {
 	const signinForm = document.getElementById('signinForm');
 	const usernameOrEmailInput = document.querySelector('input[name="usernameOrEmail"]');
-	const passwordInput = document.querySelector('input[name="passwords"]');
+	const passwordInput = document.querySelector('input[name="pwd"]');
 
-	// Theo dõi giá trị password khi nhập
-	passwordInput.addEventListener('input', (e) => {
-		console.log('Password updated:', e.target.value);
-	});
+	
 
 	signinForm.addEventListener('submit', async (e) => {
 		e.preventDefault();
-
-		console.log('Username/Email Input:', usernameOrEmailInput);
-		console.log('Password Input:', passwordInput);
-		console.log('Username/Email Value:', usernameOrEmailInput ? usernameOrEmailInput.value : 'Not found');
-		console.log('Password Value at submit:', passwordInput ? passwordInput.value : 'Not found');
 
 		const usernameOrEmail = usernameOrEmailInput ? usernameOrEmailInput.value : '';
 		const password = passwordInput ? passwordInput.value : '';
@@ -85,34 +77,34 @@ document.addEventListener('DOMContentLoaded', () => {
 		};
 
 		try {
-			const response = await fetch('/api/auth/signin', {
+			const response = await fetch('/auth/signin', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(data)
 			});
 
 			const responseText = await response.text();
-			console.log('Status:', response.status);
-			console.log('Response:', responseText);
 
 			if (!response.ok) {
-				try {
-					const errorData = JSON.parse(responseText);
-					showMessage("Đăng nhập thất bại: " + (errorData.message || "Lỗi server"), "error");
-				} catch (e) {
-					showMessage("Đăng nhập thất bại: Phản hồi không phải JSON - " + responseText.substring(0, 100), "error");
+					try {
+						const errorData = JSON.parse(responseText);
+						showMessage("Đăng nhập thất bại: " + (errorData.message || "Lỗi server"), "error");
+					} catch {
+						showMessage("Đăng nhập thất bại: Phản hồi không phải JSON - " + responseText.substring(0, 100), "error");
+					}
+					return;
 				}
-				return;
-			}
 
-			try {
 				const result = JSON.parse(responseText);
 				showMessage(result.message || "Đăng nhập thành công!", "success");
-				document.querySelector('.form-container.sign-in').style.display = 'none';
-				document.getElementById('container').innerHTML = '<h2>Chào mừng bạn đã đăng nhập!</h2>';
-			} catch (e) {
-				showMessage("Lỗi khi xử lý phản hồi: " + responseText.substring(0, 100), "error");
-			}
+				
+				if (result.token) localStorage.setItem('token', result.token);
+				const token = localStorage.getItem('token');
+				localStorage.setItem('username', result.username);
+				localStorage.setItem('role', result.role);
+				
+				window.location.href = "/admin/users";
+				
 
 		} catch (error) {
 			console.error('Lỗi:', error);
@@ -134,7 +126,7 @@ signUpForm.addEventListener("submit", async (e) => {
 	};
 
 	try {
-		const response = await fetch("/api/auth/signup", {
+		const response = await fetch("/auth/signup", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json"

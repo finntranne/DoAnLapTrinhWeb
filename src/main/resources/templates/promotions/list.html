@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{layout.html}">
+
+<head>
+<title>Quản lý khuyến mãi</title>
+</head>
+
+<body>
+	<main class="app-main">
+		<div layout:fragment="content">
+			<div class="container mt-4">
+
+				<div class="d-flex justify-content-between align-items-center mb-3">
+					<h3 class="fw-bold mb-0">Danh sách khuyến mãi</h3>
+				</div>
+
+
+
+
+
+				<div class="table-responsive shadow-sm rounded">
+					<table class="table table-striped table-hover align-middle">
+						<thead class="table-success">
+							<tr>
+								<th scope="col"><input type="checkbox" id="selectAll"
+									class="form-check-input"></th>
+								<th scope="col">STT</th>
+								<th scope="col">Mã Khuyến Mãi</th>
+								<th scope="col">Người Tạo</th>
+								<th scope="col">Thời Gian Hiệu Lực</th>
+								<th scope="col">Trạng Thái</th>
+								<th scope="col">Hành Động</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr th:each="promo, iterStat : ${promotions}">
+
+								<td><input type="checkbox" name="selectedIds"
+									th:value="${promo.promotiontId}"
+									class="form-check-input selectItem"></td>
+								<td th:text="${iterStat.index + 1}"></td>
+
+								<td>
+									<div>
+										<div class="fw-semibold" th:text="${promo.promoCode}"></div>
+										<span class="product-category"> <i
+											class="bi bi-tag-fill me-1"></i> <span
+											th:text="|${promo.discountType} - ${promo.discountValue}${promo.discountType == 'Percentage' ? '%' : 'VND'}|"></span>
+										</span>
+									</div>
+								</td>
+
+								<td><span class="fw-semibold"
+									th:text="${promo.shop != null ? promo.shop.shopName : 'Admin'}">
+								</span></td>
+
+								<td><span
+									th:text="${#temporals.format(promo.startDate, 'dd/MM/yyyy')}"></span>
+									<span> - </span> <span
+									th:text="${#temporals.format(promo.endDate, 'dd/MM/yyyy')}"></span>
+								</td>
+
+								<td><span class="badge rounded-pill fw-semibold px-3 py-2"
+									th:classappend="${promo.status == 1 ? 'bg-success-subtle text-success border border-success-subtle' :
+                                                      'bg-danger-subtle text-danger border border-danger-subtle'}">
+										<i
+										th:class="${promo.status == 1 ? 'bi bi-check-circle-fill' : 'bi bi-x-circle-fill'}"></i>
+										<span
+										th:text="${promo.status == 1 ? 'Hoạt động' : 'Vô hiệu hóa'}"></span>
+								</span></td>
+
+								<td><a
+									th:href="@{/admin/promotions/edit/{id}(id=${promo.promotiontId})}"
+									class="btn btn-sm btn-outline-primary border-0"
+									title="Chỉnh sửa"> <i class="bi bi-pencil-square"></i>
+								</a>
+
+									<form
+										th:action="@{/admin/promotions/deactivate/{id}(id=${promo.promotiontId})}"
+										method="post" class="d-inline"
+										onsubmit="return confirm('Bạn có chắc muốn vô hiệu hóa mã này?');">
+										<button type="submit"
+											class="btn btn-sm btn-outline-danger border-0"
+											title="Vô hiệu hóa">
+											<i class="bi bi-trash-fill"></i>
+										</button>
+									</form></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+
+
+
+			</div>
+		</div>
+	</main>
+
+
+
+</body>
+</html>

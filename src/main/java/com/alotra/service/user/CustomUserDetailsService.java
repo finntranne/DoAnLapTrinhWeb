@@ -31,17 +31,15 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() ->
                         new UsernameNotFoundException("User not found with username or email: " + usernameOrEmail));
 
-        return new org.springframework.security.core.userdetails.User(
-        		usernameOrEmail,
-                user.getPassword(),
-                mapRolesToAuthorities(user.getRoles())
-        );
-    }
-
-    private Collection<? extends GrantedAuthority> mapRolesToAuthorities(Set<Role> roles) {
-        return roles.stream()
+    	Set<GrantedAuthority> authorities = user.getRoles().stream()
                 .map(role -> new SimpleGrantedAuthority(role.getRolename()))
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
+    	
+        return new org.springframework.security.core.userdetails.User(
+        		user.getUsername(),
+                user.getPassword(),
+                authorities
+        );
     }
 }
 
