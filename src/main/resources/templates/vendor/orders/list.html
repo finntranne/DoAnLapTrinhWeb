@@ -36,37 +36,57 @@
 			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
 		</div>
 
-		<ul class="nav nav-tabs mb-4">
+		<ul class="nav nav-tabs mb-3">
 			<li class="nav-item"><a class="nav-link"
 				th:classappend="${status == null ? 'active' : ''}"
-				href="/vendor/orders"> <i class="bi bi-list"></i> Tất cả
-			</a></li>
+				th:href="@{/vendor/orders(searchQuery=${searchQuery})}">Tất cả</a></li>
 			<li class="nav-item"><a class="nav-link"
 				th:classappend="${status == 'Pending' ? 'active' : ''}"
-				href="/vendor/orders?status=Pending"> <i class="bi bi-clock"></i>
-					Chờ xác nhận
-			</a></li>
+				th:href="@{/vendor/orders(status='Pending', searchQuery=${searchQuery})}">Chờ
+					xác nhận</a></li>
 			<li class="nav-item"><a class="nav-link"
 				th:classappend="${status == 'Confirmed' ? 'active' : ''}"
-				href="/vendor/orders?status=Confirmed"> <i
-					class="bi bi-check-circle"></i> Đã xác nhận
-			</a></li>
+				th:href="@{/vendor/orders(status='Confirmed', searchQuery=${searchQuery})}">Đã
+					xác nhận</a></li>
 			<li class="nav-item"><a class="nav-link"
 				th:classappend="${status == 'Delivering' ? 'active' : ''}"
-				href="/vendor/orders?status=Delivering"> <i class="bi bi-truck"></i>
-					Đang giao
-			</a></li>
+				th:href="@{/vendor/orders(status='Delivering', searchQuery=${searchQuery})}">Đang
+					giao</a></li>
 			<li class="nav-item"><a class="nav-link"
 				th:classappend="${status == 'Completed' ? 'active' : ''}"
-				href="/vendor/orders?status=Completed"> <i
-					class="bi bi-check-all"></i> Hoàn thành
-			</a></li>
+				th:href="@{/vendor/orders(status='Completed', searchQuery=${searchQuery})}">Hoàn
+					thành</a></li>
 			<li class="nav-item"><a class="nav-link"
 				th:classappend="${status == 'Cancelled' ? 'active' : ''}"
-				href="/vendor/orders?status=Cancelled"> <i
-					class="bi bi-x-circle"></i> Đã hủy
-			</a></li>
+				th:href="@{/vendor/orders(status='Cancelled', searchQuery=${searchQuery})}">Đã
+					hủy</a></li>
 		</ul>
+
+		<div class="card mb-4">
+			<div class="card-body">
+				<form method="get" th:action="@{/vendor/orders}"
+					class="row g-2 align-items-end">
+					<input type="hidden" name="status" th:if="${status != null}"
+						th:value="${status}" />
+					<div class="col-md-8">
+						<label for="searchQuery" class="form-label ">Tìm
+							kiếm</label> <input type="text" class="form-control form-control-sm"
+							id="searchQuery" name="searchQuery" th:value="${searchQuery}"
+							placeholder="Tên khách hàng, SĐT khách, SĐT nhận...">
+					</div>
+					<div class="col-md-4 d-flex">
+						<button type="submit"
+							class="btn btn-primary btn-sm me-2 flex-grow-1">
+							<i class="bi bi-search"></i> Tìm
+						</button>
+						<a th:href="@{/vendor/orders}"
+							class="btn btn-outline-secondary btn-sm flex-grow-1"> <i
+							class="bi bi-arrow-clockwise"></i> Đặt lại
+						</a>
+					</div>
+				</form>
+			</div>
+		</div>
 
 		<div class="card">
 			<div class="card-header">
@@ -128,15 +148,27 @@
 										<span class="badge bg-secondary"
 											th:text="${order.paymentMethod}"></span>
 									</div> <span class="badge status-badge"
-									th:classappend="${order.paymentStatus == 'Paid' ? 'bg-success' : 'bg-warning'}"
-									th:text="${order.paymentStatus}"></span>
+									th:classappend="${order.paymentStatus == 'Paid' ? 'bg-success' : (order.paymentStatus == 'Unpaid' ? 'bg-warning text-dark' : 'bg-danger')}"
+									th:switch="${order.paymentStatus}"> <span
+										th:case="'Paid'">Đã thanh toán </span> <span
+										th:case="'Unpaid'">Chưa thanh toán </span> <span
+										th:case="'Refunded'">Đã hoàn tiền </span> <span th:case="*"
+										th:text="${order.paymentStatus}"> </span>
+								</span>
 								</td>
 								<td><span class="badge status-badge"
 									th:classappend="${order.orderStatus == 'Pending' ? 'bg-warning' :
                                                            (order.orderStatus == 'Confirmed' ? 'bg-info' :
                                                            (order.orderStatus == 'Delivering' ? 'bg-primary' :
                                                            (order.orderStatus == 'Completed' ? 'bg-success' : 'bg-danger')))}"
-									th:text="${order.orderStatus}"></span>
+									th:switch="${order.orderStatus}"> <span
+										th:case="'Pending'">Chờ xác nhận </span> <span
+										th:case="'Confirmed'">Đã xác nhận </span> <span
+										th:case="'Delivering'">Đang giao </span> <span
+										th:case="'Completed'">Hoàn thành </span> <span
+										th:case="'Cancelled'">Đã hủy </span> <span th:case="*"
+										th:text="${order.orderStatus}"> </span>
+								</span>
 									<div th:if="${order.shipperName != null}" class="mt-1">
 										<small class="text-muted"> <i class="bi bi-person"></i>
 											<span th:text="${order.shipperName}"></span>
@@ -157,20 +189,20 @@
 						<li class="page-item"
 							th:classappend="${currentPage == 0 ? 'disabled' : ''}"><a
 							class="page-link"
-							th:href="@{/vendor/orders(page=${currentPage - 1}, status=${status})}">
+							th:href="@{/vendor/orders(page=${currentPage - 1}, status=${status}, searchQuery=${searchQuery})}">
 								Trước </a></li>
 
 						<li class="page-item"
 							th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
 							th:classappend="${i == currentPage ? 'active' : ''}"><a
 							class="page-link"
-							th:href="@{/vendor/orders(page=${i}, status=${status})}"
+							th:href="@{/vendor/orders(page=${i}, status=${status}, searchQuery=${searchQuery})}"
 							th:text="${i + 1}"></a></li>
 
 						<li class="page-item"
 							th:classappend="${currentPage == totalPages - 1 ? 'disabled' : ''}">
 							<a class="page-link"
-							th:href="@{/vendor/orders(page=${currentPage + 1}, status=${status})}">
+							th:href="@{/vendor/orders(page=${currentPage + 1}, status=${status}, searchQuery=${searchQuery})}">
 								Sau </a>
 						</li>
 					</ul>

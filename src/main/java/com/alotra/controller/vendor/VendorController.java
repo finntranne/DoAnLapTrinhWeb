@@ -5,6 +5,7 @@ import com.alotra.dto.product.ProductStatisticsDTO;
 import com.alotra.dto.promotion.PromotionStatisticsDTO;
 import com.alotra.dto.promotion.PromotionRequestDTO;
 import com.alotra.dto.response.ApprovalResponseDTO;
+import com.alotra.dto.shop.CategoryRevenueDTO;
 import com.alotra.dto.shop.ShopDashboardDTO;
 import com.alotra.dto.shop.ShopOrderDTO;
 import com.alotra.dto.shop.ShopRevenueDTO;
@@ -534,26 +535,37 @@ public class VendorController {
 
 	@GetMapping("/orders")
 	public String listOrders(@AuthenticationPrincipal MyUserDetails userDetails,
-			@RequestParam(required = false) String status, @RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "20") int size, Model model, RedirectAttributes redirectAttributes) {
+	        @RequestParam(required = false) String status, // Nhận status như cũ
+	        @RequestParam(required = false) String searchQuery,
+	        @RequestParam(defaultValue = "0") int page,
+	        @RequestParam(defaultValue = "5") int size,
+	        Model model,
+	        RedirectAttributes redirectAttributes) {
 
-		try {
-			Integer shopId = getShopIdOrThrow(userDetails);
-			Pageable pageable = PageRequest.of(page, size);
+	    try {
+	        Integer shopId = getShopIdOrThrow(userDetails);
+	        Pageable pageable = PageRequest.of(page, size);
 
-			Page<ShopOrderDTO> orders = vendorService.getShopOrders(shopId, status, pageable);
+	        String effectiveStatus = (status != null && status.isEmpty()) ? null : status;
+	      
+	        Page<ShopOrderDTO> orders = vendorService.getShopOrders(shopId, effectiveStatus, searchQuery, pageable);
 
-			model.addAttribute("orders", orders);
-			model.addAttribute("currentPage", page);
-			model.addAttribute("totalPages", orders.getTotalPages());
-			model.addAttribute("status", status);
+	        model.addAttribute("orders", orders);
+	        model.addAttribute("currentPage", page);
+	        model.addAttribute("totalPages", orders.getTotalPages());
+	        model.addAttribute("status", effectiveStatus);
+	        model.addAttribute("searchQuery", searchQuery);
 
-			return "vendor/orders/list";
+	        return "vendor/orders/list";
 
-		} catch (IllegalStateException e) {
-			redirectAttributes.addFlashAttribute("error", e.getMessage());
-			return "redirect:/shop/register";
-		}
+	    } catch (IllegalStateException e) {
+	        redirectAttributes.addFlashAttribute("error", e.getMessage());
+	        return "redirect:/shop/register";
+	    } catch (Exception e) {
+	        log.error("Error loading order list", e);
+	        redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra khi tải danh sách đơn hàng.");
+	        return "redirect:/vendor/dashboard";
+	    }
 	}
 
 	@GetMapping("/orders/{id}")
@@ -615,6 +627,8 @@ public class VendorController {
 			List<ShopRevenueDTO> revenues = vendorService.getShopRevenue(shopId, startDate, endDate);
 
 			model.addAttribute("revenues", revenues);
+			List<CategoryRevenueDTO> categoryRevenues = vendorService.getShopRevenueByCategory(shopId, startDate, endDate);
+            model.addAttribute("categoryRevenues", categoryRevenues);
 			// Pass raw dates back for the form
 			model.addAttribute("startDate", startDate);
 			model.addAttribute("endDate", endDate);
@@ -631,7 +645,6 @@ public class VendorController {
 		}
 	}
 
-	// *** START NEW EXPORT METHOD ***
 	@GetMapping("/revenue/export")
 	public void exportRevenueToExcel(@AuthenticationPrincipal MyUserDetails userDetails,
 			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,

@@ -83,7 +83,21 @@
                                                    (order.orderStatus == 'Confirmed' ? 'bg-info' :
                                                    (order.orderStatus == 'Delivering' ? 'bg-primary' :
                                                    (order.orderStatus == 'Completed' ? 'bg-success' : 'bg-danger')))}"
-								th:text="${order.orderStatus}"></span>
+								th:switch="${order.orderStatus}">
+								<span
+										th:case="'Pending'">Chờ xác nhận
+										</span> 
+										<span th:case="'Confirmed'">Đã xác nhận
+										</span> 
+										<span th:case="'Delivering'">Đang giao
+										</span>
+										<span th:case="'Completed'">Hoàn thành
+										</span>
+										<span th:case="'Cancelled'">Đã hủy
+										</span> 
+										<span
+										th:case="*" th:text="${order.orderStatus}">
+										</span></span>
 						</div>
 
 						<div

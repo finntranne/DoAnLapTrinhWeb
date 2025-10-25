@@ -309,6 +309,23 @@
 				</div>
 			</div>
 		</div>
+		
+		<div class="card mb-4 border-0 shadow-sm">
+			<div class="card-header bg-white border-0 pt-4">
+				<h5 class="card-title mb-0">
+                    <i class="bi bi-pie-chart-fill me-2"></i>Doanh thu theo Danh mục
+                </h5>
+			</div>
+			<div class="card-body">
+                <div th:if="${categoryRevenues == null or categoryRevenues.isEmpty()}" class="text-center text-muted py-5">
+                    <i class="bi bi-pie-chart" style="font-size: 3rem; opacity: 0.3;"></i>
+                    <p class="mt-2">Không có dữ liệu doanh thu theo danh mục.</p>
+                </div>
+				<div th:if="${categoryRevenues != null and !categoryRevenues.isEmpty()}">
+                    <div class="chart-container" style="height: 350px;"> <canvas id="categoryRevenueChart"></canvas> </div>
+                </div>
+			</div>
+		</div>
 
 		<div class="card border-0 shadow-sm">
 			<div class="card-body p-0">
@@ -351,9 +368,25 @@
             /*[/]*/
             /*[/]*/
             console.log('Revenue data loaded:', revenuesData.length, 'records');
+            
+            var categoryRevenueChart = null; // Instance for the new chart
+            var categoryRevenuesData = [];
+            /*[# th:if="${categoryRevenues != null and !categoryRevenues.isEmpty()}"]*/
+            /*[# th:each="catRevenue : ${categoryRevenues}"]*/
+            categoryRevenuesData.push({
+                categoryName: /*[[${catRevenue.categoryName}]]*/ '',
+                totalGrossRevenue: /*[[${catRevenue.totalGrossRevenue}]]*/ 0,
+                totalNetRevenue: /*[[${catRevenue.totalNetRevenue}]]*/ 0
+            });
+            /*[/]*/
+            /*[/]*/
+            console.log('Category revenue data loaded:', categoryRevenuesData.length, 'records');
 
             // ===== INITIALIZE CHART ON PAGE LOAD =====
-            document.addEventListener('DOMContentLoaded', initializeChart);
+            document.addEventListener('DOMContentLoaded', function() {
+                initializeChart(); // Initialize daily chart
+                initializeCategoryChart(); // Initialize category chart
+            });
 
             function initializeChart() {
                 console.log('=== INITIALIZING CHART ===');
@@ -473,6 +506,94 @@
                     event.target.closest('.chart-tab').classList.add('active');
                 }
             }
+            
+            function initializeCategoryChart() {
+                console.log('=== INITIALIZING CATEGORY CHART ===');
+                if (typeof Chart === 'undefined') {
+                    console.error('Chart.js not loaded for category chart.'); return;
+                }
+                const catChartCanvas = document.getElementById('categoryRevenueChart');
+                if (!catChartCanvas) {
+                    console.log('Category chart canvas not found (likely no data).'); return;
+                }
+                 const catCtx = catChartCanvas.getContext('2d');
+                 if (!catCtx) { console.error('Could not get 2D context for category canvas!'); return; }
+
+
+                if (categoryRevenuesData && categoryRevenuesData.length > 0) {
+                    // Data is already sorted by Gross Revenue descending from the service
+                    const catLabels = categoryRevenuesData.map(r => r.categoryName);
+                    const catGrossData = categoryRevenuesData.map(r => parseFloat(r.totalGrossRevenue) || 0);
+                    const catNetData = categoryRevenuesData.map(r => parseFloat(r.totalNetRevenue) || 0);
+
+                    console.log('Creating category chart with', catLabels.length, 'categories');
+                    createCategoryChart(catCtx, catLabels, catGrossData, catNetData);
+                } else {
+                    console.log('No category revenue data to display chart.');
+                }
+            }
+
+            function createCategoryChart(ctx, labels, grossData, netData) {
+                console.log('Attempting to create category bar chart');
+
+                if (categoryRevenueChart instanceof Chart) {
+                    console.log('Destroying existing category chart instance');
+                    categoryRevenueChart.destroy();
+                    categoryRevenueChart = null;
+                }
+
+                try {
+                    categoryRevenueChart = new Chart(ctx, {
+                        type: 'bar', // Bar chart
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: 'Doanh thu (Gross)',
+                                    data: grossData,
+                                    backgroundColor: 'rgba(13, 110, 253, 0.7)', // Blue
+                                    borderColor: 'rgb(13, 110, 253)',
+                                    borderWidth: 1
+                                },
+                                {
+                                    label: 'Thực nhận (Net)',
+                                    data: netData,
+                                    backgroundColor: 'rgba(25, 135, 84, 0.7)', // Green
+                                    borderColor: 'rgb(25, 135, 84)',
+                                    borderWidth: 1
+                                }
+                                // You could add commission data too if needed
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            indexAxis: 'y', // Make it horizontal bars for better label reading if many categories
+                            plugins: {
+                                legend: { display: true, position: 'top' },
+                                tooltip: { /* Keep existing tooltip config */
+                                    callbacks: {
+                                        label: function(context) { /* Keep existing label callback */ }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: { // Now X-axis is value
+                                    beginAtZero: true,
+                                    ticks: { callback: value => new Intl.NumberFormat('vi-VN', { notation: 'compact' }).format(value) + ' ₫' },
+                                    grid: { color: 'rgba(0,0,0,0.05)' }
+                                },
+                                y: { // Now Y-axis is category
+                                    grid: { display: false }
+                                }
+                            }
+                        }
+                    });
+                    console.log('Category chart instance created successfully!');
+                } catch (error) {
+                    console.error('!!! Error creating Category Chart instance:', error);
+                }
+            }
 
             // ===== FILTER FUNCTIONS =====
             function clearFilter() {
@@ -570,7 +691,7 @@
                 console.log('Navigating to export URL:', exportUrl);
                 window.location.href = exportUrl; // Trigger download
             }
-
+			
 		</script>
 
 	</th:block>

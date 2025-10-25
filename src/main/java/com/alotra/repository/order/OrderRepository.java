@@ -46,4 +46,13 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 			""")
 	List<Order> findShipperOrders(@Param("shipperId") Integer shipperId, @Param("status") String status);
 
+	@Query("SELECT o FROM Order o JOIN o.user u WHERE o.shop.shopId = :shopId "
+			+ "AND (:status IS NULL OR o.orderStatus = :status) " + "AND (:searchQuery IS NULL OR "
+			+ "     LOWER(TRIM(u.fullName)) LIKE LOWER(CONCAT('%', TRIM(:searchQuery), '%')) OR " + // Thêm TRIM()
+			"     TRIM(u.phoneNumber) LIKE CONCAT('%', TRIM(:searchQuery), '%') OR " + // Thêm TRIM()
+			"     TRIM(o.recipientPhone) LIKE CONCAT('%', TRIM(:searchQuery), '%') OR " + // Thêm TRIM()
+			"     LOWER(TRIM(o.recipientName)) LIKE LOWER(CONCAT('%', TRIM(:searchQuery), '%')) )" + // Thêm TRIM()
+			"ORDER BY o.orderDate DESC")
+	Page<Order> findShopOrdersFiltered(@Param("shopId") Integer shopId, @Param("status") String status,
+			@Param("searchQuery") String searchQuery, Pageable pageable);
 }

@@ -9,6 +9,7 @@ import com.alotra.dto.product.SimpleSizeDTO;
 import com.alotra.dto.promotion.PromotionStatisticsDTO;
 import com.alotra.dto.promotion.PromotionRequestDTO;
 import com.alotra.dto.response.ApprovalResponseDTO;
+import com.alotra.dto.shop.CategoryRevenueDTO;
 import com.alotra.dto.shop.ShopDashboardDTO;
 import com.alotra.dto.shop.ShopOrderDTO;
 import com.alotra.dto.shop.ShopRevenueDTO;
@@ -42,6 +43,10 @@ import com.alotra.service.cloudinary.CloudinaryService;
 import com.alotra.service.notification.NotificationService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -78,6 +83,8 @@ public class VendorService {
 	private final UserRepository userRepository;
 
 	private final ObjectMapper objectMapper;
+	@PersistenceContext // Inject EntityManager for JPQL
+	private EntityManager entityManager;
 
 	// ==================== DASHBOARD ====================
 
@@ -699,9 +706,11 @@ public class VendorService {
 	}
 
 	// ==================== ORDER MANAGEMENT ====================
-	public Page<ShopOrderDTO> getShopOrders(Integer shopId, String status, Pageable pageable) {
-		Page<Order> orders = orderRepository.findShopOrdersByStatus(shopId, status, pageable);
+	public Page<ShopOrderDTO> getShopOrders(Integer shopId, String status, String searchQuery, Pageable pageable) {
 
+		Page<Order> orders = orderRepository.findShopOrdersFiltered(shopId, status, searchQuery, pageable);
+
+		// Mapping logic remains the same
 		return orders.map(order -> {
 			ShopOrderDTO dto = new ShopOrderDTO();
 			dto.setOrderId(order.getOrderID());
@@ -710,8 +719,14 @@ public class VendorService {
 			dto.setPaymentMethod(order.getPaymentMethod());
 			dto.setPaymentStatus(order.getPaymentStatus());
 			dto.setGrandTotal(order.getGrandTotal());
-			dto.setCustomerName(order.getUser().getFullName());
-			dto.setCustomerPhone(order.getUser().getPhoneNumber());
+			// Use associated User entity for customer info
+			if (order.getUser() != null) {
+				dto.setCustomerName(order.getUser().getFullName());
+				dto.setCustomerPhone(order.getUser().getPhoneNumber()); // Assuming User has phoneNumber
+			} else {
+				dto.setCustomerName("N/A"); // Handle case where user might be null?
+				dto.setCustomerPhone("N/A");
+			}
 			dto.setRecipientName(order.getRecipientName());
 			dto.setRecipientPhone(order.getRecipientPhone());
 			dto.setShippingAddress(order.getShippingAddress());
@@ -720,7 +735,8 @@ public class VendorService {
 				dto.setShipperName(order.getShipper().getFullName());
 			}
 
-			dto.setTotalItems(order.getOrderDetails().size());
+			// Calculate total items (safer way)
+			dto.setTotalItems(order.getOrderDetails() != null ? order.getOrderDetails().size() : 0);
 
 			return dto;
 		});
@@ -815,6 +831,55 @@ public class VendorService {
 		log.info("Grouped into {} days", result.size());
 
 		return result;
+	}
+
+	public List<CategoryRevenueDTO> getShopRevenueByCategory(Integer shopId, LocalDateTime startDate,
+			LocalDateTime endDate) {
+		log.info("Fetching category revenue for shopId: {}, startDate: {}, endDate: {}", shopId, startDate, endDate);
+
+		if (startDate == null) {
+			startDate = LocalDateTime.now().minusMonths(1);
+		}
+		if (endDate == null) {
+			endDate = LocalDateTime.now();
+		}
+		endDate = endDate.withHour(23).withMinute(59).withSecond(59);
+
+		String jpql = """
+				    SELECT new com.alotra.dto.shop.CategoryRevenueDTO(
+				        c.categoryName,
+				        CAST(SUM(od.subtotal) AS java.math.BigDecimal),
+				        CAST(SUM(od.subtotal) * (100.0 - COALESCE(s.commissionRate, 5.0)) / 100.0 AS java.math.BigDecimal),
+				        COUNT(DISTINCT o.orderID)
+				    )
+				    FROM Order o
+				    JOIN o.orderDetails od
+				    JOIN od.variant pv
+				    JOIN pv.product p
+				    JOIN p.category c
+				    JOIN o.shop s
+				    WHERE o.shop.shopId = :shopId
+				      AND o.orderStatus = 'Completed'
+				      AND o.completedAt >= :startDate
+				      AND o.completedAt <= :endDate
+				    GROUP BY c.categoryName, s.commissionRate
+				    ORDER BY SUM(od.subtotal) DESC
+				""";
+
+		try {
+			TypedQuery<CategoryRevenueDTO> query = entityManager.createQuery(jpql, CategoryRevenueDTO.class);
+			query.setParameter("shopId", shopId);
+			query.setParameter("startDate", startDate);
+			query.setParameter("endDate", endDate);
+
+			List<CategoryRevenueDTO> results = query.getResultList();
+			log.info("Found {} categories with revenue.", results.size());
+			return results;
+
+		} catch (Exception e) {
+			log.error("Error fetching category revenue: {}", e.getMessage(), e);
+			return new ArrayList<>(); // Return empty list on error
+		}
 	}
 
 	// ==================== APPROVAL STATUS ====================
