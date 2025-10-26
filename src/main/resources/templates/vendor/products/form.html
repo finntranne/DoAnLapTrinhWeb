@@ -153,6 +153,61 @@
 						</div>
 					</div>
 
+					<!-- *** CARD MỚI: KHUYẾN MÃI SẢN PHẨM *** -->
+					<div class="card mb-4">
+						<div class="card-header bg-warning bg-opacity-10">
+							<i class="bi bi-percent"></i> Khuyến mãi sản phẩm
+						</div>
+						<div class="card-body">
+							<div class="alert alert-info">
+								<i class="bi bi-info-circle me-2"></i> <strong>Lưu ý:</strong> %
+								Giảm giá này sẽ áp dụng trực tiếp cho sản phẩm. Nếu muốn tạo mã
+								giảm giá cho toàn đơn hàng, hãy vào mục <a
+									href="/vendor/promotions" target="_blank">Quản lý khuyến
+									mãi</a>.
+							</div>
+
+							<div class="row">
+								<div class="col-md-6">
+									<label for="discountPercentage" class="form-label"> %
+										Giảm giá </label>
+									<div class="input-group">
+										<input type="number" class="form-control"
+											id="discountPercentage" th:field="*{discountPercentage}"
+											min="0" max="100" step="1" placeholder="0"
+											th:classappend="${#fields.hasErrors('discountPercentage')} ? 'is-invalid' : ''">
+										<span class="input-group-text">%</span>
+										<div class="invalid-feedback"
+											th:if="${#fields.hasErrors('discountPercentage')}"
+											th:errors="*{discountPercentage}"></div>
+									</div>
+									<div class="form-text">Nhập 0 hoặc để trống nếu không có
+										giảm giá. Tối đa 100%.</div>
+								</div>
+
+								<div class="col-md-6">
+									<label class="form-label">Xem trước giá sau giảm</label>
+									<div class="border rounded p-3 bg-light">
+										<div class="d-flex justify-content-between align-items-center">
+											<span class="text-muted">Giá gốc:</span> <strong
+												id="previewOriginalPrice">--</strong>
+										</div>
+										<div
+											class="d-flex justify-content-between align-items-center mt-2">
+											<span class="text-success">Giảm:</span> <strong
+												class="text-success" id="previewDiscountAmount">0đ</strong>
+										</div>
+										<hr class="my-2">
+										<div class="d-flex justify-content-between align-items-center">
+											<span class="text-primary fw-bold">Giá bán:</span> <strong
+												class="text-primary fs-5" id="previewFinalPrice">--</strong>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
 					<div class="card mb-4">
 						<div class="card-header">
 							<i class="bi bi-cup-straw"></i> Topping có sẵn cho sản phẩm này
@@ -186,36 +241,6 @@
 							<div class="text-muted"
 								th:if="${allShopToppings == null or #lists.isEmpty(allShopToppings)}">
 								Bạn chưa thêm topping nào vào shop.</div>
-						</div>
-					</div>
-
-					<div class="card mb-4">
-						<div class="card-header">
-							<i class="bi bi-tags-fill"></i> Khuyến mãi (Theo Sản phẩm)
-						</div>
-						<div class="card-body">
-							<div class="form-text mb-3">
-								Chọn các chương trình khuyến mãi (loại "Theo Sản phẩm") mà bạn
-								muốn áp dụng cho sản phẩm này. (Bạn phải <a
-									th:href="@{/vendor/promotions/create}" target="_blank">tạo
-									Khuyến mãi loại Sản phẩm</a> trước.)
-							</div>
-
-							<div class="mb-3"
-								th:if="${allShopProductPromotions != null and not #lists.isEmpty(allShopProductPromotions)}">
-								<label for="promotionIds" class="form-label">Chương
-									trình áp dụng</label> <select class="form-select" id="promotionIds"
-									th:field="*{promotionIds}" multiple="multiple">
-									<option th:each="promo : ${allShopProductPromotions}"
-										th:value="${promo.promotionId}"
-										th:text="${promo.promotionName} + ' (' + ${promo.promoCode} + ')'">
-										[Tên Khuyến mãi]</option>
-								</select>
-							</div>
-
-							<div class="text-muted"
-								th:if="${allShopProductPromotions == null or #lists.isEmpty(allShopProductPromotions)}">
-								Bạn chưa có khuyến mãi (loại "Sản phẩm") nào đang hoạt động.</div>
 						</div>
 					</div>
 
@@ -317,7 +342,58 @@
                 // Add one empty variant for create mode
                 addVariant();
             }
+            
+            // *** MỚI: Listen to discount input ***
+            const discountInput = document.getElementById('discountPercentage');
+            if (discountInput) {
+                discountInput.addEventListener('input', updateDiscountPreview);
+            }
+            
+            // *** MỚI: Listen to variant price changes ***
+            document.addEventListener('input', function(e) {
+                if (e.target.name && e.target.name.includes('variants') && e.target.name.includes('price')) {
+                    updateDiscountPreview();
+                }
+            });
+            
+            // Initial preview update
+            updateDiscountPreview();
         });
+        
+        // *** MỚI: Update discount preview ***
+        function updateDiscountPreview() {
+            const discountInput = document.getElementById('discountPercentage');
+            const discountPercent = parseFloat(discountInput?.value) || 0;
+            
+            // Get minimum price from variants
+            const priceInputs = document.querySelectorAll('input[name*="variants"][name*="price"]');
+            let minPrice = 0;
+            
+            priceInputs.forEach(input => {
+                const price = parseFloat(input.value) || 0;
+                if (price > 0 && (minPrice === 0 || price < minPrice)) {
+                    minPrice = price;
+                }
+            });
+            
+            if (minPrice > 0) {
+                const discountAmount = minPrice * (discountPercent / 100);
+                const finalPrice = minPrice - discountAmount;
+                
+                document.getElementById('previewOriginalPrice').textContent = formatNumber(minPrice) + 'đ';
+                document.getElementById('previewDiscountAmount').textContent = 
+                    (discountPercent > 0 ? '-' : '') + formatNumber(discountAmount) + 'đ';
+                document.getElementById('previewFinalPrice').textContent = formatNumber(finalPrice) + 'đ';
+            } else {
+                document.getElementById('previewOriginalPrice').textContent = '--';
+                document.getElementById('previewDiscountAmount').textContent = '0đ';
+                document.getElementById('previewFinalPrice').textContent = '--';
+            }
+        }
+        
+        function formatNumber(num) {
+            return new Intl.NumberFormat('vi-VN').format(Math.round(num));
+        }
         
         function addVariantWithData(variant, index) {
             const container = document.getElementById('variantsContainer');
@@ -432,6 +508,7 @@
             if (confirm('Bạn có chắc muốn xóa biến thể này?')) {
                 button.closest('.variant-item').remove();
                 reindexVariants();
+                updateDiscountPreview(); // Update preview after removing variant
             }
         }
         
@@ -473,6 +550,16 @@
                 return false;
             } else {
                 document.getElementById('variantError').classList.add('d-none');
+            }
+            
+            // *** MỚI: Validate discount ***
+            const discountInput = document.getElementById('discountPercentage');
+            const discountValue = parseFloat(discountInput?.value) || 0;
+            if (discountValue < 0 || discountValue > 100) {
+                e.preventDefault();
+                alert('% Giảm giá phải từ 0-100%');
+                discountInput.focus();
+                return false;
             }
         });
         
@@ -537,15 +624,6 @@
                     newBadge.textContent = 'Chính';
                     wrapper.appendChild(newBadge);
                 }
-            });
-        });
-        
-        // === KHỞI TẠO SELECT2 CHO PROMOTIONS ===
-        $(document).ready(function() {
-            $('#promotionIds').select2({
-                theme: "bootstrap-5",
-                placeholder: "Chọn các khuyến mãi...",
-                allowClear: true
             });
         });
         

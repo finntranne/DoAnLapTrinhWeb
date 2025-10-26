@@ -46,5 +46,9 @@ public class ProductRequestDTO {
     
     private Set<Integer> availableToppingIds;
     
-    private Set<Integer> promotionIds;
+//    private Set<Integer> promotionIds;
+    
+    @Min(value = 0, message = "% Giảm giá phải từ 0-100")
+    @Max(value = 100, message = "% Giảm giá phải từ 0-100")
+    private Integer discountPercentage; // Null = không giảm giá
 }

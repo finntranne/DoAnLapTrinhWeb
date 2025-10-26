@@ -6,25 +6,10 @@
 <meta charset="UTF-8">
 <title
 	th:text="${action == 'create' ? 'Tạo khuyến mãi mới' : 'Chỉnh sửa khuyến mãi'} + ' - Vendor | AloTra'"></title>
-<link
-	href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
-	rel="stylesheet" />
-<link rel="stylesheet"
-	href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
 <style>
 .form-label.required::after {
 	content: " *";
 	color: red;
-}
-/* Cải thiện hiển thị Select2 */
-.select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice
-	{
-	font-size: 0.9rem;
-	padding: 0.25rem 0.5rem;
-}
-
-.product-discount-row .form-control {
-	width: 100px; /* Thu hẹp ô nhập % */
 }
 </style>
 </head>
@@ -50,9 +35,20 @@
 				aria-label="Close"></button>
 		</div>
 
+		<div class="alert alert-info">
+			<i class="bi bi-info-circle me-2"></i> <strong>Lưu ý:</strong> Trang
+			này chỉ dùng để tạo <strong>Mã giảm giá cho toàn đơn hàng</strong>.
+			Nếu muốn giảm giá cho từng sản phẩm cụ thể, vui lòng vào <a
+				href="/vendor/products" class="alert-link">Quản lý sản phẩm</a> và
+			chỉnh sửa từng sản phẩm.
+		</div>
+
 		<form
 			th:action="${action == 'create' ? '/vendor/promotions/create' : '/vendor/promotions/edit/' + promotionId}"
 			method="post" th:object="${promotion}" id="promotionForm">
+
+			<!-- *** THÊM HIDDEN INPUT CHO PROMOTION TYPE *** -->
+			<input type="hidden" th:field="*{promotionType}" value="ORDER" />
 
 			<div class="row">
 				<div class="col-lg-8">
@@ -103,38 +99,12 @@
 						</div>
 					</div>
 
+					<!-- *** BỎ CARD "LOẠI KHUYẾN MÃI" - CHỈ CÒN ORDER *** -->
+
 					<div class="card mb-4">
 						<div class="card-header">
 							<h5 class="mb-0">
-								<i class="bi bi-diagram-3 me-2"></i>Loại khuyến mãi
-							</h5>
-						</div>
-						<div class="card-body">
-							<div class="form-check">
-								<input class="form-check-input" type="radio"
-									name="promotionType" id="typeOrder" value="ORDER"
-									th:field="*{promotionType}"
-									onchange="togglePromotionTypeFields()" required> <label
-									class="form-check-label" for="typeOrder"> <strong>Khuyến
-										mãi Toàn Đơn hàng</strong> (Giảm giá tổng hóa đơn, freeship...)
-								</label>
-							</div>
-							<div class="form-check mt-2">
-								<input class="form-check-input" type="radio"
-									name="promotionType" id="typeProduct" value="PRODUCT"
-									th:field="*{promotionType}"
-									onchange="togglePromotionTypeFields()" required> <label
-									class="form-check-label" for="typeProduct"> <strong>Khuyến
-										mãi theo Sản phẩm</strong> (Giảm % trên từng sản phẩm cụ thể)
-								</label>
-							</div>
-						</div>
-					</div>
-
-					<div class="card mb-4" id="orderDiscountSettings">
-						<div class="card-header">
-							<h5 class="mb-0">
-								<i class="bi bi-percent me-2"></i>Cài đặt Giảm giá Toàn Đơn
+								<i class="bi bi-percent me-2"></i>Cài đặt Giảm giá
 							</h5>
 						</div>
 						<div class="card-body">
@@ -204,63 +174,7 @@
 						</div>
 					</div>
 
-					<div class="card mb-4" id="productDiscountSettings"
-						style="display: none;">
-						<div class="card-header">
-							<h5 class="mb-0">
-								<i class="bi bi-tags-fill me-2"></i>Cài đặt Giảm giá Sản phẩm
-							</h5>
-						</div>
-						<div class="card-body">
-							<div class="alert alert-info">Chọn sản phẩm và nhập phần
-								trăm giảm giá (1-100%) cho từng sản phẩm.</div>
-							<div class="mb-3">
-								<label for="productSelector" class="form-label">Chọn sản
-									phẩm áp dụng</label> <select class="form-select" id="productSelector"
-									style="width: 100%;">
-									<option value="">-- Tìm sản phẩm --</option>
-									<option th:each="product : ${shopProducts}"
-										th:value="${product.productID}"
-										th:text="${product.productName}">[Tên Sản phẩm]</option>
-								</select>
-							</div>
-
-							<table class="table table-sm" id="productDiscountTable">
-								<thead class="table-light">
-									<tr>
-										<th>Sản phẩm</th>
-										<th style="width: 150px;">Giảm giá (%) <span
-											class="text-danger">*</span></th>
-										<th style="width: 50px;">Xóa</th>
-									</tr>
-								</thead>
-								<tbody>
-									<tr class="product-discount-row"
-										th:each="item, iterStat : *{productDiscounts}">
-										<td><input type="hidden"
-											th:field="*{productDiscounts[__${iterStat.index}__].productId}" />
-											<span
-											th:with="foundProduct = ${#lists.stream(shopProducts).filter(p -> p.productID == item.productId).findFirst().orElse(null)}"
-											th:text="${foundProduct != null ? foundProduct.productName : 'Sản phẩm không tìm thấy'}">
-												Tên Sản Phẩm </span></td>
-										<td><input type="number"
-											class="form-control form-control-sm"
-											th:field="*{productDiscounts[__${iterStat.index}__].discountPercentage}"
-											min="1" max="100" placeholder="%" required></td>
-										<td>
-											<button type="button" class="btn btn-danger btn-sm"
-												onclick="removeProductDiscount(this)">
-												<i class="bi bi-trash"></i>
-											</button>
-										</td>
-									</tr>
-								</tbody>
-							</table>
-							<div id="noProductsSelected" class="text-muted text-center"
-								th:if="*{productDiscounts == null or #lists.isEmpty(productDiscounts)}">
-								Chưa chọn sản phẩm nào.</div>
-						</div>
-					</div>
+					<!-- *** BỎ CARD "CÀI ĐẶT GIẢM GIÁ SẢN PHẨM" *** -->
 
 					<div class="card mb-4">
 						<div class="card-header">
@@ -410,17 +324,9 @@
 		</form>
 
 		<th:block layout:fragment="scripts">
-			<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-			<script
-				src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
 			<script th:inline="javascript">
 		        /*<![CDATA[*/
 		        
-		        // Lấy danh sách sản phẩm từ model
-		        const shopProducts = /*[[${shopProducts}]]*/ [];
-		        let productDiscountIndex = /*[[${promotion.productDiscounts != null ? promotion.productDiscounts.size() : 0}]]*/ 0;
-		
 		        // Format number with thousand separators
 				function formatNumber(num) {
 					return new Intl.NumberFormat('vi-VN').format(num);
@@ -497,42 +403,34 @@
 					document.getElementById('previewCode').textContent = code.toUpperCase();
 
 					// Discount type and value
-					const promotionType = document.querySelector('input[name="promotionType"]:checked')?.value;
 					const discountType = document.getElementById('discountType').value;
 					
-					if (promotionType === 'PRODUCT') {
-						document.getElementById('previewType').textContent = 'Theo sản phẩm';
-						document.getElementById('previewDiscount').textContent = 'Giảm % tùy sản phẩm';
-						document.getElementById('previewMaxRow').style.display = 'none';
-						document.getElementById('previewMinRow').style.display = 'none';
-					} else {
-						const typeText = discountType === 'PERCENTAGE' ? 'Phần trăm' : discountType === 'FIXED' ? 'Cố định' : '---';
-						document.getElementById('previewType').textContent = typeText;
-						
-						const value = parseFloat(document.getElementById('discountValue').value) || 0;
-						let discountText = '---';
-						if (discountType === 'PERCENTAGE') {
-							discountText = value + '%';
-						} else if (discountType === 'FIXED') {
-							discountText = formatNumber(value) + 'đ';
-						}
-						document.getElementById('previewDiscount').textContent = discountText;
-
-						// Max discount (only for percentage)
-						const maxDiscountRow = document.getElementById('previewMaxRow');
-						if (discountType === 'PERCENTAGE') {
-							const maxDiscount = parseFloat(document.getElementById('maxDiscountAmount').value) || 0;
-							document.getElementById('previewMax').textContent = formatNumber(maxDiscount) + 'đ';
-							maxDiscountRow.style.display = 'flex';
-						} else {
-							maxDiscountRow.style.display = 'none';
-						}
-
-						// Min order value
-						document.getElementById('previewMinRow').style.display = 'flex';
-						const minOrder = parseFloat(document.getElementById('minOrderValue').value) || 0;
-						document.getElementById('previewMin').textContent = formatNumber(minOrder) + 'đ';
+					const typeText = discountType === 'PERCENTAGE' ? 'Phần trăm' : discountType === 'FIXED' ? 'Cố định' : '---';
+					document.getElementById('previewType').textContent = typeText;
+					
+					const value = parseFloat(document.getElementById('discountValue').value) || 0;
+					let discountText = '---';
+					if (discountType === 'PERCENTAGE') {
+						discountText = value + '%';
+					} else if (discountType === 'FIXED') {
+						discountText = formatNumber(value) + 'đ';
 					}
+					document.getElementById('previewDiscount').textContent = discountText;
+
+					// Max discount (only for percentage)
+					const maxDiscountRow = document.getElementById('previewMaxRow');
+					if (discountType === 'PERCENTAGE') {
+						const maxDiscount = parseFloat(document.getElementById('maxDiscountAmount').value) || 0;
+						document.getElementById('previewMax').textContent = formatNumber(maxDiscount) + 'đ';
+						maxDiscountRow.style.display = 'flex';
+					} else {
+						maxDiscountRow.style.display = 'none';
+					}
+
+					// Min order value
+					document.getElementById('previewMinRow').style.display = 'flex';
+					const minOrder = parseFloat(document.getElementById('minOrderValue').value) || 0;
+					document.getElementById('previewMin').textContent = formatNumber(minOrder) + 'đ';
 
 					// Dates
 					const startDate = document.getElementById('startDate').value;
@@ -552,85 +450,6 @@
 						limitRow.style.display = 'block';
 					}
 				}
-				
-				// Toggle promotion type fields
-                function togglePromotionTypeFields() {
-                    const type = document.querySelector('input[name="promotionType"]:checked')?.value;
-                    const orderSettings = document.getElementById('orderDiscountSettings');
-                    const productSettings = document.getElementById('productDiscountSettings');
-
-                    if (type === 'PRODUCT') {
-                        if(orderSettings) orderSettings.style.display = 'none';
-                        if(productSettings) productSettings.style.display = 'block';
-                        // Vô hiệu hóa các input không cần thiết
-                        if (orderSettings) {
-                            orderSettings.querySelectorAll('input, select').forEach(el => el.disabled = true);
-                        }
-                        if (productSettings) {
-                            productSettings.querySelectorAll('input, select').forEach(el => el.disabled = false);
-                        }
-                    } else { // 'ORDER'
-                        if(orderSettings) orderSettings.style.display = 'block';
-                        if(productSettings) productSettings.style.display = 'none';
-                        // Kích hoạt lại
-                        if (orderSettings) {
-                            orderSettings.querySelectorAll('input, select').forEach(el => el.disabled = false);
-                        }
-                        if (productSettings) {
-                            productSettings.querySelectorAll('input, select').forEach(el => el.disabled = true);
-                        }
-                        toggleDiscountFields();
-                    }
-                    updatePreview();
-                }
-                
-                // Add product to table
-                function addProductToTable(productId, productName) {
-                    const tableBody = document.getElementById('productDiscountTable').querySelector('tbody');
-                    
-                    // Kiểm tra xem sản phẩm đã có trong bảng chưa
-                    if (document.querySelector(`input[name$=".productId"][value="${productId}"]`)) {
-                        alert("Sản phẩm này đã có trong danh sách.");
-                        return;
-                    }
-                    
-                    // Ẩn thông báo "Chưa chọn sản phẩm nào"
-                    const noProductsDiv = document.getElementById('noProductsSelected');
-                    if (noProductsDiv) {
-                        noProductsDiv.style.display = 'none';
-                    }
-
-                    const index = productDiscountIndex++;
-                    const row = tableBody.insertRow();
-                    row.className = 'product-discount-row';
-                    row.innerHTML = `
-                        <td>
-                            <input type="hidden" name="productDiscounts[${index}].productId" value="${productId}">
-                            ${productName}
-                        </td>
-                        <td>
-                            <input type="number" name="productDiscounts[${index}].discountPercentage" 
-                                   class="form-control form-control-sm" 
-                                   min="1" max="100" value="10" required>
-                        </td>
-                        <td>
-                            <button type="button" class="btn btn-danger btn-sm" onclick="removeProductDiscount(this)">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </td>
-                    `;
-                }
-                
-                // Remove product discount
-                function removeProductDiscount(button) {
-                    button.closest('tr').remove();
-                    // Nếu xóa hết, hiển thị lại "Chưa chọn"
-                    const tableBody = document.getElementById('productDiscountTable').querySelector('tbody');
-                    const noProductsDiv = document.getElementById('noProductsSelected');
-                    if (tableBody.rows.length === 0 && noProductsDiv) {
-                         noProductsDiv.style.display = 'block';
-                    }
-                }
 		
 				// Form validation
 				document.getElementById('promotionForm').addEventListener('submit', function(e) {
@@ -638,38 +457,26 @@
 					const discountValue = parseFloat(document.getElementById('discountValue').value) || 0;
 					const startDate = new Date(document.getElementById('startDate').value);
 					const endDate = new Date(document.getElementById('endDate').value);
-					const promotionType = document.querySelector('input[name="promotionType"]:checked')?.value;
 
-					// Validate based on promotion type
-					if (promotionType === 'PRODUCT') {
-						// Kiểm tra có ít nhất 1 sản phẩm
-						const productInputs = document.querySelectorAll('#productDiscountTable input[name^="productDiscounts"]');
-						if (productInputs.length === 0) {
+					// Validate discount type
+					if (!discountType) {
+						e.preventDefault();
+						alert('Vui lòng chọn Loại giảm giá.');
+						return false;
+					}
+					
+					// Validate discount value
+					if (discountType === 'PERCENTAGE') {
+						if (discountValue < 0 || discountValue > 100) {
 							e.preventDefault();
-							alert('Vui lòng chọn ít nhất một sản phẩm để áp dụng khuyến mãi.');
+							alert('Giá trị giảm giá phần trăm phải từ 0-100%');
 							return false;
 						}
-					} else { // 'ORDER'
-						// Validate discount type
-						if (!discountType) {
+					} else if (discountType === 'FIXED') {
+						if (discountValue <= 0) {
 							e.preventDefault();
-							alert('Vui lòng chọn Loại giảm giá cho khuyến mãi toàn đơn.');
+							alert('Giá trị giảm giá cố định phải lớn hơn 0');
 							return false;
-						}
-						
-						// Validate discount value
-						if (discountType === 'PERCENTAGE') {
-							if (discountValue < 0 || discountValue > 100) {
-								e.preventDefault();
-								alert('Giá trị giảm giá phần trăm phải từ 0-100%');
-								return false;
-							}
-						} else if (discountType === 'FIXED') {
-							if (discountValue <= 0) {
-								e.preventDefault();
-								alert('Giá trị giảm giá cố định phải lớn hơn 0');
-								return false;
-							}
 						}
 					}
 
@@ -731,27 +538,9 @@
 						document.getElementById('hasUsageLimit').checked = true;
 						toggleUsageLimit();
 					}
-					
-					// Khởi tạo Select2 (Tìm kiếm sản phẩm)
-                    $('#productSelector').select2({
-                        theme: "bootstrap-5",
-                        placeholder: 'Tìm và chọn sản phẩm...',
-                        allowClear: true,
-                        data: shopProducts.map(p => ({ id: p.productID, text: p.productName }))
-                    });
-                    
-                    // Thêm sản phẩm vào bảng khi chọn
-                    $('#productSelector').on('select2:select', function (e) {
-                        const data = e.params.data;
-                        if (data) {
-                            addProductToTable(data.id, data.text);
-                        }
-                        // Xóa lựa chọn hiện tại khỏi select2
-                        $(this).val(null).trigger('change');
-                    });
 
-					// KHỞI CHẠY LẦN ĐẦU
-					togglePromotionTypeFields();
+					// Initial field setup
+					toggleDiscountFields();
 					updatePreview();
 				});
 		        /*]]>*/
