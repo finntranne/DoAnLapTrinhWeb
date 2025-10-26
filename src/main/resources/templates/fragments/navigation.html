@@ -93,7 +93,7 @@
                 <ul class="dropdown-menu" th:if="${categories != null}">
                     <li th:each="category : ${categories}">
                         <a class="dropdown-item" 
-                       th:href="@{/categories/{id}(id=${category.categoryId})}" 
+                       th:href="@{/categories/{id}(id=${category.categoryID})}" 
                        th:text="${category.categoryName}"></a>
                     </li>
                 </ul>
@@ -130,7 +130,7 @@
                     <ul class="dropdown-menu" th:if="${categories != null}">
                         <li th:each="category : ${categories}">
                             <a class="dropdown-item" 
-                           th:href="@{/categories/{id}(id=${category.categoryId})}" 
+                           th:href="@{/categories/{id}(id=${category.categoryID})}" 
                            th:text="${category.categoryName}"></a>
                         </li>
                     </ul>

@@ -1,41 +1,153 @@
-package com.alotra.entity.product;
+//package com.alotra.entity.product;
+//
+//<<<<<<< HEAD
+//import com.alotra.entity.order.OrderDetail; // Thêm import này
+//import jakarta.persistence.*;
+//import lombok.*;
+//import java.math.BigDecimal;
+//import java.util.Set; // Thêm import này
+//
+//@Entity
+//@Table(name = "ProductVariants")
+//@Data
+//@NoArgsConstructor
+//@AllArgsConstructor
+//public class ProductVariant {
+//    @Id
+//    @GeneratedValue(strategy = GenerationType.IDENTITY)
+//    @Column(name = "VariantID")
+//    private Integer variantId;
+//
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "ProductID", nullable = false)
+//    @EqualsAndHashCode.Exclude
+//    @ToString.Exclude
+//    private Product product;
+//
+//    @ManyToOne
+//    @JoinColumn(name = "SizeID", nullable = false)
+//    private Size size;
+//
+//    @Column(name = "Price", nullable = false)
+//    private BigDecimal price;
+//
+//    @Column(name = "Stock", nullable = false)
+//    private int stock;
+//
+//    // === THÊM MỐI QUAN HỆ NÀY VÀO ===
+//    @OneToMany(mappedBy = "variant")
+//    @EqualsAndHashCode.Exclude
+//    @ToString.Exclude
+//    private Set<OrderDetail> orderDetails;
+//=======
+//import java.math.BigDecimal;
+//
+//import jakarta.persistence.Column;
+//import jakarta.persistence.Entity;
+//import jakarta.persistence.FetchType;
+//import jakarta.persistence.GeneratedValue;
+//import jakarta.persistence.GenerationType;
+//import jakarta.persistence.Id;
+//import jakarta.persistence.JoinColumn;
+//import jakarta.persistence.ManyToOne;
+//import jakarta.persistence.Table;
+//import jakarta.persistence.UniqueConstraint;
+//import lombok.AllArgsConstructor;
+//import lombok.Data;
+//import lombok.NoArgsConstructor;
+//import lombok.ToString;
+//
+//@Entity
+//@Table(name = "ProductVariants", 
+//    uniqueConstraints = @UniqueConstraint(
+//        name = "UQ_ProductVariant_Unique", 
+//        columnNames = {"ProductID", "SizeID"}
+//    )
+//)
+//@Data
+//@NoArgsConstructor
+//@AllArgsConstructor
+//@ToString(exclude = {"product", "size"})
+//public class ProductVariant {
+//    
+//    @Id
+//    @GeneratedValue(strategy = GenerationType.IDENTITY)
+//    @Column(name = "VariantID")
+//    private Integer variantID;
+//    
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "ProductID", nullable = false)
+//    private Product product;
+//    
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "SizeID", nullable = false)
+//    private Size size;
+//    
+//    @Column(name = "Price", nullable = false, precision = 10, scale = 2)
+//    private BigDecimal price;
+//    
+//    @Column(name = "Stock", nullable = false)
+//    private Integer stock = 0;
+//    
+//    @Column(name = "SKU", unique = true, length = 50)
+//    private String sku;
+//>>>>>>> lam
+//}
 
-import com.alotra.entity.order.OrderDetail; // Thêm import này
-import jakarta.persistence.*;
-import lombok.*;
+
+
+
+
+
+
+
+package com.alotra.entity.product; // Giữ package này
+
 import java.math.BigDecimal;
-import java.util.Set; // Thêm import này
+
+import jakarta.persistence.*; // Import đầy đủ JPA annotations
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode; // Import Exclude
+import lombok.NoArgsConstructor;
+import lombok.ToString; // Import Exclude
 
 @Entity
-@Table(name = "ProductVariants")
+@Table(name = "ProductVariants", // Khớp DB
+    uniqueConstraints = @UniqueConstraint( // Giữ lại constraint từ nhánh lam, khớp DB
+        name = "UQ_ProductVariant_Unique",
+        columnNames = {"ProductID", "SizeID"}
+    )
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+// Thêm Excludes
+@ToString(exclude = {"product", "size"})
+@EqualsAndHashCode(exclude = {"product", "size"})
 public class ProductVariant {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "VariantID")
-    private Integer variantId;
+    @Column(name = "VariantID") // Khớp DB và nhánh lam
+    private Integer variantID; // Giữ tên theo nhánh lam
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ProductID", nullable = false)
-    @EqualsAndHashCode.Exclude
-    @ToString.Exclude
+    @ManyToOne(fetch = FetchType.LAZY) // Giữ LAZY fetch
+    @JoinColumn(name = "ProductID", nullable = false) // Khớp DB
     private Product product;
 
-    @ManyToOne
-    @JoinColumn(name = "SizeID", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY) // Giữ LAZY fetch
+    @JoinColumn(name = "SizeID", nullable = false) // Khớp DB
     private Size size;
 
-    @Column(name = "Price", nullable = false)
+    @Column(name = "Price", nullable = false, precision = 10, scale = 2) // Khớp DB và nhánh lam
     private BigDecimal price;
 
-    @Column(name = "Stock", nullable = false)
-    private int stock;
+    @Column(name = "Stock", nullable = false) // Khớp DB và nhánh lam
+    private Integer stock = 0; // Giữ kiểu Integer và giá trị mặc định từ nhánh lam
 
-    // === THÊM MỐI QUAN HỆ NÀY VÀO ===
-    @OneToMany(mappedBy = "variant")
-    @EqualsAndHashCode.Exclude
-    @ToString.Exclude
-    private Set<OrderDetail> orderDetails;
+    @Column(name = "SKU", unique = true, length = 50) // Giữ lại từ nhánh lam, khớp DB
+    private String sku;
+
+    // Bỏ @OneToMany Set<OrderDetail> orderDetails từ HEAD vì nó sai logic (OrderDetail phải trỏ về ProductVariant)
 }

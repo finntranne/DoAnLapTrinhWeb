@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{vendor/layouts/vendor-layout}" lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Chi tiết đơn hàng - Vendor | AloTra</title>
+
+<style>
+.timeline {
+	position: relative;
+	padding-left: 30px;
+}
+
+.timeline-item {
+	position: relative;
+	padding-bottom: 20px;
+}
+
+.timeline-item:not(:last-child):before {
+	content: '';
+	position: absolute;
+	left: -22px;
+	top: 8px;
+	width: 2px;
+	height: calc(100% + 10px);
+	background-color: #dee2e6;
+}
+
+.timeline-marker {
+	position: absolute;
+	left: -26px;
+	top: 0;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+}
+
+.timeline-content {
+	padding-left: 10px;
+}
+</style>
+</head>
+<body>
+
+	<div layout:fragment="content">
+
+		<div
+			class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+			<h1 class="h2">
+				<i class="bi bi-receipt"></i> Chi tiết đơn hàng #<span
+					th:text="${order.orderID}"></span>
+			</h1>
+			<a href="/vendor/orders" class="btn btn-outline-secondary"> <i
+				class="bi bi-arrow-left"></i> Quay lại
+			</a>
+		</div>
+
+		<div th:if="${success}"
+			class="alert alert-success alert-dismissible fade show">
+			<i class="bi bi-check-circle"></i> <span th:text="${success}"></span>
+			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+		</div>
+
+		<div th:if="${error}"
+			class="alert alert-danger alert-dismissible fade show">
+			<i class="bi bi-exclamation-triangle"></i> <span th:text="${error}"></span>
+			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+		</div>
+
+		<div class="row">
+			<div class="col-md-8">
+				<div class="card mb-4">
+					<div class="card-header bg-primary text-white">
+						<i class="bi bi-info-circle"></i> Trạng thái đơn hàng
+					</div>
+					<div class="card-body">
+						<div
+							class="d-flex justify-content-between align-items-center mb-3">
+							<h5>Trạng thái hiện tại:</h5>
+							<span class="badge fs-6"
+								th:classappend="${order.orderStatus == 'Pending' ? 'bg-warning' :
+                                                   (order.orderStatus == 'Confirmed' ? 'bg-info' :
+                                                   (order.orderStatus == 'Delivering' ? 'bg-primary' :
+                                                   (order.orderStatus == 'Completed' ? 'bg-success' : 'bg-danger')))}"
+								th:switch="${order.orderStatus}">
+								<span
+										th:case="'Pending'">Chờ xác nhận
+										</span> 
+										<span th:case="'Confirmed'">Đã xác nhận
+										</span> 
+										<span th:case="'Delivering'">Đang giao
+										</span>
+										<span th:case="'Completed'">Hoàn thành
+										</span>
+										<span th:case="'Cancelled'">Đã hủy
+										</span> 
+										<span
+										th:case="*" th:text="${order.orderStatus}">
+										</span></span>
+						</div>
+
+						<div
+							th:if="${order.orderStatus != 'Completed' && order.orderStatus != 'Cancelled'}">
+							<form method="post"
+								th:action="@{/vendor/orders/{id}/status(id=${order.orderID})}">
+								<div class="row g-3">
+									<div class="col-md-8">
+										<select name="newStatus" class="form-select" required>
+											<option value="">-- Chọn trạng thái mới --</option>
+											<option value="Confirmed"
+												th:if="${order.orderStatus == 'Pending'}">Xác nhận
+												đơn hàng</option>
+											<option value="Delivering"
+												th:if="${order.orderStatus == 'Confirmed'}">Bắt đầu
+												giao hàng</option>
+											<option value="Completed"
+												th:if="${order.orderStatus == 'Delivering'}">Hoàn
+												thành</option>
+											<option value="Cancelled"
+												th:if="${order.orderStatus == 'Pending' || order.orderStatus == 'Confirmed'}">
+												Hủy đơn</option>
+										</select>
+									</div>
+									<div class="col-md-4">
+										<button type="submit" class="btn btn-primary w-100">
+											<i class="bi bi-arrow-right-circle"></i> Cập nhật
+										</button>
+									</div>
+								</div>
+							</form>
+						</div>
+					</div>
+				</div>
+
+				<div class="card mb-4">
+					<div class="card-header">
+						<i class="bi bi-box-seam"></i> Sản phẩm trong đơn hàng
+					</div>
+					<div class="card-body">
+						<div class="table-responsive">
+							<table class="table">
+								<thead class="table-light">
+									<tr>
+										<th>Sản phẩm</th>
+										<th>Đơn giá</th>
+										<th>Số lượng</th>
+										<th>Thành tiền</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="detail : ${order.orderDetails}">
+										<td>
+											<div class="d-flex align-items-center">
+												<img th:src="${detail.variant.product.images[0]?.imageURL}"
+													alt="Product" class="img-thumbnail me-2"
+													style="width: 60px; height: 60px; object-fit: cover;">
+												<div>
+													<strong th:text="${detail.variant.product.productName}"></strong>
+													<br> <small class="text-muted"> Size: <span
+														th:text="${detail.variant.size.sizeName}"></span>
+													</small>
+													<div th:if="${!detail.toppings.isEmpty()}">
+														<small class="text-info"> + Topping: <span
+															th:each="topping, iterStat : ${detail.toppings}">
+																<span th:text="${topping.topping.toppingName}"></span> <span
+																th:if="${!iterStat.last}">, </span>
+														</span>
+														</small>
+													</div>
+												</div>
+											</div>
+										</td>
+										<td><span
+											th:text="${#numbers.formatDecimal(detail.unitPrice, 0, 'COMMA', 0, 'POINT')}"></span>đ
+										</td>
+										<td><span th:text="${detail.quantity}"></span></td>
+										<td><strong
+											th:text="${#numbers.formatDecimal(detail.subtotal, 0, 'COMMA', 0, 'POINT')}"></strong>đ
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="col-md-4">
+				<div class="card mb-4">
+					<div class="card-header">
+						<i class="bi bi-person"></i> Thông tin khách hàng
+					</div>
+					<div class="card-body">
+						<p class="mb-2">
+							<strong>Tên:</strong> <span th:text="${order.user.fullName}"></span>
+						</p>
+						<p class="mb-2">
+							<strong>Email:</strong> <span th:text="${order.user.email}"></span>
+						</p>
+						<p class="mb-0">
+							<strong>SĐT:</strong> <span th:text="${order.user.phoneNumber}"></span>
+						</p>
+					</div>
+				</div>
+
+				<div class="card mb-4">
+					<div class="card-header">
+						<i class="bi bi-truck"></i> Thông tin giao hàng
+					</div>
+					<div class="card-body">
+						<p class="mb-2">
+							<strong>Người nhận:</strong> <span
+								th:text="${order.recipientName}"></span>
+						</p>
+						<p class="mb-2">
+							<strong>SĐT:</strong> <span th:text="${order.recipientPhone}"></span>
+						</p>
+						<p class="mb-2">
+							<strong>Địa chỉ:</strong><br> <span
+								th:text="${order.shippingAddress}"></span>
+						</p>
+						<p class="mb-2" th:if="${order.shipper != null}">
+							<strong>Shipper:</strong> <span
+								th:text="${order.shipper.fullName}"></span>
+						</p>
+						<p class="mb-0" th:if="${order.shippingProvider != null}">
+							<strong>Đơn vị vận chuyển:</strong> <span
+								th:text="${order.shippingProvider.providerName}"></span>
+						</p>
+					</div>
+				</div>
+
+				<div class="card">
+					<div class="card-header bg-success text-white">
+						<i class="bi bi-cash"></i> Tổng kết thanh toán
+					</div>
+					<div class="card-body">
+						<div class="d-flex justify-content-between mb-2">
+							<span>Tạm tính:</span> <strong
+								th:text="${#numbers.formatDecimal(order.subtotal, 0, 'COMMA', 0, 'POINT')} + 'đ'"></strong>
+						</div>
+						<div class="d-flex justify-content-between mb-2">
+							<span>Phí vận chuyển:</span> <strong
+								th:text="${#numbers.formatDecimal(order.shippingFee, 0, 'COMMA', 0, 'POINT')} + 'đ'"></strong>
+						</div>
+						<div class="d-flex justify-content-between mb-2"
+							th:if="${order.discountAmount > 0}">
+							<span>Giảm giá:</span> <strong class="text-danger"> -<span
+								th:text="${#numbers.formatDecimal(order.discountAmount, 0, 'COMMA', 0, 'POINT')}"></span>đ
+							</strong>
+						</div>
+						<hr>
+						<div class="d-flex justify-content-between mb-3">
+							<strong>Tổng cộng:</strong>
+							<h4 class="text-success mb-0">
+								<span
+									th:text="${#numbers.formatDecimal(order.grandTotal, 0, 'COMMA', 0, 'POINT')}"></span>đ
+							</h4>
+						</div>
+
+						<div class="alert alert-info mb-0">
+							<strong>Phương thức:</strong> <span
+								th:text="${order.paymentMethod}"></span> <br> <strong>Trạng
+								thái:</strong> <span class="badge"
+								th:classappend="${order.paymentStatus == 'Paid' ? 'bg-success' : 'bg-warning'}"
+								th:text="${order.paymentStatus}"></span>
+						</div>
+					</div>
+				</div>
+
+				<div class="card mt-4">
+					<div class="card-header">
+						<i class="bi bi-clock-history"></i> Lịch sử đơn hàng
+					</div>
+					<div class="card-body">
+						<div class="timeline">
+							<div class="timeline-item">
+								<div class="timeline-marker bg-primary"></div>
+								<div class="timeline-content">
+									<small class="text-muted"> <span
+										th:text="${#temporals.format(order.orderDate, 'dd/MM/yyyy HH:mm')}"></span>
+									</small>
+									<p class="mb-0">Đơn hàng được tạo</p>
+								</div>
+							</div>
+
+							<div class="timeline-item"
+								th:if="${order.orderStatus != 'Pending'}">
+								<div class="timeline-marker bg-info"></div>
+								<div class="timeline-content">
+									<p class="mb-0">Đơn hàng đã được xác nhận</p>
+								</div>
+							</div>
+
+							<div class="timeline-item"
+								th:if="${order.orderStatus == 'Delivering' || order.orderStatus == 'Completed'}">
+								<div class="timeline-marker bg-warning"></div>
+								<div class="timeline-content">
+									<p class="mb-0">Đang giao hàng</p>
+								</div>
+							</div>
+
+							<div class="timeline-item"
+								th:if="${order.orderStatus == 'Completed'}">
+								<div class="timeline-marker bg-success"></div>
+								<div class="timeline-content">
+									<small class="text-muted"> <span
+										th:text="${#temporals.format(order.completedAt, 'dd/MM/yyyy HH:mm')}"></span>
+									</small>
+									<p class="mb-0">Đơn hàng hoàn thành</p>
+								</div>
+							</div>
+
+							<div class="timeline-item"
+								th:if="${order.orderStatus == 'Cancelled'}">
+								<div class="timeline-marker bg-danger"></div>
+								<div class="timeline-content">
+									<p class="mb-0">Đơn hàng đã bị hủy</p>
+									<small class="text-muted"
+										th:if="${order.cancellationReason != null}"> Lý do: <span
+										th:text="${order.cancellationReason}"></span>
+									</small>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+	</div>
+</body>
+</html>

@@ -1,16 +1,146 @@
-package com.alotra.repository.order;
+//package com.alotra.repository.order;
+//
+//<<<<<<< HEAD
+//
+//import com.alotra.entity.order.Order;
+//import com.alotra.entity.user.Customer;
+//
+//import java.util.List;
+//
+//import org.springframework.data.jpa.repository.JpaRepository;
+//
+//public interface OrderRepository extends JpaRepository<Order, Integer> {
+//	
+//	List<Order> findByCustomerOrderByOrderDateDesc(Customer customer);
+//	
+//	List<Order> findByCustomerAndOrderStatusOrderByOrderDateDesc(Customer customer, String status);
+//=======
+//import java.util.List;
+//
+//import org.springframework.data.domain.Page;
+//import org.springframework.data.domain.Pageable;
+//import org.springframework.data.jpa.repository.JpaRepository;
+//import org.springframework.data.jpa.repository.Query;
+//import org.springframework.data.repository.query.Param;
+//import org.springframework.stereotype.Repository;
+//
+//import com.alotra.entity.order.Order;
+//
+//@Repository
+//public interface OrderRepository extends JpaRepository<Order, Integer> {
+//
+//	Page<Order> findByShop_ShopIdOrderByOrderDateDesc(Integer shopId, Pageable pageable);
+//
+//	@Query("SELECT o FROM Order o " + "WHERE o.shop.shopId = :shopId "
+//			+ "AND (:status IS NULL OR o.orderStatus = :status) " + "ORDER BY o.orderDate DESC")
+//	Page<Order> findShopOrdersByStatus(@Param("shopId") Integer shopId, @Param("status") String status,
+//			Pageable pageable);
+//
+//	@Query("SELECT COUNT(o) FROM Order o " + "WHERE o.shop.shopId = :shopId AND o.orderStatus = :status")
+//	Long countByShopIdAndStatus(@Param("shopId") Integer shopId, @Param("status") String status);
+//
+//	@Query("SELECT COUNT(o) FROM Order o WHERE o.shop.shopId = :shopId")
+//	Long countByShopId(@Param("shopId") Integer shopId);
+//
+//	Page<Order> findByUser_IdOrderByOrderDateDesc(Integer userId, Pageable pageable);
+//
+//	@Query("""
+//			    SELECT o FROM Order o
+//			    WHERE o.user.id = :userId
+//			    AND (:status IS NULL OR o.orderStatus = :status)
+//			    ORDER BY o.orderDate DESC
+//			""")
+//	Page<Order> findUserOrdersByStatus(@Param("userId") Integer userId, @Param("status") String status,
+//			Pageable pageable);
+//
+//	@Query("""
+//			    SELECT o FROM Order o
+//			    WHERE o.shipper.id = :shipperId
+//			    AND (:status IS NULL OR o.orderStatus = :status)
+//			    ORDER BY CASE WHEN o.orderStatus = 'Delivering' THEN 1 ELSE 2 END, o.orderDate DESC
+//			""")
+//	List<Order> findShipperOrders(@Param("shipperId") Integer shipperId, @Param("status") String status);
+//
+//	@Query("SELECT o FROM Order o JOIN o.user u WHERE o.shop.shopId = :shopId "
+//			+ "AND (:status IS NULL OR o.orderStatus = :status) " + "AND (:searchQuery IS NULL OR "
+//			+ "     LOWER(TRIM(u.fullName)) LIKE LOWER(CONCAT('%', TRIM(:searchQuery), '%')) OR " + // Thêm TRIM()
+//			"     TRIM(u.phoneNumber) LIKE CONCAT('%', TRIM(:searchQuery), '%') OR " + // Thêm TRIM()
+//			"     TRIM(o.recipientPhone) LIKE CONCAT('%', TRIM(:searchQuery), '%') OR " + // Thêm TRIM()
+//			"     LOWER(TRIM(o.recipientName)) LIKE LOWER(CONCAT('%', TRIM(:searchQuery), '%')) )" + // Thêm TRIM()
+//			"ORDER BY o.orderDate DESC")
+//	Page<Order> findShopOrdersFiltered(@Param("shopId") Integer shopId, @Param("status") String status,
+//			@Param("searchQuery") String searchQuery, Pageable pageable);
+//>>>>>>> lam
+//}
 
-
-import com.alotra.entity.order.Order;
-import com.alotra.entity.user.Customer;
+package com.alotra.repository.order; // Giữ package này
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
-public interface OrderRepository extends JpaRepository<Order, Integer> {
-	
-	List<Order> findByCustomerOrderByOrderDateDesc(Customer customer);
-	
-	List<Order> findByCustomerAndOrderStatusOrderByOrderDateDesc(Customer customer, String status);
+import com.alotra.entity.order.Order;
+// Bỏ import Customer
+
+@Repository
+public interface OrderRepository extends JpaRepository<Order, Integer> { // Khớp Entity
+
+    // --- Giữ lại TẤT CẢ phương thức từ nhánh lam ---
+	Page<Order> findByShop_ShopIdOrderByOrderDateDesc(Integer shopId, Pageable pageable);
+
+	@Query("SELECT COUNT(o) FROM Order o WHERE o.shop.shopId = :shopId AND o.orderStatus = :status")
+	Long countByShopIdAndStatus(@Param("shopId") Integer shopId, @Param("status") String status);
+
+	@Query("SELECT COUNT(o) FROM Order o WHERE o.shop.shopId = :shopId")
+	Long countByShopId(@Param("shopId") Integer shopId);
+
+	Page<Order> findByUser_IdOrderByOrderDateDesc(Integer userId, Pageable pageable);
+
+	@Query("""
+	        SELECT o FROM Order o
+	        WHERE o.user.id = :userId
+	        AND (:status IS NULL OR o.orderStatus = :status)
+	        ORDER BY o.orderDate DESC
+	    """)
+	Page<Order> findUserOrdersByStatus(@Param("userId") Integer userId, @Param("status") String status,
+			Pageable pageable);
+
+	@Query("""
+	        SELECT o FROM Order o
+	        WHERE o.shipper.id = :shipperId
+	        AND (:status IS NULL OR o.orderStatus = :status)
+	        ORDER BY CASE WHEN o.orderStatus = 'Delivering' THEN 1 ELSE 2 END, o.orderDate DESC
+	    """)
+	List<Order> findShipperOrders(@Param("shipperId") Integer shipperId, @Param("status") String status);
+
+    // Giữ lại query đã sửa với countQuery tường minh
+	@Query(value = "SELECT o FROM Order o JOIN o.user u WHERE o.shop.shopId = :shopId " +
+	           "AND (:status IS NULL OR o.orderStatus = :status) " +
+	           "AND (:searchQuery IS NULL OR " +
+	           "     LOWER(TRIM(u.fullName)) LIKE LOWER(CONCAT('%', TRIM(:searchQuery), '%')) OR " +
+	           "     TRIM(u.phoneNumber) LIKE CONCAT('%', TRIM(:searchQuery), '%') OR " +
+	           "     TRIM(o.recipientPhone) LIKE CONCAT('%', TRIM(:searchQuery), '%') OR " +
+	           "     LOWER(TRIM(o.recipientName)) LIKE LOWER(CONCAT('%', TRIM(:searchQuery), '%')) )",
+           countQuery = "SELECT count(o) FROM Order o JOIN o.user u WHERE o.shop.shopId = :shopId " +
+	           "AND (:status IS NULL OR o.orderStatus = :status) " +
+	           "AND (:searchQuery IS NULL OR " +
+	           "     LOWER(TRIM(u.fullName)) LIKE LOWER(CONCAT('%', TRIM(:searchQuery), '%')) OR " +
+	           "     TRIM(u.phoneNumber) LIKE CONCAT('%', TRIM(:searchQuery), '%') OR " +
+	           "     TRIM(o.recipientPhone) LIKE CONCAT('%', TRIM(:searchQuery), '%') OR " +
+	           "     LOWER(TRIM(o.recipientName)) LIKE LOWER(CONCAT('%', TRIM(:searchQuery), '%')) )"
+          )
+	    Page<Order> findShopOrdersFiltered(
+	            @Param("shopId") Integer shopId,
+	            @Param("status") String status,
+	            @Param("searchQuery") String searchQuery,
+	            Pageable pageable);
+
+    // Bỏ các phương thức dùng Customer từ HEAD
+    // List<Order> findByCustomerOrderByOrderDateDesc(Customer customer);
+	// List<Order> findByCustomerAndOrderStatusOrderByOrderDateDesc(Customer customer, String status);
 }

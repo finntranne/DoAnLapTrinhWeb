@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{vendor/layouts/vendor-layout}"
+      lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - Vendor | AloTra</title>
+    
+    <style>
+        .stat-card {
+            border-left: 4px solid #007bff;
+            transition: transform 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .stat-icon {
+            font-size: 2.5rem;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+
+    <div layout:fragment="content">
+        
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h2">
+                <i class="bi bi-speedometer2"></i> Dashboard
+            </h1>
+        </div>
+        
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle"></i> <span th:text="${success}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle"></i> <span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <img th:src="${dashboard.logoUrl}" alt="Shop Logo" 
+                         class="rounded-circle me-3" style="width: 80px; height: 80px; object-fit: cover;">
+                    <div>
+                        <h3 class="mb-1" th:text="${dashboard.shopName}">Tên Shop</h3>
+                        <p class="text-muted mb-0">
+                            <i class="bi bi-shop"></i> Cửa hàng của bạn
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="card stat-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1">Tổng sản phẩm</p>
+                                <h3 class="mb-0" th:text="${dashboard.totalProducts}">0</h3>
+                                <small class="text-success">
+                                    <span th:text="${dashboard.activeProducts}">0</span> đang hoạt động
+                                </small>
+                            </div>
+                            <i class="bi bi-box-seam stat-icon text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card stat-card h-100" style="border-left-color: #28a745;">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1">Tổng đơn hàng</p>
+                                <h3 class="mb-0" th:text="${dashboard.totalOrders}">0</h3>
+                                <small class="text-warning">
+                                    <span th:text="${dashboard.pendingOrders}">0</span> đang chờ
+                                </small>
+                            </div>
+                            <i class="bi bi-cart-check stat-icon text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card stat-card h-100" style="border-left-color: #ffc107;">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1">Đang giao hàng</p>
+                                <h3 class="mb-0" th:text="${dashboard.deliveringOrders}">0</h3>
+                                <small class="text-info">
+                                    Theo dõi giao hàng
+                                </small>
+                            </div>
+                            <i class="bi bi-truck stat-icon text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card stat-card h-100" style="border-left-color: #dc3545;">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1">Chờ phê duyệt</p>
+                                <h3 class="mb-0" th:text="${dashboard.pendingApprovals}">0</h3>
+                                <small class="text-danger">
+                                    Yêu cầu chờ xử lý
+                                </small>
+                            </div>
+                            <i class="bi bi-hourglass-split stat-icon text-danger"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row g-4 mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <i class="bi bi-graph-up"></i> Tổng doanh thu
+                    </div>
+                    <div class="card-body text-center">
+                        <h2 class="text-success mb-0">
+                            <span th:text="${#numbers.formatDecimal(dashboard.totalRevenue, 0, 'COMMA', 0, 'POINT')}">0</span>đ
+                        </h2>
+                        <p class="text-muted">Tổng cộng từ khi bắt đầu</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <i class="bi bi-calendar-month"></i> Doanh thu tháng này
+                    </div>
+                    <div class="card-body text-center">
+                        <h2 class="text-info mb-0">
+                            <span th:text="${#numbers.formatDecimal(dashboard.thisMonthRevenue, 0, 'COMMA', 0, 'POINT')}">0</span>đ
+                        </h2>
+                        <p class="text-muted">Từ đầu tháng đến nay</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4" th:if="${pendingApprovals != null and !pendingApprovals.isEmpty()}">
+            <div class="card-header bg-warning">
+                <i class="bi bi-exclamation-circle"></i> Yêu cầu đang chờ phê duyệt
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Loại</th>
+                                <th>Hành động</th>
+                                <th>Ngày yêu cầu</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="approval : ${pendingApprovals}">
+                                <td>
+                                    <span class="badge bg-primary" th:text="${approval.entityType}"></span>
+                                </td>
+                                <td>
+                                    <span class="badge" 
+                                          th:classappend="${approval.actionType == 'CREATE' ? 'bg-success' : 
+                                                           (approval.actionType == 'UPDATE' ? 'bg-info' : 'bg-danger')}"
+                                          th:text="${approval.actionType}"></span>
+                                </td>
+                                <td th:text="${#temporals.format(approval.requestedAt, 'dd/MM/yyyy HH:mm')}"></td>
+                                <td>
+                                    <span class="badge bg-warning">Đang chờ</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-center">
+                    <a href="/vendor/approvals" class="btn btn-outline-warning">
+                        Xem tất cả yêu cầu <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-lightning"></i> Thao tác nhanh
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <a href="/vendor/products/create" class="btn btn-primary w-100">
+                            <i class="bi bi-plus-circle"></i> Thêm sản phẩm mới
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="/vendor/promotions/create" class="btn btn-success w-100">
+                            <i class="bi bi-gift"></i> Tạo khuyến mãi
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="/vendor/orders?status=Pending" class="btn btn-warning w-100">
+                            <i class="bi bi-list-check"></i> Xem đơn hàng mới
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div> </body>
+</html>

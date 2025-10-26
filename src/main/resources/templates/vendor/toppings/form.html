@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{vendor/layouts/vendor-layout}" lang="vi">
+<head>
+<meta charset="UTF-8">
+<title
+	th:text="${action == 'create' ? 'Thêm Topping Mới' : 'Chỉnh sửa Topping'}">Form
+	Topping</title>
+
+<style>
+/* CSS cho ảnh preview */
+.image-preview-container {
+	margin-top: 15px;
+}
+
+.image-preview {
+	width: 150px;
+	height: 150px;
+	border: 2px solid #ddd;
+	border-radius: 5px;
+	object-fit: cover;
+	background-color: #f8f9fa;
+}
+</style>
+</head>
+<body>
+
+	<div layout:fragment="content">
+		<div
+			class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+			<h1 class="h2"
+				th:text="${action == 'create' ? 'Thêm Topping Mới' : 'Chỉnh sửa Topping'}"></h1>
+			<a href="/vendor/toppings" class="btn btn-outline-secondary"> <i
+				class="bi bi-x-lg"></i> Hủy
+			</a>
+		</div>
+
+		<div th:if="${error}"
+			class="alert alert-danger alert-dismissible fade show" role="alert">
+			<i class="bi bi-exclamation-triangle"></i> <span th:text="${error}"></span>
+			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+		</div>
+
+		<form
+			th:action="@{${action == 'create' ? '/vendor/toppings/create' : '/vendor/toppings/edit/' + toppingId}}"
+			th:object="${topping}" method="post" enctype="multipart/form-data">
+
+			<input type="hidden" th:if="${action == 'edit'}"
+				th:field="*{toppingId}" /> <input type="hidden"
+				th:if="${action == 'edit'}" th:field="*{imageURL}" />
+
+
+			<div class="row">
+				<div class="col-md-8">
+					<div class="card">
+						<div class="card-header">Thông tin cơ bản</div>
+						<div class="card-body">
+
+							<div class="mb-3">
+								<label for="toppingName" class="form-label">Tên Topping
+									<span class="text-danger">*</span>
+								</label> <input type="text" class="form-control"
+									th:classappend="${#fields.hasErrors('toppingName') ? 'is-invalid' : ''}"
+									id="toppingName" th:field="*{toppingName}" required>
+								<div class="invalid-feedback"
+									th:if="${#fields.hasErrors('toppingName')}"
+									th:errors="*{toppingName}"></div>
+							</div>
+
+							<div class="mb-3">
+								<label for="additionalPrice" class="form-label">Giá thêm
+									<span class="text-danger">*</span>
+								</label>
+								<div class="input-group">
+									<input type="number" class="form-control"
+										th:classappend="${#fields.hasErrors('additionalPrice') ? 'is-invalid' : ''}"
+										id="additionalPrice" th:field="*{additionalPrice}" required
+										min="0" step="1000"> <span class="input-group-text">VNĐ</span>
+									<div class="invalid-feedback"
+										th:if="${#fields.hasErrors('additionalPrice')}"
+										th:errors="*{additionalPrice}"></div>
+								</div>
+							</div>
+
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-4">
+					<div class="card">
+						<div class="card-header">Hình ảnh</div>
+						<div class="card-body">
+
+							<div class="mb-3">
+								<label for="imageFile" class="form-label">Tải ảnh lên</label> <input
+									type="file" class="form-control" id="imageFile"
+									th:field="*{imageFile}" accept="image/*">
+								<div class="form-text"
+									th:if="${action == 'edit' and topping.imageURL != null}">
+									Để trống nếu không muốn thay đổi ảnh hiện tại.</div>
+								<div class="invalid-feedback"
+									th:if="${#fields.hasErrors('imageFile')}"
+									th:errors="*{imageFile}"></div>
+							</div>
+
+							<div class="image-preview-container text-center">
+								<img id="imagePreview"
+									th:src="${topping.imageURL != null and topping.imageURL != '' ? topping.imageURL : '/images/placeholder.png'}"
+									alt="Image Preview" class="image-preview">
+							</div>
+
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="mt-4">
+				<button type="submit" class="btn btn-primary">
+					<i class="bi bi-check-circle"></i> Gửi yêu cầu phê duyệt
+				</button>
+				<a href="/vendor/toppings" class="btn btn-secondary">Hủy</a>
+			</div>
+		</form>
+
+
+		<th:block layout:fragment="scripts">
+			<script th:inline="javascript">
+				/*<![CDATA[*/
+
+				document.addEventListener('DOMContentLoaded', function() {
+					const fileInput = document.getElementById('imageFile');
+					const imagePreview = document
+							.getElementById('imagePreview');
+					// Lưu lại ảnh gốc khi tải trang (dùng khi edit)
+					const originalSrc = imagePreview.src;
+
+					if (fileInput) {
+						fileInput.addEventListener('change', function(event) {
+							const file = event.target.files[0];
+							if (file && file.type.startsWith('image/')) {
+								// Nếu có file mới, tạo URL tạm thời và hiển thị
+								const reader = new FileReader();
+								reader.onload = function(e) {
+									imagePreview.src = e.target.result;
+								};
+								reader.readAsDataURL(file);
+							} else if (!file) {
+								// Nếu người dùng hủy chọn file, quay lại ảnh gốc (ảnh cũ lúc edit)
+								imagePreview.src = originalSrc;
+							}
+						});
+					}
+				});
+
+				/*]]>*/
+			</script>
+		</th:block>
+
+	</div>
+</body>
+</html>

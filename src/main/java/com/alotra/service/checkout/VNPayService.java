@@ -34,10 +34,10 @@ public class VNPayService {
         long amount = order.getGrandTotal().multiply(new BigDecimal(100)).longValue();
         
         // MÃ ĐƠN HÀNG: Dùng chính OrderID (Integer)
-        String vnp_TxnRef = String.valueOf(order.getOrderId());
+        String vnp_TxnRef = String.valueOf(order.getOrderID());
         
         String vnp_IpAddr = VNPayUtil.getIpAddress(request);
-        String vnp_OrderInfo = "Thanh toan don hang ALOTRA ID: " + order.getOrderId();
+        String vnp_OrderInfo = "Thanh toan don hang ALOTRA ID: " + order.getOrderID();
         
         Map<String, String> vnp_Params = new HashMap<>();
         vnp_Params.put("vnp_Version", "2.1.0");

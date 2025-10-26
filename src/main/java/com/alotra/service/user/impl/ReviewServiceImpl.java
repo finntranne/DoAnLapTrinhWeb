@@ -6,8 +6,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.alotra.entity.product.Product;
-import com.alotra.entity.user.Review;
-import com.alotra.repository.user.ReviewRepository;
+import com.alotra.entity.product.Review;
+import com.alotra.repository.product.ReviewRepository;
 import com.alotra.service.user.ReviewService;
 
 @Service

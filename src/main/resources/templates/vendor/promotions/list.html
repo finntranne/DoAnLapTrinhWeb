@@ -1,0 +1,400 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{vendor/layouts/vendor-layout}" lang="vi">
+<head>
+<title>Quản lý khuyến mãi</title>
+</head>
+
+<body>
+	<div layout:fragment="content">
+		<div>
+			<div
+				class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+				<h1 class="h2">
+					<i class="bi bi-gift"></i> Quản lý khuyến mãi
+				</h1>
+
+				<a th:href="@{/vendor/promotions/create}" class="btn btn-primary">
+					<i class="bi bi-plus-circle me-1"></i>Tạo khuyến mãi mới
+				</a>
+			</div>
+			<div th:if="${success}"
+				class="alert alert-success alert-dismissible fade show" role="alert">
+				<i class="bi bi-check-circle me-2"></i> <span th:text="${success}"></span>
+				<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+			</div>
+
+			<div th:if="${error}"
+				class="alert alert-danger alert-dismissible fade show" role="alert">
+				<i class="bi bi-exclamation-triangle me-2"></i> <span
+					th:text="${error}"></span>
+				<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+			</div>
+
+			<div th:if="${warning}"
+				class="alert alert-warning alert-dismissible fade show" role="alert">
+				<i class="bi bi-exclamation-circle me-2"></i> <span
+					th:text="${warning}"></span>
+				<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+			</div>
+
+			<div class="card mb-4">
+				<div class="card-body">
+					<form th:action="@{/vendor/promotions}" method="get"
+						class="row g-3">
+						<div class="col-md-4">
+							<label class="form-label">Trạng thái</label> <select
+								name="status" class="form-select">
+								<option value="">Tất cả trạng thái</option>
+								<option value="1" th:selected="${status == 1}">Đang
+									hoạt động</option>
+								<option value="0" th:selected="${status == 0}">Không
+									hoạt động</option>
+								<option value="2" th:selected="${status == 2}">Đã kết
+									thúc</option>
+							</select>
+						</div>
+						<div class="col-md-8 d-flex align-items-end">
+							<button type="submit" class="btn btn-primary me-2">
+								<i class="bi bi-funnel me-1"></i>Lọc
+							</button>
+							<a th:href="@{/vendor/promotions}"
+								class="btn btn-outline-secondary"> <i
+								class="bi bi-arrow-clockwise me-1"></i>Đặt lại
+							</a>
+						</div>
+					</form>
+				</div>
+			</div>
+
+			<div class="card">
+				<div class="card-header">
+					<h5 class="card-title mb-0">
+						<i class="bi bi-list-ul me-2"></i>Danh sách khuyến mãi
+					</h5>
+				</div>
+				<div class="card-body">
+					<div th:if="${promotions.isEmpty()}" class="text-center py-5">
+						<i class="bi bi-inbox display-1 text-muted"></i>
+						<p class="text-muted mt-3">Chưa có khuyến mãi nào</p>
+						<a th:href="@{/vendor/promotions/create}" class="btn btn-primary">
+							<i class="bi bi-plus-circle me-1"></i>Tạo khuyến mãi đầu tiên
+						</a>
+					</div>
+
+					<div th:if="${!promotions.isEmpty()}" class="table-responsive">
+						<table class="table table-hover align-middle">
+							<thead class="table-light">
+								<tr>
+									<th style="width: 5%">#</th>
+									<th style="width: 20%">Tên khuyến mãi</th>
+									<th style="width: 12%">Mã giảm giá</th>
+									<th style="width: 12%">Loại giảm giá</th>
+									<th style="width: 12%">Giá trị</th>
+									<th style="width: 15%">Thời gian</th>
+									<th style="width: 10%">Lượt dùng</th>
+									<th style="width: 10%">Trạng thái</th>
+									<th style="width: 10%">Phê duyệt</th>
+									<th style="width: 4%">Thao tác</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr th:each="dto, iter : ${promotions}">
+									<td th:text="${iter.count + (currentPage * 20)}"></td>
+									<td><strong th:text="${dto.promotion.promotionName}"></strong>
+										<br> <small class="text-muted"
+										th:text="${dto.promotion.description}"></small></td>
+									<td><code class="fs-6"
+											th:text="${dto.promotion.promoCode}"></code></td>
+									<td><span
+										th:if="${dto.promotion.discountType == 'PERCENTAGE'}"
+										class="badge bg-info"> <i class="bi bi-percent me-1"></i>Phần
+											trăm
+									</span> <span th:if="${dto.promotion.discountType == 'FIXED'}"
+										class="badge bg-success"> <i
+											class="bi bi-currency-dollar me-1"></i>Cố định
+									</span></td>
+									<td><span
+										th:if="${dto.promotion.discountType == 'PERCENTAGE'}">
+											<strong th:text="${dto.promotion.discountValue}"></strong>% <br>
+											<small class="text-muted"> Tối đa: <span
+												th:text="${#numbers.formatDecimal(dto.promotion.maxDiscountAmount, 0, 'COMMA', 0, 'POINT')}"></span>đ
+										</small>
+									</span> <span th:if="${dto.promotion.discountType == 'FIXED'}">
+											<strong
+											th:text="${#numbers.formatDecimal(dto.promotion.discountValue, 0, 'COMMA', 0, 'POINT')}"></strong>đ
+									</span></td>
+									<td><small> <i class="bi bi-calendar-event me-1"></i>
+											<strong>Từ:</strong> <span
+											th:text="${#temporals.format(dto.promotion.startDate, 'dd/MM/yyyy HH:mm')}"></span>
+											<br> <i class="bi bi-calendar-x me-1"></i> <strong>Đến:</strong>
+											<span
+											th:text="${#temporals.format(dto.promotion.endDate, 'dd/MM/yyyy HH:mm')}"></span>
+									</small></td>
+									<td>
+										<div class="progress" style="height: 20px;">
+											<div class="progress-bar"
+												th:style="'width: ' + ${dto.promotion.usageLimit > 0 ? (dto.promotion.usedCount * 100.0 / dto.promotion.usageLimit) : 0} + '%'"
+												th:classappend="${dto.promotion.usageLimit > 0 && dto.promotion.usedCount >= dto.promotion.usageLimit ? 'bg-danger' : 'bg-primary'}">
+												<small> <span th:text="${dto.promotion.usedCount}"></span>/<span
+													th:text="${dto.promotion.usageLimit > 0 ? dto.promotion.usageLimit : '∞'}"></span>
+												</small>
+											</div>
+										</div>
+									</td>
+
+									<td><span class="badge"
+										th:classappend="${
+          dto.activityStatus == 'Đang hoạt động' ? 'bg-success' :
+          (dto.activityStatus == 'Đã kết thúc' ? 'bg-danger' :
+          (dto.activityStatus == 'Không hoạt động' ? 'bg-secondary' : ''))
+      }"
+										th:text="${dto.activityStatus}"> </span></td>
+
+									<td><span class="badge bg-warning text-dark"
+										th:if="${dto.approvalStatus != null and #strings.startsWith(dto.approvalStatus, 'Đang chờ:')}"
+										th:text="${dto.approvalStatus}"> </span> <span
+										class="badge bg-danger"
+										th:if="${dto.approvalStatus != null and #strings.startsWith(dto.approvalStatus, 'Bị từ chối:')}"
+										th:text="${dto.approvalStatus}"> </span> <span
+										class="badge bg-success" th:if="${dto.approvalStatus == null}">
+											Đã duyệt </span></td>
+
+
+									<td>
+										<div class="dropdown">
+											<button
+												class="btn btn-sm btn-outline-secondary dropdown-toggle"
+												type="button" data-bs-toggle="dropdown">
+												<i class="bi bi-three-dots-vertical"></i>
+											</button>
+											<ul class="dropdown-menu">
+												<li><a class="dropdown-item" href="#"
+													data-bs-toggle="modal"
+													th:data-bs-target="'#detailModal' + ${dto.promotion.promotionId}">
+														<i class="bi bi-eye me-2"></i>Chi tiết
+												</a></li>
+												<li><a class="dropdown-item"
+													th:href="@{/vendor/promotions/edit/{id}(id=${dto.promotion.promotionId})}">
+														<i class="bi bi-pencil me-2"></i>Chỉnh sửa
+												</a></li>
+												<li
+													th:if="${dto.promotion.status == 0 || dto.promotion.status == 1}">
+													<hr class="dropdown-divider">
+												</li>
+												<li
+													th:if="${dto.promotion.status == 0 || dto.promotion.status == 1}">
+													<a class="dropdown-item text-danger btn-delete-promo"
+													href="#"
+													th:attr="data-promotion-id=${dto.promotion.promotionId}, data-promotion-name=${dto.promotion.promotionName}">
+														<i class="bi bi-trash me-2"></i>Yêu cầu xóa
+												</a>
+												</li>
+											</ul>
+										</div>
+
+										<div class="modal fade"
+											th:id="'detailModal' + ${dto.promotion.promotionId}"
+											tabindex="-1">
+											<div class="modal-dialog modal-lg">
+												<div class="modal-content">
+													<div class="modal-header bg-primary text-white">
+														<h5 class="modal-title">
+															<i class="bi bi-gift me-2"></i> Chi tiết khuyến mãi
+														</h5>
+														<button type="button" class="btn-close btn-close-white"
+															data-bs-dismiss="modal"></button>
+													</div>
+													<div class="modal-body">
+														<div class="row g-3">
+															<div class="col-md-6">
+																<label class="text-muted small">Tên khuyến mãi</label>
+																<p class="fw-bold"
+																	th:text="${dto.promotion.promotionName}"></p>
+															</div>
+															<div class="col-md-6">
+																<label class="text-muted small">Mã giảm giá</label>
+																<p>
+																	<code class="fs-5" th:text="${dto.promotion.promoCode}"></code>
+																</p>
+															</div>
+															<div class="col-12">
+																<label class="text-muted small">Mô tả</label>
+																<p th:text="${dto.promotion.description}"></p>
+															</div>
+															<div class="col-md-6">
+																<label class="text-muted small">Loại giảm giá</label>
+																<p>
+																	<span
+																		th:if="${dto.promotion.discountType == 'PERCENTAGE'}"
+																		class="badge bg-info">Phần trăm</span> <span
+																		th:if="${dto.promotion.discountType == 'FIXED'}"
+																		class="badge bg-success">Cố định</span>
+																</p>
+															</div>
+															<div class="col-md-6">
+																<label class="text-muted small">Giá trị giảm</label>
+																<p class="fw-bold">
+																	<span
+																		th:if="${dto.promotion.discountType == 'PERCENTAGE'}">
+																		<span th:text="${dto.promotion.discountValue}"></span>%
+																	</span> <span th:if="${dto.promotion.discountType == 'FIXED'}">
+																		<span
+																		th:text="${#numbers.formatDecimal(dto.promotion.discountValue, 0, 'COMMA', 0, 'POINT')}"></span>đ
+																	</span>
+																</p>
+															</div>
+															<div class="col-md-6"
+																th:if="${dto.promotion.maxDiscountAmount != null}">
+																<label class="text-muted small">Giảm tối đa</label>
+																<p class="fw-bold">
+																	<span
+																		th:text="${#numbers.formatDecimal(dto.promotion.maxDiscountAmount, 0, 'COMMA', 0, 'POINT')}"></span>đ
+																</p>
+															</div>
+															<div class="col-md-6">
+																<label class="text-muted small">Giá trị đơn hàng
+																	tối thiểu</label>
+																<p class="fw-bold">
+																	<span
+																		th:text="${#numbers.formatDecimal(dto.promotion.minOrderValue, 0, 'COMMA', 0, 'POINT')}"></span>đ
+																</p>
+															</div>
+															<div class="col-md-6">
+																<label class="text-muted small">Thời gian bắt
+																	đầu</label>
+																<p
+																	th:text="${#temporals.format(dto.promotion.startDate, 'dd/MM/yyyy HH:mm')}"></p>
+															</div>
+															<div class="col-md-6">
+																<label class="text-muted small">Thời gian kết
+																	thúc</label>
+																<p
+																	th:text="${#temporals.format(dto.promotion.endDate, 'dd/MM/yyyy HH:mm')}"></p>
+															</div>
+															<div class="col-md-6">
+																<label class="text-muted small">Giới hạn sử dụng</label>
+																<p class="fw-bold">
+																	<span th:if="${dto.promotion.usageLimit > 0}"
+																		th:text="${dto.promotion.usageLimit}"></span> <span
+																		th:if="${dto.promotion.usageLimit == 0}">Không
+																		giới hạn</span>
+																</p>
+															</div>
+															<div class="col-md-6">
+																<label class="text-muted small">Đã sử dụng</label>
+																<p class="fw-bold" th:text="${dto.promotion.usedCount}"></p>
+															</div>
+															<div class="col-md-6">
+																<label class="text-muted small">Trạng thái (DB)</label>
+																<p>
+																	<span th:if="${dto.promotion.status == 1}"
+																		class="badge bg-success">1 (Active)</span> <span
+																		th:if="${dto.promotion.status == 0}"
+																		class="badge bg-secondary">0 (Inactive)</span>
+																</p>
+															</div>
+															<div class="col-md-6">
+																<label class="text-muted small">Ngày tạo</label>
+																<p
+																	th:text="${#temporals.format(dto.promotion.createdAt, 'dd/MM/yyyy HH:mm')}"></p>
+															</div>
+														</div>
+													</div>
+													<div class="modal-footer">
+														<button type="button" class="btn btn-secondary"
+															data-bs-dismiss="modal">Đóng</button>
+													</div>
+												</div>
+											</div>
+										</div>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<nav th:if="${totalPages > 1}" aria-label="Pagination" class="mt-4">
+						<ul class="pagination justify-content-center">
+							<li class="page-item"
+								th:classappend="${currentPage == 0} ? 'disabled'"><a
+								class="page-link"
+								th:href="@{/vendor/promotions(page=${currentPage - 1}, status=${status})}">
+									<i class="bi bi-chevron-left"></i>
+							</a></li>
+
+							<li th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+								class="page-item"
+								th:classappend="${i == currentPage} ? 'active'"><a
+								class="page-link"
+								th:href="@{/vendor/promotions(page=${i}, status=${status})}"
+								th:text="${i + 1}"></a></li>
+
+							<li class="page-item"
+								th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
+								<a class="page-link"
+								th:href="@{/vendor/promotions(page=${currentPage + 1}, status=${status})}">
+									<i class="bi bi-chevron-right"></i>
+							</a>
+							</li>
+						</ul>
+					</nav>
+				</div>
+			</div>
+		</div>
+
+		<div class="modal fade" id="deleteModal" tabindex="-1">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">Xác nhận xóa khuyến mãi</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+					</div>
+					<div class="modal-body">
+						<p>
+							Bạn có chắc muốn gửi yêu cầu xóa khuyến mãi <strong
+								id="promoNameToDelete"></strong>? </B>
+						<p class="text-warning">
+							<i class="bi bi-exclamation-triangle"></i> Yêu cầu này cần được
+							phê duyệt bởi Admin.
+						</p>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary"
+							data-bs-dismiss="modal">Hủy</button>
+						<form id="deleteForm" method="post">
+							<button type="submit" class="btn btn-danger">Xác nhận
+								xóa</button>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<form id="deleteForm" method="post" style="display: none;">
+			<input type="hidden" name="${_csrf.parameterName}"
+				value="${_csrf.token}" />
+		</form>
+
+		<script>
+            document.addEventListener('DOMContentLoaded', function() {
+                document.querySelectorAll('.btn-delete-promo').forEach(button => {
+                    button.addEventListener('click', function(event) {
+						event.preventDefault(); // Ngăn hành vi click mặc định của thẻ <a>
+                        const promotionId = this.getAttribute('data-promotion-id');
+                        const promotionName = this.getAttribute('data-promotion-name');
+                        confirmDelete(promotionId, promotionName);
+                    });
+                });
+            });
+    
+            function confirmDelete(promotionId, promotionName) {
+                document.getElementById('promoNameToDelete').textContent = promotionName;
+                document.getElementById('deleteForm').action = '/vendor/promotions/delete/' + promotionId;
+                new bootstrap.Modal(document.getElementById('deleteModal')).show();
+            }
+        </script>
+	</div>
+</body>
+</html>

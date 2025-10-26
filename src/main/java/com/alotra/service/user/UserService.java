@@ -10,4 +10,7 @@ public interface UserService {
     // (Thêm các hàm quản lý User khác nếu cần: save, findById, etc.)
     
     public User save(User user);
+
+	Optional<User> findByPhoneNumber(String phoneNumber);
+
 }
