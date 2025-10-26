@@ -22,4 +22,5 @@ public class ProductStatisticsDTO {
     private BigDecimal minPrice;
     private String status;
     private String approvalStatus;
+    private Integer discountPercentage;
 }

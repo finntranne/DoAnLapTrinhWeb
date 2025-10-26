@@ -5,6 +5,23 @@
 <head>
 <meta charset="UTF-8">
 <title>Quản lý sản phẩm - Vendor | AloTra</title>
+<style>
+.discount-badge {
+	position: relative;
+	display: inline-block;
+}
+
+.original-price {
+	text-decoration: line-through;
+	color: #999;
+	font-size: 0.85em;
+}
+
+.discounted-price {
+	color: #dc3545;
+	font-weight: bold;
+}
+</style>
 </head>
 <body>
 
@@ -39,6 +56,7 @@
 			<button type="button" class="btn-close" data-bs-dismiss="alert"
 				aria-label="Close"></button>
 		</div>
+
 		<div class="card mb-4">
 			<div class="card-body">
 				<form method="get" action="/vendor/products"
@@ -52,10 +70,10 @@
 						<label class="form-label">Trạng thái</label> <select name="status"
 							class="form-select">
 							<option value="">Tất cả</option>
-							<option value="1" th:selected="${status != null and status == 1}">Đang
-								hoạt động</option>
-							<option value="0" th:selected="${status != null and status == 0}">Không
-								hoạt động</option>
+							<option value="1" th:selected="${status != null and status == 1}">
+								Đang hoạt động</option>
+							<option value="0" th:selected="${status != null and status == 0}">
+								Không hoạt động</option>
 						</select>
 					</div>
 					<div class="col-md-3 col-lg-3">
@@ -95,6 +113,7 @@
 								<th style="width: 80px;">Hình ảnh</th>
 								<th>Tên sản phẩm</th>
 								<th>Giá</th>
+								<th>Giảm giá</th>
 								<th>Đã bán</th>
 								<th>Đánh giá</th>
 								<th>Lượt xem</th>
@@ -105,7 +124,7 @@
 						</thead>
 						<tbody>
 							<tr th:if="${products.isEmpty()}">
-								<td colspan="9" class="text-center text-muted py-5"><i
+								<td colspan="10" class="text-center text-muted py-5"><i
 									class="bi bi-inbox" style="font-size: 3rem;"></i>
 									<p class="mt-2">Chưa có sản phẩm nào</p></td>
 							</tr>
@@ -114,14 +133,34 @@
 									alt="Product Image" class="img-thumbnail"
 									style="width: 60px; height: 60px; object-fit: cover;"></td>
 								<td><strong th:text="${product.productName}"></strong></td>
-								<td><span
-									th:text="${#numbers.formatDecimal(product.minPrice, 0, 'COMMA', 0, 'POINT')}"></span>đ
+								<td>
+									<!-- Hiển thị giá có giảm -->
+									<div
+										th:if="${product.discountPercentage != null and product.discountPercentage > 0}">
+										<span class="original-price"> <span
+											th:text="${#numbers.formatDecimal(product.minPrice, 0, 'COMMA', 0, 'POINT')}"></span>đ
+										</span> <br> <span class="discounted-price"> <span
+											th:text="${#numbers.formatDecimal(product.minPrice * (100 - product.discountPercentage) / 100, 0, 'COMMA', 0, 'POINT')}"></span>đ
+										</span>
+									</div> <!-- Hiển thị giá bình thường -->
+									<div
+										th:if="${product.discountPercentage == null or product.discountPercentage == 0}">
+										<span
+											th:text="${#numbers.formatDecimal(product.minPrice, 0, 'COMMA', 0, 'POINT')}"></span>đ
+									</div>
 								</td>
+								<td><span
+									th:if="${product.discountPercentage != null and product.discountPercentage > 0}"
+									class="badge bg-danger"> -<span
+										th:text="${product.discountPercentage}"></span>%
+								</span> <span
+									th:if="${product.discountPercentage == null or product.discountPercentage == 0}"
+									class="text-muted"> -- </span></td>
 								<td><span class="badge bg-info"
 									th:text="${product.soldCount}"></span></td>
 								<td><i class="bi bi-star-fill text-warning"></i> <span
 									th:text="${#numbers.formatDecimal(product.averageRating, 1, 2)}"></span>
-									<small class="text-muted">(<span
+									<small class="text-muted"> (<span
 										th:text="${product.totalReviews}"></span>)
 								</small></td>
 								<td><i class="bi bi-eye"></i> <span
@@ -162,20 +201,20 @@
 						<li class="page-item"
 							th:classappend="${currentPage == 0 ? 'disabled' : ''}"><a
 							class="page-link"
-							th:href="@{/vendor/products(page=${currentPage - 1}, status=${status}, search=${search})}">
+							th:href="@{/vendor/products(page=${currentPage - 1}, status=${status}, search=${search}, categoryId=${categoryId})}">
 								Trước </a></li>
 
 						<li class="page-item"
 							th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
 							th:classappend="${i == currentPage ? 'active' : ''}"><a
 							class="page-link"
-							th:href="@{/vendor/products(page=${i}, status=${status}, search=${search})}"
+							th:href="@{/vendor/products(page=${i}, status=${status}, search=${search}, categoryId=${categoryId})}"
 							th:text="${i + 1}"></a></li>
 
 						<li class="page-item"
 							th:classappend="${currentPage == totalPages - 1 ? 'disabled' : ''}">
 							<a class="page-link"
-							th:href="@{/vendor/products(page=${currentPage + 1}, status=${status}, search=${search})}">
+							th:href="@{/vendor/products(page=${currentPage + 1}, status=${status}, search=${search}, categoryId=${categoryId})}">
 								Sau </a>
 						</li>
 					</ul>
@@ -183,6 +222,7 @@
 			</div>
 		</div>
 
+		<!-- Modal xác nhận xóa -->
 		<div class="modal fade" id="deleteModal" tabindex="-1">
 			<div class="modal-dialog">
 				<div class="modal-content">

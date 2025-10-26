@@ -32,37 +32,49 @@
 			<button type="button" class="btn-close" data-bs-dismiss="alert"
 				aria-label="Close"></button>
 		</div>
+
+		<!-- Form lọc -->
 		<div class="card mb-4">
 			<div class="card-body">
-			<form method="get" th:action="@{/vendor/approvals}" class="row g-3 align-items-end">
+				<form method="get" th:action="@{/vendor/approvals}"
+					class="row g-3 align-items-end">
 					<div class="col-md-4">
 						<label for="entityType" class="form-label">Loại đối tượng</label>
-                        <select class="form-select" id="entityType" name="entityType">
-                            <option value="">-- Tất cả --</option>
-                            <option value="PRODUCT" th:selected="${entityType == 'PRODUCT'}">Sản phẩm</option>
-                            <option value="PROMOTION" th:selected="${entityType == 'PROMOTION'}">Khuyến mãi</option>
-                        </select>
+						<select class="form-select" id="entityType" name="entityType">
+							<option value="">-- Tất cả --</option>
+							<option value="PRODUCT" th:selected="${entityType == 'PRODUCT'}">Sản
+								phẩm</option>
+							<option value="PROMOTION"
+								th:selected="${entityType == 'PROMOTION'}">Khuyến mãi</option>
+							<option value="TOPPING" th:selected="${entityType == 'TOPPING'}">Topping</option>
+						</select>
 					</div>
-                    <div class="col-md-4">
-						<label for="actionType" class="form-label">Hành động</label>
-                        <select class="form-select" id="actionType" name="actionType">
-                            <option value="">-- Tất cả --</option>
-                            <option value="CREATE" th:selected="${actionType == 'CREATE'}">Tạo mới</option>
-                            <option value="UPDATE" th:selected="${actionType == 'UPDATE'}">Cập nhật</option>
-                            <option value="DELETE" th:selected="${actionType == 'DELETE'}">Yêu cầu xóa</option>
-                        </select>
+					<div class="col-md-4">
+						<label for="actionType" class="form-label">Hành động</label> <select
+							class="form-select" id="actionType" name="actionType">
+							<option value="">-- Tất cả --</option>
+							<option value="CREATE" th:selected="${actionType == 'CREATE'}">Tạo
+								mới</option>
+							<option value="UPDATE" th:selected="${actionType == 'UPDATE'}">Cập
+								nhật</option>
+							<option value="DELETE" th:selected="${actionType == 'DELETE'}">Yêu
+								cầu xóa</option>
+						</select>
 					</div>
 					<div class="col-md-4 d-flex">
 						<button type="submit" class="btn btn-primary me-2">
 							<i class="bi bi-funnel"></i> Lọc
 						</button>
-						<a th:href="@{/vendor/approvals}" class="btn btn-outline-secondary">
-							<i class="bi bi-arrow-clockwise"></i> Đặt lại
+						<a th:href="@{/vendor/approvals}"
+							class="btn btn-outline-secondary"> <i
+							class="bi bi-arrow-clockwise"></i> Đặt lại
 						</a>
 					</div>
 				</form>
 			</div>
 		</div>
+
+		<!-- Bảng danh sách -->
 		<div class="card">
 			<div class="card-header">
 				<h5 class="card-title mb-0">
@@ -91,11 +103,14 @@
 						<tbody>
 							<tr th:each="approval : ${approvals}">
 								<td><span th:if="${approval.entityType == 'PRODUCT'}"
-									class="badge bg-primary"> <i class="bi bi-box-seam me-1"></i>
-										Sản phẩm
+									class="badge bg-primary"> <i class="bi bi-box-seam me-1"></i>Sản
+										phẩm
 								</span> <span th:if="${approval.entityType == 'PROMOTION'}"
 									class="badge bg-info text-dark"> <i
-										class="bi bi-gift me-1"></i> Khuyến mãi
+										class="bi bi-gift me-1"></i>Khuyến mãi
+								</span> <span th:if="${approval.entityType == 'TOPPING'}"
+									class="badge bg-success"> <i
+										class="bi bi-plus-circle me-1"></i>Topping
 								</span></td>
 								<td><span
 									th:text="${approval.entityName != null ? approval.entityName : '(ID: ' + approval.entityId + ')'}"></span>
@@ -107,7 +122,7 @@
 											cầu xóa</span> <span th:case="*" th:text="${approval.actionType}"></span>
 								</span></td>
 								<td><span class="badge bg-warning text-dark"
-									th:text="${approval.status}"> </span></td>
+									th:text="${approval.status}"></span></td>
 								<td><span
 									th:text="${#temporals.format(approval.requestedAt, 'dd/MM/yyyy HH:mm')}"></span>
 								</td>

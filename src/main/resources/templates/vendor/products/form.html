@@ -153,54 +153,58 @@
 						</div>
 					</div>
 
-					<!-- *** CARD MỚI: KHUYẾN MÃI SẢN PHẨM *** -->
 					<div class="card mb-4">
-						<div class="card-header bg-warning bg-opacity-10">
-							<i class="bi bi-percent"></i> Khuyến mãi sản phẩm
+						<div class="card-header bg-danger text-white">
+							<h5 class="mb-0">
+								<i class="bi bi-percent"></i> Giảm giá sản phẩm (Tùy chọn)
+							</h5>
 						</div>
 						<div class="card-body">
 							<div class="alert alert-info">
-								<i class="bi bi-info-circle me-2"></i> <strong>Lưu ý:</strong> %
-								Giảm giá này sẽ áp dụng trực tiếp cho sản phẩm. Nếu muốn tạo mã
-								giảm giá cho toàn đơn hàng, hãy vào mục <a
-									href="/vendor/promotions" target="_blank">Quản lý khuyến
-									mãi</a>.
+								<i class="bi bi-info-circle"></i> <strong>Lưu ý:</strong> Giảm
+								giá sẽ được áp dụng cho TẤT CẢ các biến thể của sản phẩm này.
+								Nếu để trống hoặc 0%, sản phẩm sẽ không có giảm giá.
 							</div>
 
 							<div class="row">
 								<div class="col-md-6">
 									<label for="discountPercentage" class="form-label"> %
-										Giảm giá </label>
+										Giảm giá <span class="text-muted">(0-100%)</span>
+									</label>
 									<div class="input-group">
 										<input type="number" class="form-control"
-											id="discountPercentage" th:field="*{discountPercentage}"
-											min="0" max="100" step="1" placeholder="0"
-											th:classappend="${#fields.hasErrors('discountPercentage')} ? 'is-invalid' : ''">
-										<span class="input-group-text">%</span>
-										<div class="invalid-feedback"
-											th:if="${#fields.hasErrors('discountPercentage')}"
-											th:errors="*{discountPercentage}"></div>
+											id="discountPercentage" name="discountPercentage"
+											th:value="${product.discountPercentage}" min="0" max="100"
+											step="1" placeholder="Ví dụ: 15"> <span
+											class="input-group-text">%</span>
 									</div>
-									<div class="form-text">Nhập 0 hoặc để trống nếu không có
-										giảm giá. Tối đa 100%.</div>
+									<small class="form-text text-muted"> Nhập 0 hoặc để
+										trống nếu không muốn giảm giá </small>
 								</div>
 
-								<div class="col-md-6">
+								<div class="col-md-6" id="discountPreview"
+									style="display: none;">
 									<label class="form-label">Xem trước giá sau giảm</label>
-									<div class="border rounded p-3 bg-light">
-										<div class="d-flex justify-content-between align-items-center">
-											<span class="text-muted">Giá gốc:</span> <strong
-												id="previewOriginalPrice">--</strong>
-										</div>
-										<div
-											class="d-flex justify-content-between align-items-center mt-2">
-											<span class="text-success">Giảm:</span> <strong
-												class="text-success" id="previewDiscountAmount">0đ</strong>
-										</div>
-										<hr class="my-2">
-										<div class="d-flex justify-content-between align-items-center">
-											<span class="text-primary fw-bold">Giá bán:</span> <strong
-												class="text-primary fs-5" id="previewFinalPrice">--</strong>
+									<div class="card bg-light">
+										<div class="card-body">
+											<div
+												class="d-flex justify-content-between align-items-center">
+												<div>
+													<small class="text-muted">Giá gốc:</small>
+													<div id="originalPricePreview"
+														class="text-decoration-line-through">--</div>
+												</div>
+												<div>
+													<small class="text-muted">Giá sau giảm:</small>
+													<div id="discountedPricePreview"
+														class="text-danger fw-bold fs-5">--</div>
+												</div>
+											</div>
+											<div class="mt-2">
+												<span class="badge bg-danger" id="discountBadge"> -0%
+												</span> <small class="text-muted">tiết kiệm: </small> <span
+													id="savingsAmount" class="text-success fw-bold">0đ</span>
+											</div>
 										</div>
 									</div>
 								</div>

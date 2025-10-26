@@ -139,62 +139,6 @@ public class VendorService {
 
 	// ==================== PRODUCT MANAGEMENT ====================
 
-//	public Page<ProductStatisticsDTO> getShopProducts(Integer shopId, Byte status, Integer categoryId, String search,
-//			Pageable pageable) {
-//		// *** PASS categoryId TO REPOSITORY ***
-//		Page<Product> products = productRepository.searchShopProducts(shopId, status, categoryId, search, pageable);
-//
-//		// The rest of the mapping logic remains the same
-//		return products.map(product -> {
-//			ProductStatisticsDTO dto = new ProductStatisticsDTO();
-//			// ... (Gán các thuộc tính khác như cũ)
-//			dto.setProductId(product.getProductID());
-//			dto.setProductName(product.getProductName());
-//			dto.setSoldCount(product.getSoldCount());
-//			dto.setAverageRating(product.getAverageRating());
-//			dto.setTotalReviews(product.getTotalReviews());
-//			dto.setViewCount(product.getViewCount());
-//			// Use DTO status directly
-//			dto.setStatus(product.getStatus() == 1 ? "Đang hoạt động" : "Không hoạt động"); // Updated status text
-//			product.getImages().stream().filter(ProductImage::getIsPrimary).findFirst()
-//					.ifPresent(img -> dto.setPrimaryImageUrl(img.getImageURL()));
-//			product.getVariants().stream().map(ProductVariant::getPrice).min(BigDecimal::compareTo)
-//					.ifPresent(dto::setMinPrice);
-//
-//			Optional<ProductApproval> latestApprovalOpt = productApprovalRepository
-//					.findTopByProduct_ProductIDOrderByRequestedAtDesc(product.getProductID());
-//
-//			if (latestApprovalOpt.isPresent()) {
-//				ProductApproval latestApproval = latestApprovalOpt.get();
-//				String currentStatus = latestApproval.getStatus();
-//
-//				if ("Pending".equals(currentStatus) || "Rejected".equals(currentStatus)) {
-//					String actionTypeText = "";
-//					switch (latestApproval.getActionType()) {
-//					case "CREATE":
-//						actionTypeText = "Tạo mới";
-//						break;
-//					case "UPDATE":
-//						actionTypeText = "Cập nhật";
-//						break;
-//					case "DELETE":
-//						actionTypeText = "Xóa";
-//						break;
-//					default:
-//						actionTypeText = latestApproval.getActionType();
-//					}
-//
-//					if ("Pending".equals(currentStatus)) {
-//						dto.setApprovalStatus("Đang chờ: " + actionTypeText);
-//					} else {
-//						dto.setApprovalStatus("Bị từ chối: " + actionTypeText);
-//					}
-//				}
-//			}
-//			return dto;
-//		});
-//	}
-
 	public Page<ProductStatisticsDTO> getShopProducts(Integer shopId, Byte status, Integer categoryId,
 			String approvalStatus, String search, Pageable pageable) {
 
@@ -205,11 +149,9 @@ public class VendorService {
 		log.debug("Calling repository with: shopId={}, status={}, categoryId={}, approvalStatus='{}', search='{}'",
 				shopId, status, categoryId, normalizedApprovalStatus, normalizedSearch);
 
-		// Gọi repository với parameters đã chuẩn hóa
 		Page<Product> products = productRepository.searchShopProducts(shopId, status, categoryId,
 				normalizedApprovalStatus, normalizedSearch, pageable);
 
-		// Mapping logic giữ nguyên
 		return products.map(product -> {
 			ProductStatisticsDTO dto = new ProductStatisticsDTO();
 			dto.setProductId(product.getProductID());
@@ -220,15 +162,29 @@ public class VendorService {
 			dto.setViewCount(product.getViewCount());
 			dto.setStatus(product.getStatus() == 1 ? "Đang hoạt động" : "Không hoạt động");
 
-			// Safely get primary image URL
+			// Primary image
 			product.getImages().stream().filter(img -> img != null && Boolean.TRUE.equals(img.getIsPrimary()))
 					.findFirst().ifPresent(img -> dto.setPrimaryImageUrl(img.getImageURL()));
 
-			// Safely get min price
+			// Min price
 			product.getVariants().stream().filter(Objects::nonNull).map(ProductVariant::getPrice)
 					.filter(Objects::nonNull).min(BigDecimal::compareTo).ifPresent(dto::setMinPrice);
 
-			// Fetch approval status for DISPLAY
+			// *** THÊM: TÌM DISCOUNT PERCENTAGE ***
+			// Tìm promotion nội bộ của product (PromotionType = "PRODUCT")
+			if (product.getPromotionProducts() != null && !product.getPromotionProducts().isEmpty()) {
+				product.getPromotionProducts().stream().filter(pp -> pp.getPromotion() != null)
+						.filter(pp -> "PRODUCT".equals(pp.getPromotion().getPromotionType()))
+						.filter(pp -> pp.getPromotion().getStatus() == 1) // Chỉ lấy promotion đang active
+						.filter(pp -> {
+							// Kiểm tra còn hiệu lực
+							LocalDateTime now = LocalDateTime.now();
+							return pp.getPromotion().getStartDate().isBefore(now)
+									&& pp.getPromotion().getEndDate().isAfter(now);
+						}).findFirst().ifPresent(pp -> dto.setDiscountPercentage(pp.getDiscountPercentage()));
+			}
+
+			// Approval status
 			Optional<ProductApproval> latestApprovalOpt = productApprovalRepository
 					.findTopByProduct_ProductIDOrderByRequestedAtDesc(product.getProductID());
 
@@ -275,129 +231,6 @@ public class VendorService {
 		return product;
 	}
 
-//	public void requestProductCreation(Integer shopId, ProductRequestDTO request, Integer userId,
-//			Set<Topping> selectedToppings) throws JsonProcessingException { // Thêm throws Exception nếu
-//																			// uploadImageAndReturnDetails có thể ném
-//																			// lỗi I/O
-//
-//		Shop shop = shopRepository.findById(shopId).orElseThrow(() -> new RuntimeException("Shop not found"));
-//
-//		// Tạo sản phẩm mới với status = 0 (Inactive)
-//		Product product = new Product();
-//		product.setShop(shop);
-//		product.setCategory(categoryRepository.findById(request.getCategoryId())
-//				.orElseThrow(() -> new RuntimeException("Category not found")));
-//		product.setProductName(request.getProductName());
-//		product.setDescription(request.getDescription());
-//		product.setStatus((byte) 0); // Inactive until approved
-//		product.setCreatedAt(LocalDateTime.now());
-//		product.setUpdatedAt(LocalDateTime.now());
-//
-//		product.setAvailableToppings(selectedToppings);
-//
-//		product = productRepository.save(product);
-//
-//		log.info("Product entity created with ID: {}", product.getProductID());
-//
-//		// *** START SỬA ĐỔI PHẦN UPLOAD ẢNH ***
-//		if (request.getImages() != null && !request.getImages().isEmpty()) {
-//			boolean hasValidImage = request.getImages().stream().anyMatch(file -> file != null && !file.isEmpty());
-//
-//			if (hasValidImage) {
-//				log.info("Processing images for new product ID: {}", product.getProductID());
-//				for (int i = 0; i < request.getImages().size(); i++) {
-//					MultipartFile file = request.getImages().get(i);
-//					if (file != null && !file.isEmpty()) {
-//						try {
-//							// *** THAY ĐỔI LỜI GỌI: Sử dụng uploadImageAndReturnDetails và chỉ định folder
-//							// "products" ***
-//							Map<String, String> uploadResult = cloudinaryService.uploadImageAndReturnDetails(file,
-//									"products", userId);
-//							String imageUrl = uploadResult.get("secure_url");
-//							// String publicId = uploadResult.get("public_id"); // Lấy publicId nếu cần lưu
-//
-//							if (imageUrl == null) {
-//								log.error("Cloudinary upload did not return URL for image at index {}", i);
-//								throw new RuntimeException("Lỗi khi upload hình ảnh: Không nhận được URL.");
-//							}
-//							// *** KẾT THÚC THAY ĐỔI LỜI GỌI ***
-//
-//							ProductImage productImage = new ProductImage();
-//							productImage.setProduct(product);
-//							productImage.setImageURL(imageUrl);
-//							productImage.setIsPrimary(
-//									i == (request.getPrimaryImageIndex() != null ? request.getPrimaryImageIndex() : 0));
-//							productImage.setDisplayOrder(i);
-//							productImageRepository.save(productImage);
-//
-//							log.info("Image uploaded and saved: {}", imageUrl);
-//
-//						} catch (Exception e) { // Bắt Exception chung (bao gồm IOException và RuntimeException)
-//							log.error("Error uploading image at index {}: {}", i, e.getMessage(), e);
-//							// Ném lại lỗi để transaction rollback
-//							throw new RuntimeException("Lỗi khi upload hình ảnh: " + e.getMessage());
-//						}
-//					}
-//				}
-//			} else {
-//				log.warn("Image list provided but contains no valid files for product ID: {}", product.getProductID());
-//				// Cân nhắc: Có nên throw lỗi nếu ảnh là bắt buộc không? Dựa vào logic trước đó
-//				// thì có.
-//				throw new RuntimeException("Vui lòng upload ít nhất một hình ảnh hợp lệ.");
-//			}
-//		} else {
-//			// Logic validation ở Controller đã kiểm tra, nhưng thêm log ở đây để chắc chắn
-//			log.warn("No images provided for new product request.");
-//			throw new RuntimeException("Vui lòng upload ít nhất một hình ảnh.");
-//		}
-//		// *** END SỬA ĐỔI PHẦN UPLOAD ẢNH ***
-//
-//		// Tạo variants (Giữ nguyên logic cũ)
-//		if (request.getVariants() != null && !request.getVariants().isEmpty()) {
-//			for (ProductVariantDTO variantDTO : request.getVariants()) {
-//				ProductVariant variant = new ProductVariant();
-//				variant.setProduct(product);
-//				variant.setSize(sizeRepository.findById(variantDTO.getSizeId())
-//						.orElseThrow(() -> new RuntimeException("Size not found")));
-//				variant.setPrice(variantDTO.getPrice());
-//				variant.setStock(variantDTO.getStock());
-//				variant.setSku(variantDTO.getSku());
-//				productVariantRepository.save(variant);
-//
-//				log.info("Variant saved: Size={}, Price={}, Stock={}", variantDTO.getSizeId(), variantDTO.getPrice(),
-//						variantDTO.getStock());
-//			}
-//		} else {
-//			throw new RuntimeException("Sản phẩm phải có ít nhất một biến thể");
-//		}
-//
-//		// Tạo yêu cầu phê duyệt (Giữ nguyên logic cũ)
-//		ProductApproval approval = new ProductApproval();
-//		approval.setProduct(product);
-//		approval.setActionType("CREATE");
-//		approval.setStatus("Pending");
-//		// Chuyển DTO thành JSON (DTO này không chứa newImageUrls vì không cần cho
-//		// CREATE)
-//		approval.setChangeDetails(objectMapper.writeValueAsString(request));
-//		approval.setRequestedBy(
-//				userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found")));
-//		approval.setRequestedAt(LocalDateTime.now());
-//
-//		approval = productApprovalRepository.save(approval);
-//
-//		log.info("Product approval created with ID: {}", approval.getApprovalId());
-//
-//		// Gửi thông báo cho admin (Giữ nguyên logic cũ)
-//		try {
-//			notificationService.notifyAdminsAboutNewApproval("PRODUCT", product.getProductID());
-//		} catch (Exception e) {
-//			log.error("Error sending notification: {}", e.getMessage());
-//		}
-//
-//		log.info("Product creation requested - Product ID: {}, Shop ID: {}, Approval ID: {}", product.getProductID(),
-//				shopId, approval.getApprovalId());
-//	}
-
 	@Transactional
 	public void requestProductCreation(Integer shopId, ProductRequestDTO request, Integer userId,
 			Set<Topping> selectedToppings) throws JsonProcessingException {
@@ -411,18 +244,18 @@ public class VendorService {
 				.orElseThrow(() -> new RuntimeException("Category not found")));
 		product.setProductName(request.getProductName());
 		product.setDescription(request.getDescription());
-		product.setStatus((byte) 0); // Inactive until approved
+		product.setStatus((byte) 0);
 		product.setCreatedAt(LocalDateTime.now());
 		product.setUpdatedAt(LocalDateTime.now());
 		product.setAvailableToppings(selectedToppings);
 
+		// *** LƯU SẢN PHẨM TRƯỚC (để có ID) ***
 		product = productRepository.save(product);
 		log.info("Product entity created with ID: {}", product.getProductID());
 
-		// *** UPLOAD ẢNH (giữ nguyên logic cũ) ***
+		// Upload ảnh (giữ nguyên logic cũ)
 		if (request.getImages() != null && !request.getImages().isEmpty()) {
 			boolean hasValidImage = request.getImages().stream().anyMatch(file -> file != null && !file.isEmpty());
-
 			if (hasValidImage) {
 				log.info("Processing images for new product ID: {}", product.getProductID());
 				for (int i = 0; i < request.getImages().size(); i++) {
@@ -432,11 +265,9 @@ public class VendorService {
 							Map<String, String> uploadResult = cloudinaryService.uploadImageAndReturnDetails(file,
 									"products", userId);
 							String imageUrl = uploadResult.get("secure_url");
-
 							if (imageUrl == null) {
 								throw new RuntimeException("Lỗi khi upload hình ảnh: Không nhận được URL.");
 							}
-
 							ProductImage productImage = new ProductImage();
 							productImage.setProduct(product);
 							productImage.setImageURL(imageUrl);
@@ -444,9 +275,7 @@ public class VendorService {
 									i == (request.getPrimaryImageIndex() != null ? request.getPrimaryImageIndex() : 0));
 							productImage.setDisplayOrder(i);
 							productImageRepository.save(productImage);
-
 							log.info("Image uploaded and saved: {}", imageUrl);
-
 						} catch (Exception e) {
 							log.error("Error uploading image at index {}: {}", i, e.getMessage(), e);
 							throw new RuntimeException("Lỗi khi upload hình ảnh: " + e.getMessage());
@@ -460,8 +289,10 @@ public class VendorService {
 			throw new RuntimeException("Vui lòng upload ít nhất một hình ảnh.");
 		}
 
-		// Tạo variants (giữ nguyên)
+		// *** TẠO VARIANTS VÀ TỰ ĐỘNG TÍNH basePrice ***
 		if (request.getVariants() != null && !request.getVariants().isEmpty()) {
+			List<ProductVariant> createdVariants = new ArrayList<>();
+
 			for (ProductVariantDTO variantDTO : request.getVariants()) {
 				ProductVariant variant = new ProductVariant();
 				variant.setProduct(product);
@@ -470,8 +301,23 @@ public class VendorService {
 				variant.setPrice(variantDTO.getPrice());
 				variant.setStock(variantDTO.getStock());
 				variant.setSku(variantDTO.getSku());
-				productVariantRepository.save(variant);
+
+				variant = productVariantRepository.save(variant);
+				createdVariants.add(variant);
+
+				log.info("Variant saved: Size={}, Price={}, Stock={}", variantDTO.getSizeId(), variantDTO.getPrice(),
+						variantDTO.getStock());
 			}
+
+			// *** TÍNH VÀ LƯU basePrice ***
+			BigDecimal minPrice = createdVariants.stream().map(ProductVariant::getPrice).filter(Objects::nonNull)
+					.min(BigDecimal::compareTo).orElse(BigDecimal.ZERO);
+
+			product.setBasePrice(minPrice);
+			product = productRepository.save(product); // Lưu lại để cập nhật basePrice
+
+			log.info("Product basePrice calculated and saved: {}", minPrice);
+
 		} else {
 			throw new RuntimeException("Sản phẩm phải có ít nhất một biến thể");
 		}
@@ -502,253 +348,74 @@ public class VendorService {
 		}
 	}
 
-//	public void requestProductUpdate(Integer shopId, ProductRequestDTO request, Integer userId, Set<Topping> selectedToppings)
-//			throws JsonProcessingException { // Add potential Exception from upload
-//
-//		Product product = productRepository.findById(request.getProductId())
-//				.orElseThrow(() -> new RuntimeException("Product not found"));
-//
-//		if (request.getImages() != null && !request.getImages().isEmpty() && request.getImages().stream().anyMatch(f -> f != null && !f.isEmpty())) {
-//            log.info("Processing new images for product update ID: {}", request.getProductId());
-//            List<String> uploadedImageUrls = new ArrayList<>();
-//            for (MultipartFile file : request.getImages()) {
-//                if (file != null && !file.isEmpty()) {
-//                    try {
-//                        Map<String, String> uploadResult = cloudinaryService.uploadImageAndReturnDetails(file, "products", userId);
-//                        uploadedImageUrls.add(uploadResult.get("secure_url"));
-//                    } catch (Exception e) {
-//                        throw new RuntimeException("Lỗi khi upload hình ảnh mới: " + e.getMessage());
-//                    }
-//                }
-//            }
-//            if (!uploadedImageUrls.isEmpty()) {
-//                request.setNewImageUrls(uploadedImageUrls); // DTO này cần trường newImageUrls
-//            }
-//       } else {
-//           request.setNewImageUrls(null);
-//       }
-//		
-//		if (!product.getShop().getShopId().equals(shopId)) {
-//			throw new RuntimeException("Unauthorized: Product does not belong to this shop");
-//		}
-//
-//		List<ProductApproval> existingApprovals = productApprovalRepository
-//				.findByProduct_ProductIDAndStatus(product.getProductID(), "Pending");
-//
-//		if (!existingApprovals.isEmpty()) {
-//			throw new RuntimeException("Đã có yêu cầu đang chờ phê duyệt cho sản phẩm này");
-//		}
-//
-//		// *** START IMAGE UPDATE HANDLING ***
-//		List<String> uploadedImageUrls = new ArrayList<>();
-//		// List<String> uploadedImagePublicIds = new ArrayList<>(); // Optional
-//
-//		// Check if new images were actually submitted
-//		boolean newImagesSubmitted = request.getImages() != null && !request.getImages().isEmpty()
-//				&& request.getImages().stream().anyMatch(f -> f != null && !f.isEmpty());
-//
-//		if (newImagesSubmitted) {
-//			log.info("Processing new images for product update ID: {}", request.getProductId());
-//			for (MultipartFile file : request.getImages()) {
-//				if (file != null && !file.isEmpty()) {
-//					try {
-//						// Assuming uploadImage returns Map<String, String>
-//						// Adjust if your service returns something else (e.g., just the URL)
-//						Map<String, String> uploadResult = cloudinaryService.uploadImageAndReturnDetails(file,
-//								"products", userId); // Use a
-//						// method
-//						// returning
-//						// details
-//						String imageUrl = uploadResult.get("secure_url");
-//						// String publicId = uploadResult.get("public_id"); // Optional
-//
-//						if (imageUrl != null) {
-//							uploadedImageUrls.add(imageUrl);
-//							// uploadedImagePublicIds.add(publicId); // Optional
-//							log.info("Uploaded new image: {}", imageUrl);
-//						} else {
-//							log.warn("Cloudinary upload did not return a URL for one of the files.");
-//						}
-//
-//					} catch (Exception e) {
-//						log.error("Error uploading a new image during product update: {}", e.getMessage(), e);
-//						// Decide: Throw exception to stop, or just log and continue without the failed
-//						// image?
-//						// Throwing is safer to ensure consistency.
-//						throw new RuntimeException("Lỗi khi upload hình ảnh mới: " + e.getMessage());
-//					}
-//				} else {
-//					// Handle potential null/empty entries if the list allows them
-//					// Or ensure the list passed from the controller is clean
-//				}
-//			}
-//			// Populate the DTO fields ONLY IF new images were processed
-//			if (!uploadedImageUrls.isEmpty()) {
-//				request.setNewImageUrls(uploadedImageUrls);
-//				// request.setNewImagePublicIds(uploadedImagePublicIds); // Optional
-//			} else {
-//				// If upload resulted in no URLs (e.g., all failed, or empty files submitted)
-//				// Ensure the fields are null or empty list so JSON doesn't contain them
-//				// accidentally
-//				request.setNewImageUrls(null);
-//				// request.setNewImagePublicIds(null);
-//				log.warn("New images were submitted, but none were successfully uploaded or returned URLs.");
-//			}
-//		} else {
-//			// No new image files submitted, ensure fields are null/empty
-//			request.setNewImageUrls(null);
-//			// request.setNewImagePublicIds(null);
-//			log.info("No new image files submitted for product update ID: {}", request.getProductId());
-//		}
-//		// *** END IMAGE UPDATE HANDLING ***
-//
-//		// Create approval request - NOW the DTO contains new image info (if any)
-//		ProductApproval approval = new ProductApproval();
-//		approval.setProduct(product);
-//		approval.setActionType("UPDATE");
-//		approval.setStatus("Pending");
-//		approval.setChangeDetails(objectMapper.writeValueAsString(request)); // Serialize the UPDATED DTO
-//		approval.setRequestedBy(
-//				userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found")));
-//		approval.setRequestedAt(LocalDateTime.now());
-//
-//		approval = productApprovalRepository.save(approval);
-//
-//		log.info("Product approval created with ID: {}", approval.getApprovalId());
-//
-//		try {
-//			notificationService.notifyAdminsAboutNewApproval("PRODUCT", product.getProductID());
-//		} catch (Exception e) {
-//			log.error("Error sending notification: {}", e.getMessage());
-//		}
-//
-//		log.info("Product update requested - Product ID: {}, Shop ID: {}, Approval ID: {}", product.getProductID(),
-//				shopId, approval.getApprovalId());
-//	}
-
-//	public void requestProductUpdate(Integer shopId, ProductRequestDTO request, Integer userId,
-//			Set<Topping> selectedToppings) throws Exception { // Sửa thành Exception
-//
-//		Product product = getProductDetail(shopId, request.getProductId()); // Kiểm tra quyền
-//		User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
-//
-//		List<ProductApproval> existingApprovals = productApprovalRepository
-//				.findByProduct_ProductIDAndStatus(product.getProductID(), "Pending");
-//
-//		if (!existingApprovals.isEmpty()) {
-//			throw new RuntimeException("Đã có yêu cầu đang chờ phê duyệt cho sản phẩm này");
-//		}
-//
-//		// *** BẮT ĐẦU SỬA LOGIC UPLOAD ẢNH ***
-//		// (Xóa khối logic upload ảnh trùng lặp ở trên)
-//		List<String> uploadedImageUrls = new ArrayList<>();
-//		boolean newImagesSubmitted = request.getImages() != null && !request.getImages().isEmpty()
-//				&& request.getImages().stream().anyMatch(f -> f != null && !f.isEmpty());
-//
-//		if (newImagesSubmitted) {
-//			log.info("Processing new images for product update ID: {}", request.getProductId());
-//			for (MultipartFile file : request.getImages()) {
-//				if (file != null && !file.isEmpty()) {
-//					try {
-//						Map<String, String> uploadResult = cloudinaryService.uploadImageAndReturnDetails(file,
-//								"products", userId);
-//						String imageUrl = uploadResult.get("secure_url");
-//						if (imageUrl != null) {
-//							uploadedImageUrls.add(imageUrl);
-//						}
-//					} catch (Exception e) {
-//						throw new RuntimeException("Lỗi khi upload hình ảnh mới: " + e.getMessage());
-//					}
-//				}
-//			}
-//			if (!uploadedImageUrls.isEmpty()) {
-//				request.setNewImageUrls(uploadedImageUrls); // Gán URL mới vào DTO
-//			}
-//		} else {
-//			request.setNewImageUrls(null); // Không có file mới
-//			log.info("No new image files submitted for product update ID: {}", request.getProductId());
-//		}
-//		// *** KẾT THÚC SỬA LOGIC UPLOAD ẢNH ***
-//
-//		// Tạo yêu cầu phê duyệt
-//		ProductApproval approval = new ProductApproval();
-//		approval.setProduct(product);
-//		approval.setActionType("UPDATE");
-//		approval.setStatus("Pending");
-//
-//		// DTO (request) bây giờ đã chứa:
-//		// 1. availableToppingIds (từ controller)
-//		// 2. promotionIds (từ controller)
-//		// 3. newImageUrls (từ logic upload)
-//		approval.setChangeDetails(objectMapper.writeValueAsString(request)); // Serialize DTO
-//
-//		approval.setRequestedBy(user);
-//		approval.setRequestedAt(LocalDateTime.now());
-//		approval = productApprovalRepository.save(approval);
-//
-//		notificationService.notifyAdminsAboutNewApproval("PRODUCT", product.getProductID());
-//		log.info("Product update requested - Product ID: {}, Shop ID: {}, Approval ID: {}", product.getProductID(),
-//				shopId, approval.getApprovalId());
-//	}
-	
 	@Transactional
 	public void requestProductUpdate(Integer shopId, ProductRequestDTO request, Integer userId,
-	        Set<Topping> selectedToppings) throws Exception {
+			Set<Topping> selectedToppings) throws Exception {
 
-	    Product product = getProductDetail(shopId, request.getProductId());
-	    User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+		Product product = getProductDetail(shopId, request.getProductId());
+		User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
 
-	    List<ProductApproval> existingApprovals = productApprovalRepository
-	            .findByProduct_ProductIDAndStatus(product.getProductID(), "Pending");
+		List<ProductApproval> existingApprovals = productApprovalRepository
+				.findByProduct_ProductIDAndStatus(product.getProductID(), "Pending");
 
-	    if (!existingApprovals.isEmpty()) {
-	        throw new RuntimeException("Đã có yêu cầu đang chờ phê duyệt cho sản phẩm này");
-	    }
+		if (!existingApprovals.isEmpty()) {
+			throw new RuntimeException("Đã có yêu cầu đang chờ phê duyệt cho sản phẩm này");
+		}
 
-	    // Upload ảnh mới (nếu có) - giữ nguyên logic
-	    List<String> uploadedImageUrls = new ArrayList<>();
-	    boolean newImagesSubmitted = request.getImages() != null && !request.getImages().isEmpty()
-	            && request.getImages().stream().anyMatch(f -> f != null && !f.isEmpty());
+		// Upload ảnh mới (nếu có)
+		List<String> uploadedImageUrls = new ArrayList<>();
+		boolean newImagesSubmitted = request.getImages() != null && !request.getImages().isEmpty()
+				&& request.getImages().stream().anyMatch(f -> f != null && !f.isEmpty());
 
-	    if (newImagesSubmitted) {
-	        log.info("Processing new images for product update ID: {}", request.getProductId());
-	        for (MultipartFile file : request.getImages()) {
-	            if (file != null && !file.isEmpty()) {
-	                try {
-	                    Map<String, String> uploadResult = cloudinaryService.uploadImageAndReturnDetails(file,
-	                            "products", userId);
-	                    String imageUrl = uploadResult.get("secure_url");
-	                    if (imageUrl != null) {
-	                        uploadedImageUrls.add(imageUrl);
-	                    }
-	                } catch (Exception e) {
-	                    throw new RuntimeException("Lỗi khi upload hình ảnh mới: " + e.getMessage());
-	                }
-	            }
-	        }
-	        if (!uploadedImageUrls.isEmpty()) {
-	            request.setNewImageUrls(uploadedImageUrls);
-	        }
-	    } else {
-	        request.setNewImageUrls(null);
-	    }
+		if (newImagesSubmitted) {
+			log.info("Processing new images for product update ID: {}", request.getProductId());
+			for (MultipartFile file : request.getImages()) {
+				if (file != null && !file.isEmpty()) {
+					try {
+						Map<String, String> uploadResult = cloudinaryService.uploadImageAndReturnDetails(file,
+								"products", userId);
+						String imageUrl = uploadResult.get("secure_url");
+						if (imageUrl != null) {
+							uploadedImageUrls.add(imageUrl);
+						}
+					} catch (Exception e) {
+						throw new RuntimeException("Lỗi khi upload hình ảnh mới: " + e.getMessage());
+					}
+				}
+			}
+			if (!uploadedImageUrls.isEmpty()) {
+				request.setNewImageUrls(uploadedImageUrls);
+			}
+		} else {
+			request.setNewImageUrls(null);
+		}
 
-	    // *** MỚI: CẬP NHẬT DISCOUNT (sẽ được xử lý khi approval được duyệt) ***
-	    // Không cần xử lý ở đây, chỉ lưu vào ChangeDetails
+		// *** TÍNH LẠI basePrice NẾU CÓ THAY ĐỔI VARIANTS ***
+		// (Logic này sẽ được xử lý khi approval được duyệt)
+		// Nhưng bạn có thể thêm vào changeDetails để admin biết giá mới
+		if (request.getVariants() != null && !request.getVariants().isEmpty()) {
+			BigDecimal newMinPrice = request.getVariants().stream().map(ProductVariantDTO::getPrice)
+					.filter(Objects::nonNull).min(BigDecimal::compareTo).orElse(null);
 
-	    // Tạo yêu cầu phê duyệt
-	    ProductApproval approval = new ProductApproval();
-	    approval.setProduct(product);
-	    approval.setActionType("UPDATE");
-	    approval.setStatus("Pending");
-	    approval.setChangeDetails(objectMapper.writeValueAsString(request)); // DTO có chứa discountPercentage
-	    approval.setRequestedBy(user);
-	    approval.setRequestedAt(LocalDateTime.now());
-	    approval = productApprovalRepository.save(approval);
+			// Thêm thông tin basePrice mới vào DTO (optional)
+			// request.setNewBasePrice(newMinPrice);
 
-	    notificationService.notifyAdminsAboutNewApproval("PRODUCT", product.getProductID());
-	    log.info("Product update requested - Product ID: {}, Shop ID: {}, Approval ID: {}",
-	            product.getProductID(), shopId, approval.getApprovalId());
+			log.info("New basePrice will be: {}", newMinPrice);
+		}
+
+		// Tạo yêu cầu phê duyệt
+		ProductApproval approval = new ProductApproval();
+		approval.setProduct(product);
+		approval.setActionType("UPDATE");
+		approval.setStatus("Pending");
+		approval.setChangeDetails(objectMapper.writeValueAsString(request));
+		approval.setRequestedBy(user);
+		approval.setRequestedAt(LocalDateTime.now());
+		approval = productApprovalRepository.save(approval);
+
+		notificationService.notifyAdminsAboutNewApproval("PRODUCT", product.getProductID());
+		log.info("Product update requested - Product ID: {}, Shop ID: {}, Approval ID: {}", product.getProductID(),
+				shopId, approval.getApprovalId());
 	}
 
 	public void requestProductDeletion(Integer shopId, Integer productId, Integer userId) {
@@ -841,17 +508,27 @@ public class VendorService {
 			}
 		}
 
+		// Available toppings
 		if (product.getAvailableToppings() != null) {
 			Set<Integer> toppingIds = product.getAvailableToppings().stream().map(Topping::getToppingID)
 					.collect(Collectors.toSet());
 			dto.setAvailableToppingIds(toppingIds);
 		}
 
-//		if (product.getPromotionProducts() != null) {
-//			Set<Integer> promoIds = product.getPromotionProducts().stream()
-//					.map(pp -> pp.getPromotion().getPromotionId()).collect(Collectors.toSet());
-//			dto.setPromotionIds(promoIds);
-//		}
+		// *** THÊM: LOAD DISCOUNT PERCENTAGE ***
+		if (product.getPromotionProducts() != null && !product.getPromotionProducts().isEmpty()) {
+			product.getPromotionProducts().stream().filter(pp -> pp.getPromotion() != null)
+					.filter(pp -> "PRODUCT".equals(pp.getPromotion().getPromotionType()))
+					.filter(pp -> pp.getPromotion().getStatus() == 1).filter(pp -> {
+						LocalDateTime now = LocalDateTime.now();
+						return pp.getPromotion().getStartDate().isBefore(now)
+								&& pp.getPromotion().getEndDate().isAfter(now);
+					}).findFirst().ifPresent(pp -> {
+						dto.setDiscountPercentage(pp.getDiscountPercentage());
+						log.info("Loaded discount {}% for product {}", pp.getDiscountPercentage(),
+								product.getProductID());
+					});
+		}
 
 		return dto;
 	}
@@ -1269,56 +946,55 @@ public class VendorService {
 //		promotionApprovalRepository.save(approval);
 //		notificationService.notifyAdminsAboutNewApproval("PROMOTION", savedPromotion.getPromotionId());
 //	}
-	
+
 	@Transactional
 	public void requestPromotionCreation(Integer shopId, PromotionRequestDTO request, Integer userId)
-	        throws JsonProcessingException {
+			throws JsonProcessingException {
 
-	    Shop shop = shopRepository.findById(shopId).orElseThrow(() -> new RuntimeException("Shop not found"));
-	    User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+		Shop shop = shopRepository.findById(shopId).orElseThrow(() -> new RuntimeException("Shop not found"));
+		User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
 
-	    // Kiểm tra logic ngày tháng
-	    if (request.getStartDate().isAfter(request.getEndDate())) {
-	        throw new IllegalArgumentException("Ngày kết thúc phải sau ngày bắt đầu");
-	    }
+		// Kiểm tra logic ngày tháng
+		if (request.getStartDate().isAfter(request.getEndDate())) {
+			throw new IllegalArgumentException("Ngày kết thúc phải sau ngày bắt đầu");
+		}
 
-	    Promotion promotion = new Promotion();
-	    promotion.setCreatedByUserID(user);
-	    promotion.setCreatedByShopID(shop);
-	    promotion.setPromotionName(request.getPromotionName());
-	    promotion.setDescription(request.getDescription());
-	    promotion.setPromoCode(request.getPromoCode());
-	    promotion.setStartDate(request.getStartDate());
-	    promotion.setEndDate(request.getEndDate());
-	    promotion.setUsageLimit(request.getUsageLimit());
-	    promotion.setPromotionType("ORDER"); // *** CHỈ CÒN ORDER ***
-	    promotion.setStatus((byte) 0); // Pending
+		Promotion promotion = new Promotion();
+		promotion.setCreatedByUserID(user);
+		promotion.setCreatedByShopID(shop);
+		promotion.setPromotionName(request.getPromotionName());
+		promotion.setDescription(request.getDescription());
+		promotion.setPromoCode(request.getPromoCode());
+		promotion.setStartDate(request.getStartDate());
+		promotion.setEndDate(request.getEndDate());
+		promotion.setUsageLimit(request.getUsageLimit());
+		promotion.setPromotionType("ORDER"); // *** CHỈ CÒN ORDER ***
+		promotion.setStatus((byte) 0); // Pending
 
-	    // *** CHỈ XỬ LÝ LOGIC ORDER ***
-	    if (request.getDiscountType() == null || request.getDiscountValue() == null) {
-	        throw new IllegalArgumentException("Loại giảm giá và Giá trị giảm giá là bắt buộc.");
-	    }
-	    promotion.setDiscountType(request.getDiscountType());
-	    promotion.setDiscountValue(request.getDiscountValue());
-	    promotion.setMaxDiscountAmount(request.getMaxDiscountAmount());
-	    promotion.setMinOrderValue(request.getMinOrderValue());
+		// *** CHỈ XỬ LÝ LOGIC ORDER ***
+		if (request.getDiscountType() == null || request.getDiscountValue() == null) {
+			throw new IllegalArgumentException("Loại giảm giá và Giá trị giảm giá là bắt buộc.");
+		}
+		promotion.setDiscountType(request.getDiscountType());
+		promotion.setDiscountValue(request.getDiscountValue());
+		promotion.setMaxDiscountAmount(request.getMaxDiscountAmount());
+		promotion.setMinOrderValue(request.getMinOrderValue());
 
-	    Promotion savedPromotion = promotionRepository.save(promotion);
+		Promotion savedPromotion = promotionRepository.save(promotion);
 
-	    // *** BỎ LOGIC XỬ LÝ productDiscounts ***
+		// *** BỎ LOGIC XỬ LÝ productDiscounts ***
 
-	    // Tạo yêu cầu phê duyệt
-	    PromotionApproval approval = new PromotionApproval();
-	    approval.setPromotion(savedPromotion);
-	    approval.setActionType("CREATE");
-	    approval.setStatus("Pending");
-	    approval.setChangeDetails(objectMapper.writeValueAsString(request));
-	    approval.setRequestedBy(user);
+		// Tạo yêu cầu phê duyệt
+		PromotionApproval approval = new PromotionApproval();
+		approval.setPromotion(savedPromotion);
+		approval.setActionType("CREATE");
+		approval.setStatus("Pending");
+		approval.setChangeDetails(objectMapper.writeValueAsString(request));
+		approval.setRequestedBy(user);
 
-	    promotionApprovalRepository.save(approval);
-	    notificationService.notifyAdminsAboutNewApproval("PROMOTION", savedPromotion.getPromotionId());
+		promotionApprovalRepository.save(approval);
+		notificationService.notifyAdminsAboutNewApproval("PROMOTION", savedPromotion.getPromotionId());
 	}
-
 
 	public List<SimpleProductDTO> getShopProductsForSelection(Integer shopId) {
 		List<Product> products = productRepository.findActiveProductsByShop(shopId);
@@ -1426,41 +1102,41 @@ public class VendorService {
 //
 //		log.info("Promotion update requested - Promotion ID: {}, Shop ID: {}", promotion.getPromotionId(), shopId);
 //	}
-	
+
 	@Transactional
 	public void requestPromotionUpdate(Integer shopId, PromotionRequestDTO request, Integer userId) throws Exception {
 
-	    Promotion promotion = getPromotionDetail(shopId, request.getPromotionId());
-	    User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+		Promotion promotion = getPromotionDetail(shopId, request.getPromotionId());
+		User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
 
-	    List<PromotionApproval> existingApprovals = promotionApprovalRepository
-	            .findByPromotion_PromotionIdAndStatus(promotion.getPromotionId(), "Pending");
-	    if (!existingApprovals.isEmpty()) {
-	        throw new RuntimeException("Đã có yêu cầu đang chờ phê duyệt cho khuyến mãi này");
-	    }
+		List<PromotionApproval> existingApprovals = promotionApprovalRepository
+				.findByPromotion_PromotionIdAndStatus(promotion.getPromotionId(), "Pending");
+		if (!existingApprovals.isEmpty()) {
+			throw new RuntimeException("Đã có yêu cầu đang chờ phê duyệt cho khuyến mãi này");
+		}
 
-	    if (request.getStartDate().isAfter(request.getEndDate())) {
-	        throw new IllegalArgumentException("Ngày kết thúc phải sau ngày bắt đầu");
-	    }
+		if (request.getStartDate().isAfter(request.getEndDate())) {
+			throw new IllegalArgumentException("Ngày kết thúc phải sau ngày bắt đầu");
+		}
 
-	    // *** CHỈ VALIDATE CHO ORDER TYPE ***
-	    if (request.getDiscountType() == null || request.getDiscountValue() == null) {
-	        throw new IllegalArgumentException("Loại giảm giá và Giá trị giảm giá là bắt buộc.");
-	    }
+		// *** CHỈ VALIDATE CHO ORDER TYPE ***
+		if (request.getDiscountType() == null || request.getDiscountValue() == null) {
+			throw new IllegalArgumentException("Loại giảm giá và Giá trị giảm giá là bắt buộc.");
+		}
 
-	    // *** BỎ LOGIC productDiscounts ***
+		// *** BỎ LOGIC productDiscounts ***
 
-	    // Tạo yêu cầu phê duyệt
-	    PromotionApproval approval = new PromotionApproval();
-	    approval.setPromotion(promotion);
-	    approval.setActionType("UPDATE");
-	    approval.setStatus("Pending");
-	    approval.setChangeDetails(objectMapper.writeValueAsString(request));
-	    approval.setRequestedBy(user);
-	    approval.setRequestedAt(LocalDateTime.now());
+		// Tạo yêu cầu phê duyệt
+		PromotionApproval approval = new PromotionApproval();
+		approval.setPromotion(promotion);
+		approval.setActionType("UPDATE");
+		approval.setStatus("Pending");
+		approval.setChangeDetails(objectMapper.writeValueAsString(request));
+		approval.setRequestedBy(user);
+		approval.setRequestedAt(LocalDateTime.now());
 
-	    promotionApprovalRepository.save(approval);
-	    notificationService.notifyAdminsAboutNewApproval("PROMOTION", promotion.getPromotionId());
+		promotionApprovalRepository.save(approval);
+		notificationService.notifyAdminsAboutNewApproval("PROMOTION", promotion.getPromotionId());
 	}
 
 	public void requestPromotionDeletion(Integer shopId, Integer promotionId, Integer userId) {
@@ -1755,46 +1431,46 @@ public class VendorService {
 
 		return filteredApprovals; // Return the filtered and sorted list
 	}
-	
-	private void createInternalProductPromotion(Product product, Integer discountPercentage, Shop shop, Integer userId) {
-	    try {
-	        User user = userRepository.findById(userId)
-	                .orElseThrow(() -> new RuntimeException("User not found"));
 
-	        // Tạo Promotion với PromotionType = "PRODUCT"
-	        Promotion promotion = new Promotion();
-	        promotion.setCreatedByUserID(user);
-	        promotion.setCreatedByShopID(shop);
-	        promotion.setPromotionName("Giảm giá sản phẩm: " + product.getProductName());
-	        promotion.setDescription("Khuyến mãi nội bộ cho sản phẩm");
-	        promotion.setPromoCode("PRODUCT_" + product.getProductID() + "_" + System.currentTimeMillis());
-	        promotion.setPromotionType("PRODUCT"); // *** QUAN TRỌNG ***
-	        promotion.setDiscountType(null); // Không dùng cho PRODUCT type
-	        promotion.setDiscountValue(null);
-	        promotion.setStartDate(LocalDateTime.now());
-	        promotion.setEndDate(LocalDateTime.now().plusYears(10)); // Vô thời hạn
-	        promotion.setMinOrderValue(BigDecimal.ZERO);
-	        promotion.setUsageLimit(0); // Không giới hạn
-	        promotion.setStatus((byte) 1); // Active ngay
-	        promotion.setCreatedAt(LocalDateTime.now());
+	private void createInternalProductPromotion(Product product, Integer discountPercentage, Shop shop,
+			Integer userId) {
+		try {
+			User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
 
-	        promotion = promotionRepository.save(promotion);
+			// Tạo Promotion với PromotionType = "PRODUCT"
+			Promotion promotion = new Promotion();
+			promotion.setCreatedByUserID(user);
+			promotion.setCreatedByShopID(shop);
+			promotion.setPromotionName("Giảm giá sản phẩm: " + product.getProductName());
+			promotion.setDescription("Khuyến mãi nội bộ cho sản phẩm");
+			promotion.setPromoCode("PRODUCT_" + product.getProductID() + "_" + System.currentTimeMillis());
+			promotion.setPromotionType("PRODUCT"); // *** QUAN TRỌNG ***
+			promotion.setDiscountType(null); // Không dùng cho PRODUCT type
+			promotion.setDiscountValue(null);
+			promotion.setStartDate(LocalDateTime.now());
+			promotion.setEndDate(LocalDateTime.now().plusYears(10)); // Vô thời hạn
+			promotion.setMinOrderValue(BigDecimal.ZERO);
+			promotion.setUsageLimit(0); // Không giới hạn
+			promotion.setStatus((byte) 1); // Active ngay
+			promotion.setCreatedAt(LocalDateTime.now());
 
-	        // Tạo liên kết trong PromotionProduct
-	        PromotionProduct pp = new PromotionProduct();
-	        pp.setId(new PromotionProductId(promotion.getPromotionId(), product.getProductID()));
-	        pp.setPromotion(promotion);
-	        pp.setProduct(product);
-	        pp.setDiscountPercentage(discountPercentage);
-	        
-	        promotionProductRepository.save(pp);
+			promotion = promotionRepository.save(promotion);
 
-	        log.info("Created internal product promotion ID: {} for product ID: {} with {}% discount",
-	                promotion.getPromotionId(), product.getProductID(), discountPercentage);
+			// Tạo liên kết trong PromotionProduct
+			PromotionProduct pp = new PromotionProduct();
+			pp.setId(new PromotionProductId(promotion.getPromotionId(), product.getProductID()));
+			pp.setPromotion(promotion);
+			pp.setProduct(product);
+			pp.setDiscountPercentage(discountPercentage);
 
-	    } catch (Exception e) {
-	        log.error("Error creating internal product promotion: {}", e.getMessage(), e);
-	        // Không throw exception để không làm fail toàn bộ flow
-	    }
+			promotionProductRepository.save(pp);
+
+			log.info("Created internal product promotion ID: {} for product ID: {} with {}% discount",
+					promotion.getPromotionId(), product.getProductID(), discountPercentage);
+
+		} catch (Exception e) {
+			log.error("Error creating internal product promotion: {}", e.getMessage(), e);
+			// Không throw exception để không làm fail toàn bộ flow
+		}
 	}
 }

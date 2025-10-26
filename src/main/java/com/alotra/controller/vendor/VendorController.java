@@ -301,78 +301,78 @@ public class VendorController {
 //			return "redirect:/vendor/products/create";
 //		}
 //	}
-	
+
 	@PostMapping("/products/create")
 	public String createProduct(@AuthenticationPrincipal MyUserDetails userDetails,
-	        @ModelAttribute("product") ProductRequestDTO request, BindingResult result, Model model,
-	        RedirectAttributes redirectAttributes) {
+			@ModelAttribute("product") ProductRequestDTO request, BindingResult result, Model model,
+			RedirectAttributes redirectAttributes) {
 
-	    log.info("=== CREATE PRODUCT REQUEST ===");
-	    log.info("Product name: {}", request.getProductName());
-	    log.info("Discount Percentage: {}", request.getDiscountPercentage()); // *** MỚI ***
-	    
-	    if (result.hasErrors()) {
-	        log.error("Validation errors: {}", result.getAllErrors());
-	        model.addAttribute("categories", vendorService.getAllCategories());
-	        model.addAttribute("sizes", vendorService.getAllSizesSimple());
-	        model.addAttribute("action", "create");
-	        return "vendor/products/form";
-	    }
+		log.info("=== CREATE PRODUCT REQUEST ===");
+		log.info("Product name: {}", request.getProductName());
+		log.info("Discount Percentage: {}", request.getDiscountPercentage()); // *** MỚI ***
 
-	    try {
-	        Integer shopId = getShopIdOrThrow(userDetails);
-	        Integer userId = getUserIdOrThrow(userDetails);
+		if (result.hasErrors()) {
+			log.error("Validation errors: {}", result.getAllErrors());
+			model.addAttribute("categories", vendorService.getAllCategories());
+			model.addAttribute("sizes", vendorService.getAllSizesSimple());
+			model.addAttribute("action", "create");
+			return "vendor/products/form";
+		}
 
-	        // *** BỎ LOGIC TOPPING (nếu không cần) ***
-	        Set<Topping> selectedToppings = new HashSet<>();
-	        if (request.getAvailableToppingIds() != null && !request.getAvailableToppingIds().isEmpty()) {
-	            List<Topping> toppingsFromDb = toppingRepository.findAllById(request.getAvailableToppingIds());
-	            for (Topping t : toppingsFromDb) {
-	                if (t.getShop() == null || !t.getShop().getShopId().equals(shopId)) {
-	                    throw new IllegalAccessException("Đã phát hiện topping không hợp lệ.");
-	                }
-	            }
-	            selectedToppings.addAll(toppingsFromDb);
-	        }
+		try {
+			Integer shopId = getShopIdOrThrow(userDetails);
+			Integer userId = getUserIdOrThrow(userDetails);
 
-	        // Validate variants
-	        if (request.getVariants() == null || request.getVariants().isEmpty()) {
-	            redirectAttributes.addFlashAttribute("error", "Sản phẩm phải có ít nhất một biến thể");
-	            return "redirect:/vendor/products/create";
-	        }
+			// *** BỎ LOGIC TOPPING (nếu không cần) ***
+			Set<Topping> selectedToppings = new HashSet<>();
+			if (request.getAvailableToppingIds() != null && !request.getAvailableToppingIds().isEmpty()) {
+				List<Topping> toppingsFromDb = toppingRepository.findAllById(request.getAvailableToppingIds());
+				for (Topping t : toppingsFromDb) {
+					if (t.getShop() == null || !t.getShop().getShopId().equals(shopId)) {
+						throw new IllegalAccessException("Đã phát hiện topping không hợp lệ.");
+					}
+				}
+				selectedToppings.addAll(toppingsFromDb);
+			}
 
-	        // Validate images
-	        if (request.getImages() == null || request.getImages().isEmpty()
-	                || request.getImages().stream().allMatch(file -> file == null || file.isEmpty())) {
-	            redirectAttributes.addFlashAttribute("error", "Vui lòng upload ít nhất một hình ảnh");
-	            return "redirect:/vendor/products/create";
-	        }
+			// Validate variants
+			if (request.getVariants() == null || request.getVariants().isEmpty()) {
+				redirectAttributes.addFlashAttribute("error", "Sản phẩm phải có ít nhất một biến thể");
+				return "redirect:/vendor/products/create";
+			}
 
-	        // *** MỚI: Validate Discount Percentage ***
-	        if (request.getDiscountPercentage() != null) {
-	            if (request.getDiscountPercentage() < 0 || request.getDiscountPercentage() > 100) {
-	                redirectAttributes.addFlashAttribute("error", "% Giảm giá phải từ 0-100%");
-	                return "redirect:/vendor/products/create";
-	            }
-	        }
+			// Validate images
+			if (request.getImages() == null || request.getImages().isEmpty()
+					|| request.getImages().stream().allMatch(file -> file == null || file.isEmpty())) {
+				redirectAttributes.addFlashAttribute("error", "Vui lòng upload ít nhất một hình ảnh");
+				return "redirect:/vendor/products/create";
+			}
 
-	        // *** GỌI SERVICE MỚI (đã bao gồm logic lưu discount) ***
-	        vendorService.requestProductCreation(shopId, request, userId, selectedToppings);
+			// *** MỚI: Validate Discount Percentage ***
+			if (request.getDiscountPercentage() != null) {
+				if (request.getDiscountPercentage() < 0 || request.getDiscountPercentage() > 100) {
+					redirectAttributes.addFlashAttribute("error", "% Giảm giá phải từ 0-100%");
+					return "redirect:/vendor/products/create";
+				}
+			}
 
-	        redirectAttributes.addFlashAttribute("success",
-	                "Yêu cầu tạo sản phẩm đã được gửi. Vui lòng chờ admin phê duyệt.");
+			// *** GỌI SERVICE MỚI (đã bao gồm logic lưu discount) ***
+			vendorService.requestProductCreation(shopId, request, userId, selectedToppings);
 
-	        return "redirect:/vendor/products";
+			redirectAttributes.addFlashAttribute("success",
+					"Yêu cầu tạo sản phẩm đã được gửi. Vui lòng chờ admin phê duyệt.");
 
-	    } catch (IllegalStateException e) {
-	        log.error("Auth error: {}", e.getMessage());
-	        redirectAttributes.addFlashAttribute("error", e.getMessage());
-	        return "redirect:/shop/register";
-	    } catch (Exception e) {
-	        log.error("Error creating product", e);
-	        redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
-	        return "redirect:/vendor/products/create";
-	    }
+			return "redirect:/vendor/products";
+
+		} catch (IllegalStateException e) {
+			log.error("Auth error: {}", e.getMessage());
+			redirectAttributes.addFlashAttribute("error", e.getMessage());
+			return "redirect:/shop/register";
+		} catch (Exception e) {
+			log.error("Error creating product", e);
+			redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+			return "redirect:/vendor/products/create";
+		}
 	}
 
 	@GetMapping("/products/edit/{id}")
@@ -398,6 +398,10 @@ public class VendorController {
 			model.addAttribute("allShopProductPromotions",
 					promotionRepository.findAllActiveProductPromotionsByShop(shopId));
 
+			// *** LOG ĐỂ DEBUG ***
+			log.info("Loaded product {} for edit with discount: {}%", product.getProductID(),
+					dto.getDiscountPercentage());
+
 			return "vendor/products/form";
 
 		} catch (IllegalStateException e) {
@@ -410,156 +414,78 @@ public class VendorController {
 		}
 	}
 
-//	@PostMapping("/products/edit/{id}")
-//	public String updateProduct(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
-//			@Valid @ModelAttribute("product") ProductRequestDTO request, BindingResult result, Model model,
-//			RedirectAttributes redirectAttributes) {
-//
-//		if (result.hasErrors()) {
-//			log.error("Validation errors: {}", result.getAllErrors());
-//			try {
-//				Integer shopId = getShopIdOrThrow(userDetails);
-//				Product product = vendorService.getProductDetail(shopId, id);
-//				model.addAttribute("categories", vendorService.getAllCategories());
-//				model.addAttribute("sizes", vendorService.getAllSizesSimple());
-//				model.addAttribute("existingImages", product.getImages());
-//				model.addAttribute("action", "edit");
-//				model.addAttribute("productId", id);
-//			} catch (Exception e) {
-//				log.error("Error loading form data", e);
-//			}
-//			return "vendor/products/form";
-//		}
-//
-//		try {
-//			Integer shopId = getShopIdOrThrow(userDetails);
-//			Integer userId = getUserIdOrThrow(userDetails);
-//
-//			log.info("Updating product request - Product ID: {}, Shop ID: {}, User ID: {}", id, shopId, userId);
-//
-//			// Validate variants
-//			if (request.getVariants() == null || request.getVariants().isEmpty()) {
-//				redirectAttributes.addFlashAttribute("error", "Sản phẩm phải có ít nhất một biến thể");
-//				return "redirect:/vendor/products/edit/" + id;
-//			}
-//
-//			Set<Topping> selectedToppings = new HashSet<>();
-//			if (request.getAvailableToppingIds() != null && !request.getAvailableToppingIds().isEmpty()) {
-//				List<Topping> toppingsFromDb = toppingRepository.findAllById(request.getAvailableToppingIds());
-//				for (Topping t : toppingsFromDb) {
-//					if (t.getShop() == null || !t.getShop().getShopId().equals(shopId)) {
-//						throw new IllegalAccessException("Đã phát hiện topping không hợp lệ.");
-//					}
-//				}
-//				selectedToppings.addAll(toppingsFromDb);
-//			}
-//
-//			request.setProductId(id);
-//			vendorService.requestProductUpdate(shopId, request, userId, selectedToppings);
-//			redirectAttributes.addFlashAttribute("success",
-//					"Yêu cầu cập nhật sản phẩm đã được gửi. Vui lòng chờ admin phê duyệt.");
-//
-//			return "redirect:/vendor/products";
-//
-//			// ... (try block) ...
-//		} catch (IllegalStateException e) {
-//			log.error("Auth error: {}", e.getMessage());
-//			redirectAttributes.addFlashAttribute("error", e.getMessage());
-//			return "redirect:/shop/register";
-//
-//			// Sửa lại khối catch (Exception e)
-//		} catch (Exception e) {
-//			log.error("Error updating product", e);
-//
-//			// 1. Kiểm tra xem có phải lỗi "Đang chờ phê duyệt" không
-//			if (e.getMessage() != null && e.getMessage().contains("Đã có yêu cầu đang chờ phê duyệt")) {
-//
-//				// 2. Dùng thông báo "warning" (cảnh báo) thay vì "error" (lỗi)
-//				redirectAttributes.addFlashAttribute("warning", e.getMessage());
-//
-//				// 3. Chuyển hướng về trang danh sách sản phẩm (list)
-//				return "redirect:/vendor/products";
-//
-//			} else {
-//				// 4. Đối với tất cả các lỗi khác (lỗi validation, lỗi hệ thống...)
-//				// thì giữ nguyên hành vi cũ: quay lại form edit
-//				redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
-//				return "redirect:/vendor/products/edit/" + id;
-//			}
-//		}
-//	}
-	
 	@PostMapping("/products/edit/{id}")
 	public String updateProduct(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
-	        @Valid @ModelAttribute("product") ProductRequestDTO request, BindingResult result, Model model,
-	        RedirectAttributes redirectAttributes) {
+			@Valid @ModelAttribute("product") ProductRequestDTO request, BindingResult result, Model model,
+			RedirectAttributes redirectAttributes) {
 
-	    if (result.hasErrors()) {
-	        log.error("Validation errors: {}", result.getAllErrors());
-	        try {
-	            Integer shopId = getShopIdOrThrow(userDetails);
-	            Product product = vendorService.getProductDetail(shopId, id);
-	            model.addAttribute("categories", vendorService.getAllCategories());
-	            model.addAttribute("sizes", vendorService.getAllSizesSimple());
-	            model.addAttribute("existingImages", product.getImages());
-	            model.addAttribute("action", "edit");
-	            model.addAttribute("productId", id);
-	        } catch (Exception e) {
-	            log.error("Error loading form data", e);
-	        }
-	        return "vendor/products/form";
-	    }
+		if (result.hasErrors()) {
+			log.error("Validation errors: {}", result.getAllErrors());
+			try {
+				Integer shopId = getShopIdOrThrow(userDetails);
+				Product product = vendorService.getProductDetail(shopId, id);
+				model.addAttribute("categories", vendorService.getAllCategories());
+				model.addAttribute("sizes", vendorService.getAllSizesSimple());
+				model.addAttribute("existingImages", product.getImages());
+				model.addAttribute("action", "edit");
+				model.addAttribute("productId", id);
+			} catch (Exception e) {
+				log.error("Error loading form data", e);
+			}
+			return "vendor/products/form";
+		}
 
-	    try {
-	        Integer shopId = getShopIdOrThrow(userDetails);
-	        Integer userId = getUserIdOrThrow(userDetails);
+		try {
+			Integer shopId = getShopIdOrThrow(userDetails);
+			Integer userId = getUserIdOrThrow(userDetails);
 
-	        // Validate variants
-	        if (request.getVariants() == null || request.getVariants().isEmpty()) {
-	            redirectAttributes.addFlashAttribute("error", "Sản phẩm phải có ít nhất một biến thể");
-	            return "redirect:/vendor/products/edit/" + id;
-	        }
+			// Validate variants
+			if (request.getVariants() == null || request.getVariants().isEmpty()) {
+				redirectAttributes.addFlashAttribute("error", "Sản phẩm phải có ít nhất một biến thể");
+				return "redirect:/vendor/products/edit/" + id;
+			}
 
-	        // *** MỚI: Validate Discount ***
-	        if (request.getDiscountPercentage() != null) {
-	            if (request.getDiscountPercentage() < 0 || request.getDiscountPercentage() > 100) {
-	                redirectAttributes.addFlashAttribute("error", "% Giảm giá phải từ 0-100%");
-	                return "redirect:/vendor/products/edit/" + id;
-	            }
-	        }
+			// *** MỚI: Validate Discount Percentage ***
+			if (request.getDiscountPercentage() != null) {
+				if (request.getDiscountPercentage() < 0 || request.getDiscountPercentage() > 100) {
+					redirectAttributes.addFlashAttribute("error", "% Giảm giá phải từ 0-100%");
+					return "redirect:/vendor/products/edit/" + id;
+				}
+				log.info("Product update includes discount: {}%", request.getDiscountPercentage());
+			}
 
-	        Set<Topping> selectedToppings = new HashSet<>();
-	        if (request.getAvailableToppingIds() != null && !request.getAvailableToppingIds().isEmpty()) {
-	            List<Topping> toppingsFromDb = toppingRepository.findAllById(request.getAvailableToppingIds());
-	            for (Topping t : toppingsFromDb) {
-	                if (t.getShop() == null || !t.getShop().getShopId().equals(shopId)) {
-	                    throw new IllegalAccessException("Đã phát hiện topping không hợp lệ.");
-	                }
-	            }
-	            selectedToppings.addAll(toppingsFromDb);
-	        }
+			Set<Topping> selectedToppings = new HashSet<>();
+			if (request.getAvailableToppingIds() != null && !request.getAvailableToppingIds().isEmpty()) {
+				List<Topping> toppingsFromDb = toppingRepository.findAllById(request.getAvailableToppingIds());
+				for (Topping t : toppingsFromDb) {
+					if (t.getShop() == null || !t.getShop().getShopId().equals(shopId)) {
+						throw new IllegalAccessException("Đã phát hiện topping không hợp lệ.");
+					}
+				}
+				selectedToppings.addAll(toppingsFromDb);
+			}
 
-	        request.setProductId(id);
-	        vendorService.requestProductUpdate(shopId, request, userId, selectedToppings);
-	        redirectAttributes.addFlashAttribute("success",
-	                "Yêu cầu cập nhật sản phẩm đã được gửi. Vui lòng chờ admin phê duyệt.");
+			request.setProductId(id);
+			vendorService.requestProductUpdate(shopId, request, userId, selectedToppings);
+			redirectAttributes.addFlashAttribute("success",
+					"Yêu cầu cập nhật sản phẩm đã được gửi. Vui lòng chờ admin phê duyệt.");
 
-	        return "redirect:/vendor/products";
+			return "redirect:/vendor/products";
 
-	    } catch (IllegalStateException e) {
-	        log.error("Auth error: {}", e.getMessage());
-	        redirectAttributes.addFlashAttribute("error", e.getMessage());
-	        return "redirect:/shop/register";
-	    } catch (Exception e) {
-	        log.error("Error updating product", e);
-	        if (e.getMessage() != null && e.getMessage().contains("đang chờ phê duyệt")) {
-	            redirectAttributes.addFlashAttribute("warning", e.getMessage());
-	            return "redirect:/vendor/products";
-	        } else {
-	            redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
-	            return "redirect:/vendor/products/edit/" + id;
-	        }
-	    }
+		} catch (IllegalStateException e) {
+			log.error("Auth error: {}", e.getMessage());
+			redirectAttributes.addFlashAttribute("error", e.getMessage());
+			return "redirect:/shop/register";
+		} catch (Exception e) {
+			log.error("Error updating product", e);
+			if (e.getMessage() != null && e.getMessage().contains("đang chờ phê duyệt")) {
+				redirectAttributes.addFlashAttribute("warning", e.getMessage());
+				return "redirect:/vendor/products";
+			} else {
+				redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+				return "redirect:/vendor/products/edit/" + id;
+			}
+		}
 	}
 
 	@PostMapping("/products/delete/{id}")
@@ -777,20 +703,20 @@ public class VendorController {
 //			return "redirect:/shop/register";
 //		}
 //	}
-	
+
 	@GetMapping("/promotions/create")
 	public String showCreatePromotionForm(@AuthenticationPrincipal MyUserDetails userDetails, Model model,
-	        RedirectAttributes redirectAttributes) {
-	    try {
-	        getShopIdOrThrow(userDetails);
-	        model.addAttribute("promotion", new PromotionRequestDTO());
-	        model.addAttribute("action", "create");
-	        // *** BỎ: model.addAttribute("shopProducts", ...) ***
-	        return "vendor/promotions/form";
-	    } catch (IllegalStateException e) {
-	        redirectAttributes.addFlashAttribute("error", e.getMessage());
-	        return "redirect:/shop/register";
-	    }
+			RedirectAttributes redirectAttributes) {
+		try {
+			getShopIdOrThrow(userDetails);
+			model.addAttribute("promotion", new PromotionRequestDTO());
+			model.addAttribute("action", "create");
+			// *** BỎ: model.addAttribute("shopProducts", ...) ***
+			return "vendor/promotions/form";
+		} catch (IllegalStateException e) {
+			redirectAttributes.addFlashAttribute("error", e.getMessage());
+			return "redirect:/shop/register";
+		}
 	}
 
 	@PostMapping("/promotions/create")
@@ -890,38 +816,38 @@ public class VendorController {
 //			return "redirect:/vendor/promotions";
 //		}
 //	}
-	
+
 	@GetMapping("/promotions/edit/{id}")
 	public String showEditPromotionForm(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
-	        Model model, RedirectAttributes redirectAttributes) {
-	    try {
-	        Integer shopId = getShopIdOrThrow(userDetails);
-	        Promotion promotion = vendorService.getPromotionDetail(shopId, id);
-	        
-	        // *** BỎ convertPromotionToDTOWithProducts, CHỈ dùng convertPromotionToDTO ***
-	        PromotionRequestDTO dto = vendorService.convertPromotionToDTO(promotion);
+			Model model, RedirectAttributes redirectAttributes) {
+		try {
+			Integer shopId = getShopIdOrThrow(userDetails);
+			Promotion promotion = vendorService.getPromotionDetail(shopId, id);
 
-	        model.addAttribute("promotion", dto);
-	        model.addAttribute("action", "edit");
-	        model.addAttribute("promotionId", id);
+			// *** BỎ convertPromotionToDTOWithProducts, CHỈ dùng convertPromotionToDTO ***
+			PromotionRequestDTO dto = vendorService.convertPromotionToDTO(promotion);
 
-	        if (dto.getStartDate() != null) {
-	            model.addAttribute("formattedStartDate", dto.getStartDate().toString().substring(0, 16));
-	        }
-	        if (dto.getEndDate() != null) {
-	            model.addAttribute("formattedEndDate", dto.getEndDate().toString().substring(0, 16));
-	        }
+			model.addAttribute("promotion", dto);
+			model.addAttribute("action", "edit");
+			model.addAttribute("promotionId", id);
 
-	        // *** BỎ: model.addAttribute("shopProducts", ...) ***
-	        return "vendor/promotions/form";
-	    } catch (IllegalStateException e) {
-	        redirectAttributes.addFlashAttribute("error", e.getMessage());
-	        return "redirect:/shop/register";
-	    } catch (Exception e) {
-	        log.error("Error loading promotion for edit", e);
-	        redirectAttributes.addFlashAttribute("error", e.getMessage());
-	        return "redirect:/vendor/promotions";
-	    }
+			if (dto.getStartDate() != null) {
+				model.addAttribute("formattedStartDate", dto.getStartDate().toString().substring(0, 16));
+			}
+			if (dto.getEndDate() != null) {
+				model.addAttribute("formattedEndDate", dto.getEndDate().toString().substring(0, 16));
+			}
+
+			// *** BỎ: model.addAttribute("shopProducts", ...) ***
+			return "vendor/promotions/form";
+		} catch (IllegalStateException e) {
+			redirectAttributes.addFlashAttribute("error", e.getMessage());
+			return "redirect:/shop/register";
+		} catch (Exception e) {
+			log.error("Error loading promotion for edit", e);
+			redirectAttributes.addFlashAttribute("error", e.getMessage());
+			return "redirect:/vendor/promotions";
+		}
 	}
 
 	@PostMapping("/promotions/edit/{id}")
