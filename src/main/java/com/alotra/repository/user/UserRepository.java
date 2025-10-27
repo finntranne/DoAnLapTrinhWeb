@@ -1,5 +1,6 @@
 package com.alotra.repository.user;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,5 +31,23 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     
     List<User> findByUsernameContaining(String username);
     Page<User> findByUsernameContaining(String username, Pageable pageable);
+    
+    @Query("SELECT u FROM User u " +
+    	       "WHERE (:username IS NULL OR LOWER(u.username) LIKE LOWER(CONCAT('%', :username, '%'))) " +
+    	       "AND (:email IS NULL OR LOWER(u.email) LIKE LOWER(CONCAT('%', :email, '%'))) " +
+    	       "AND (:roleId IS NULL OR u.role.id = :roleId) " +
+    	       "AND (:status IS NULL OR u.status = :status) " +
+    	       "AND (:startDate IS NULL OR u.createdAt >= :startDate) " +
+    	       "AND (:endDate IS NULL OR u.createdAt <= :endDate)")
+    	Page<User> searchUsers(
+    	        @Param("username") String username,
+    	        @Param("email") String email,
+    	        @Param("roleId") Integer roleId,
+    	        @Param("status") Integer status,
+    	        @Param("startDate") LocalDateTime startDate,
+    	        @Param("endDate") LocalDateTime endDate,
+    	        Pageable pageable);
+
+	
 
 }

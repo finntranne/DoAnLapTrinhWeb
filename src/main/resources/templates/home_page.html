@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="styles/style.css">
+</head>
+<body>
+<div th:insert="~{parts/navigation::navigation}"></div>
+<h1>This is home page</h1>
+<h2>To proceed with books please authorise</h2>
+<a href="/login">Login</a>
+<p>Don't have account? Please register</p>
+<a href="/registration">Registration</a>
+<div th:insert="~{parts/footer :: footer}"></div>
+</body>
+</html>

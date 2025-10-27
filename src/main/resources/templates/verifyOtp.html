@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Verify OTP page</title>
+</head>
+<body>
+<form th:action="@{/verifyOTP}" method="post" th:object="${user}">
+    <input type="hidden" th:field="*{email}">
+    <input th:field="*{codeOTP}" type="text" placeholder="Nhập mã OTP">
+    <input type="submit" value="Xác nhận">
+</form>
+
+</body>
+</html>

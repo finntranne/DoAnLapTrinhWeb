@@ -1,45 +1,34 @@
 package com.alotra.service.user;
 
-import java.util.Collection;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import com.alotra.entity.user.Role;
 import com.alotra.entity.user.User;
-import com.alotra.repository.user.UserRepository;
-
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
-    private UserRepository userRepository;
-
-    public CustomUserDetailsService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
+    @Autowired
+    private UserService userService;
 
     @Override
-    public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
-    	User user = userRepository.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail)
-                .orElseThrow(() ->
-                        new UsernameNotFoundException("User not found with username or email: " + usernameOrEmail));
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    	User byLogin = userService.findByLogin(username);
+        if (byLogin == null) {
+            throw new UsernameNotFoundException("Không tìm thấy tài khoản: " + username);
+        }
+        
+        boolean enabled = byLogin.getStatus() == 1 && Boolean.TRUE.equals(byLogin.getIsVerified());
 
-    	Set<GrantedAuthority> authorities = user.getRoles().stream()
-                .map(role -> new SimpleGrantedAuthority(role.getRolename()))
-                .collect(Collectors.toSet());
-    	
-        return new org.springframework.security.core.userdetails.User(
-        		user.getUsername(),
-                user.getPassword(),
-                authorities
-        );
+        return org.springframework.security.core.userdetails.User.builder()
+                .username(byLogin.getUsername())
+                .password(byLogin.getPassword())
+                .roles(byLogin.getRole().getRolename()) 
+                .disabled(!enabled)
+                .build();
     }
 }
-

@@ -21,13 +21,86 @@
             </div>
 
             <!-- Form tìm kiếm -->
-            <form th:action="@{/admin/users/search}" method="get" class="d-flex mb-4">
-                <input type="text" name="keyword" th:value="${keyword}" class="form-control me-2"
-                       placeholder="Tìm kiếm theo tên hoặc email...">
-                <button type="submit" class="btn btn-outline-primary rounded-pill">
-                    <i class="bi bi-search"></i> Tìm kiếm
-                </button>
-            </form>
+            <div class="card shadow-sm border-0 mb-4">
+			    <div class="card-body">
+			        <form th:action="@{/admin/users/search}" method="get">
+			            <div class="row g-3 align-items-end">
+			                
+			                <!-- Tên người dùng -->
+			                <div class="col-md-3">
+			                    <label class="form-label small fw-semibold text-muted">
+			                        <i class="bi bi-person-circle me-1"></i>Tên đăng nhập
+			                    </label>
+			                    <input type="text" name="username" th:value="${username}"
+			                        class="form-control form-control-sm" placeholder="Nhập tên đăng nhập...">
+			                </div>
+			
+			                <!-- Email -->
+			                <div class="col-md-3">
+			                    <label class="form-label small fw-semibold text-muted">
+			                        <i class="bi bi-envelope-at me-1"></i>Email
+			                    </label>
+			                    <input type="text" name="email" th:value="${email}"
+			                        class="form-control form-control-sm" placeholder="Nhập email...">
+			                </div>
+			
+			                <!-- Vai trò (Role - khóa ngoại) -->
+			                <div class="col-md-3">
+			                    <label class="form-label small fw-semibold text-muted">
+			                        <i class="bi bi-person-gear me-1"></i>Vai trò
+			                    </label>
+			                    <select name="roleId" class="form-select form-select-sm">
+			                        <option value="">Tất cả</option>
+			                        <th:block th:each="r : ${roles}">
+			                            <option th:value="${r.roleid}" th:text="${r.rolename}" th:selected="${r.roleid == roleId}"></option>
+			                        </th:block>
+			                    </select>
+			                </div>
+			
+			                <!-- Trạng thái -->
+			                <div class="col-md-3">
+			                    <label class="form-label small fw-semibold text-muted">
+			                        <i class="bi bi-flag-fill me-1"></i>Trạng thái
+			                    </label>
+			                    <select name="status" class="form-select form-select-sm">
+			                        <option value="">Tất cả</option>
+			                        <option value="1" th:selected="${status == 1}">Hoạt động</option>
+			                        <option value="0" th:selected="${status == 0}">Không hoạt động</option>
+			                        <option value="2" th:selected="${status == 2}">Bị khóa</option>
+			                    </select>
+			                </div>
+			
+			                <!-- Ngày tạo từ / đến -->
+			                <div class="col-md-3">
+							    <label class="form-label small fw-semibold text-muted">
+							        <i class="bi bi-calendar-event me-1"></i>Từ ngày
+							    </label>
+							    <input type="date" name="startDate" th:value="${startDate}" class="form-control form-control-sm">
+							</div>
+							
+							<div class="col-md-3">
+							    <label class="form-label small fw-semibold text-muted">
+							        <i class="bi bi-calendar-check me-1"></i>Đến ngày
+							    </label>
+							    <input type="date" name="endDate" th:value="${endDate}" class="form-control form-control-sm">
+							</div>
+
+			
+			                <!-- Nút tìm kiếm / xóa -->
+			                <div class="col-md-3 d-flex gap-2 mt-2">
+			                    <button type="submit" class="btn btn-success btn-sm flex-fill rounded-pill">
+			                        <i class="bi bi-search me-1"></i>Tìm kiếm
+			                    </button>
+			                    <button type="button" onclick="clearFilters()"
+			                        class="btn btn-outline-secondary btn-sm rounded-pill">
+			                        <i class="bi bi-x-circle"></i>
+			                    </button>
+			                </div>
+			
+			            </div>
+			        </form>
+			    </div>
+			</div>
 
             <!-- Bảng danh sách -->
             <div class="table-responsive shadow-sm rounded">
@@ -36,8 +109,8 @@
                         <tr>
                         	<th scope="col">STT</th>
                             <th scope="col">ID</th>
-                            <th scope="col">Ảnh đại diện</th>
-                            <th scope="col">Tên đăng nhập</th>
+                            <th scope="col">Người dùng</th>
+                        
                             <th scope="col">Email</th>
                             <th scope="col">Vai trò</th>
                             <th scope="col">Trạng thái</th>
@@ -48,36 +121,23 @@
                         <tr th:each="user, iterStat : ${users}">
                         	<td th:text="${iterStat.index + 1}"></td>
                             <td th:text="${user.user_id}"></td>
-                            <td>
-								<div style="width:50px; height:50px; overflow:hidden; border-radius:10px;">
-								    <img th:src="${user.avatar != null && !#strings.isEmpty(user.avatar)} ? ${user.avatar} : '/assets/img/default_user_avatar.png'"
-								         alt="Avatar"
-								         style="width:100%; height:100%; object-fit:cover;">
-								  </div>
+                           <td>
+					            <div class="d-flex align-items-center gap-2">
+					                <div style="width:40px; height:40px; overflow:hidden; border-radius:8px; flex-shrink:0;">
+					                    <img th:src="${user.avatar != null && !#strings.isEmpty(user.avatar)} ? ${user.avatar} : '/assets/img/default_user_avatar.png'"
+					                         alt="Avatar"
+					                         style="width:100%; height:100%; object-fit:cover;">
+					                </div>
+					                <span th:text="${user.username}" class="fw-semibold text-dark"></span>
+					            </div>
+					        </td>
 
-							</td>
-
-                            <td th:text="${user.username}"></td>
+                         
                             <td th:text="${user.email}"></td>
 
                             <!-- Vai trò -->
-                           <td>
-							  <div class="d-flex flex-wrap gap-2">
-							    <span th:each="r : ${user.roles}"
-							          class="badge d-inline-flex align-items-center gap-1 px-3 py-2 rounded-pill fw-semibold border"
-							          th:classappend="
-							              ${r.rolename == 'ADMIN'} ? 'bg-danger-subtle text-danger border-danger-subtle' :
-							              (${r.rolename == 'USER'} ? 'bg-primary-subtle text-primary border-primary-subtle' :
-							              (${r.rolename == 'VENDOR'} ? 'bg-warning-subtle text-warning border-warning-subtle' :
-							              'bg-secondary-subtle text-secondary border-secondary-subtle'))
-							          ">
-							      <i th:class="${r.rolename == 'ADMIN'} ? 'bi bi-shield-lock-fill' :
-							                   (${r.rolename == 'USER'} ? 'bi bi-person-fill' :
-							                   (${r.rolename == 'VENDOR'} ? 'bi bi-shop' : 'bi bi-question-circle') )"></i>
-							      <span th:text="${r.rolename}"></span>
-							    </span>
-							  </div>
-							</td>
+                            <td th:text="${user.role.rolename}"></td>
+                          
 
 
                             <!-- Trạng thái -->
@@ -174,6 +234,19 @@
         </div>
     </div>
 </main>
+<th:block layout:fragment="scripts">
+		<script>
+        
+        function clearFilters() {
+        	document.querySelector('input[name="providerName"]').value = '';
+        	document.querySelector('input[name="baseFee"]').value = '';
+        	document.querySelector('select[name="status"]').value = '';
+        	
+        	// Redirect to products page without filters
+        	window.location.href = '/admin/shippingProviders';
+        }
+    </script>
+	</th:block>
 
 </body>
 </html>

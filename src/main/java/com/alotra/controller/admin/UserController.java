@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -14,6 +15,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.util.StringUtils;
@@ -34,13 +39,10 @@ import com.alotra.model.user.UserModel;
 import com.alotra.service.CloudinaryService;
 import com.alotra.service.user.IRoleService;
 import com.alotra.service.user.IUserService;
-import com.cloudinary.Cloudinary;
-import com.cloudinary.utils.ObjectUtils;
-
-import jakarta.validation.Valid;
 
 @Controller
 @RequestMapping("admin/users")
+@PreAuthorize("hasRole('ADMIN')")
 public class UserController {
 	
 	@Autowired
@@ -51,6 +53,9 @@ public class UserController {
 	
 	@Autowired
 	CloudinaryService cloudinary;
+	
+	@Autowired
+	PasswordEncoder passwordEncoder;
 	
 	// ========== HIỂN THỊ DANH SÁCH ==========
 	@GetMapping("")
@@ -83,7 +88,8 @@ public class UserController {
 
     
     @PostMapping("/save")
-    public String saveUser(@ModelAttribute("user") UserModel userModel) {
+    public String saveUser(@ModelAttribute("user") UserModel userModel,
+    		@RequestParam("roleId") Integer roleId) {
         User user = new User();
         BeanUtils.copyProperties(userModel, user);
 
@@ -95,6 +101,11 @@ public class UserController {
                 e.printStackTrace();
             }
         }
+        Role role = roleService.findById(roleId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy vai trò có ID: " + roleId));
+        user.setRole(role);
+        
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         userService.save(user);
         return "redirect:/admin/users";
     }
@@ -169,18 +180,35 @@ public class UserController {
 
 
     // ========== TÌM KIẾM USER ==========
-  /*  @RequestMapping("/search")
-    public String search(ModelMap model,
-                         @RequestParam(name = "name", required = false) String name) {
-        List<User> list;
-        if (StringUtils.hasText(name)) {
-            list = userService.findByUsernameContaining(name);
-        } else {
-            list = userService.findAll();
-        }
-        model.addAttribute("users", list);
-        model.addAttribute("name", name);
-        return "admin/accounts/search";
+    @GetMapping("/search")
+    public String searchUsers(
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) Integer roleId,
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(defaultValue = "1") int page,
+            ModelMap model) {
+
+        List<User> users = userService.searchUsers(username, email, roleId, status, startDate, endDate, page);
+        int totalPages = userService.getTotalPages(username, email, roleId, status, startDate, endDate);
+
+        model.addAttribute("users", users);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", totalPages);
+
+        model.addAttribute("username", username);
+        model.addAttribute("email", email);
+        model.addAttribute("roleId", roleId);
+        model.addAttribute("status", status);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+
+        model.addAttribute("roles", roleService.findAll());
+
+        return "users/list";
     }
-*/
+
+
 }

@@ -1,13 +1,18 @@
 package com.alotra.service.user.impl;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.alotra.entity.shipping.ShippingProvider;
 import com.alotra.entity.user.User;
 import com.alotra.repository.user.UserRepository;
 import com.alotra.service.user.IUserService;
@@ -45,15 +50,7 @@ public class UserServiceImpl implements IUserService{
 		return userRepository.count();
 	}
 
-	@Override
-	public List<User> findByUsernameContaining(String username) {
-		return userRepository.findByUsernameContaining(username);
-	}
-
-	@Override
-	public Page<User> findByUsernameContaining(String username, Pageable pageable) {
-		return userRepository.findByUsernameContaining(username, pageable);
-	}
+	
 
 	@Override
 	public Optional<User> findByUsername(String username) {
@@ -76,6 +73,30 @@ public class UserServiceImpl implements IUserService{
 	@Override
 	public Page<User> findAll(Pageable pageable) {
 		return userRepository.findAll(pageable);
+	}
+
+	@Override
+	public List<User> searchUsers(String username, String email, Integer roleid, Integer status, LocalDate startDate, LocalDate endDate, int page) {
+		if (username != null && username.isBlank()) username = null;
+	    if (email != null && email.isBlank()) email = null;
+
+	    Pageable pageable = PageRequest.of(page - 1, 10);
+	    
+	    LocalDateTime start = (startDate != null) ? startDate.atStartOfDay() : null;
+	    LocalDateTime end = (endDate != null) ? endDate.atTime(LocalTime.MAX) : null;
+
+	    Page<User> result = userRepository.searchUsers(username, email, roleid, status, start, end, pageable);
+	    
+	    return result.getContent();
+	}
+
+	@Override
+	public int getTotalPages(String username, String email, Integer roleid, Integer status, LocalDate startDate, LocalDate endDate) {
+		 Pageable pageable = PageRequest.of(0, 5);
+		 LocalDateTime start = (startDate != null) ? startDate.atStartOfDay() : null;
+		 LocalDateTime end = (endDate != null) ? endDate.atTime(LocalTime.MAX) : null;
+	    Page<User> result = userRepository.searchUsers(username, email, roleid, status, start, end, pageable);
+	    return result.getTotalPages();
 	}
 
 }

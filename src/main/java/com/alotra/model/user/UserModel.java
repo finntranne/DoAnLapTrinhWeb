@@ -33,7 +33,7 @@ public class UserModel implements Serializable {
 	private Boolean isVerified;
 	private String codeOTP;
 	
-	private Set<Role> roles = new HashSet<>();
+	private Role role;
 	
 	private MultipartFile file;
 }

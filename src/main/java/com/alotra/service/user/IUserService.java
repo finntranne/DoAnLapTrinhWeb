@@ -1,5 +1,6 @@
 package com.alotra.service.user;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,11 +21,13 @@ public interface IUserService {
     Page<User> findAll(Pageable pageable);
 
     // ===== SEARCH =====
-    List<User> findByUsernameContaining(String username);
-    Page<User> findByUsernameContaining(String username, Pageable pageable);
+    List<User> searchUsers(String username, String email, Integer roleid, Integer status, LocalDate startDate, LocalDate endDate, int page);
+    int getTotalPages(String username, String email, Integer roleid, Integer status, LocalDate startDate, LocalDate endDate);
 
     // ===== EXTRA =====
     Optional<User> findByUsername(String username);
     Optional<User> findByEmail(String email);
     User updateUser(Integer id, User user);
+	
+    
 }

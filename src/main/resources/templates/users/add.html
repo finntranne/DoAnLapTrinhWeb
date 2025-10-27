@@ -54,16 +54,16 @@
                         </div>
 
                         <div class="row mb-4">
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Vai trò</label>
-                                <div class="d-flex flex-wrap gap-3 mt-1">
-                                    <div class="form-check" th:each="role : ${allRoles}">
-                                        <input class="form-check-input" type="checkbox" name="roleIds"
-                                               th:value="${role.roleid}"
-                                               th:id="'role-' + ${role.roleid}"
-                                               th:checked="${#lists.contains(user.roles.![roleid], role.roleid)}">
-                                        <label class="form-check-label" th:for="'role-' + ${role.roleid}"
-                                               th:text="${role.rolename}"></label>
+						    <div class="col-md-6">
+						        <label class="form-label fw-semibold">Vai trò</label>
+						        <div class="d-flex flex-wrap gap-3 mt-1">
+						            <div class="form-check" th:each="role : ${allRoles}">
+						                <input class="form-check-input" type="radio" name="roleId"
+						                       th:value="${role.roleid}"
+						                       th:id="'role-' + ${role.roleid}"
+						                       th:checked="${user.role != null and user.role.roleid == role.roleid}">
+						                <label class="form-check-label" th:for="'role-' + ${role.roleid}"
+						                       th:text="${role.rolename}"></label>
                                     </div>
                                 </div>
                                 

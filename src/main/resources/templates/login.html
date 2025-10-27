@@ -14,28 +14,35 @@
   <body>
     <div class="container" id="container">
       <div id="messageBox" class="message-box" style="display:none;"></div>
-      <div class="form-container sign-up">
-      	
-        <form id="signupForm">
+      
+      <div class="form-container sign-up">	
+        <form th:action="@{/registration}" method="post" th:object="${user}" id="signupForm">
 		  <h1>Tạo Tài Khoản</h1>
-          <input type="text" name="fullname" placeholder="Họ và tên" required />
-          <input type="text" name="username" placeholder="Tên đăng nhập" required />
-          <input type="email" name="email" placeholder="Email" required />
-          <input type="password" name="password" placeholder="Mật khẩu" required />
+          <input type="text" name="Fullname" placeholder="Họ và tên" required />
+          <input type="text" name="Username" placeholder="Tên đăng nhập" required />
+          <input type="email" name="Email" placeholder="Email" required />
+          <input type="password" name="Password" placeholder="Mật khẩu" required />
           <button type="submit">Đăng Ký</button> 
 		</form>
       </div>
       
       
       <div class="form-container sign-in">
-        <form id="signinForm">
-		  <h1>Đăng nhập</h1>		
-		  <input type="text" name="usernameOrEmail" placeholder="Email hoặc Tên đăng nhập" required />
-          <input type="password" name="pwd" placeholder="Mật khẩu" required />
-          <a id="forgotPasswordLink">Quên mật khẩu?</a>
-          <button type="submit">Đăng Nhập</button>  
-		</form>
-      </div>
+	    <form th:action="@{/login}" method="post" id = "signinForm">
+	        <h1>Đăng nhập</h1>
+	        <input type="text" name="username" placeholder="Email hoặc Tên đăng nhập" required />
+	        <input type="password" name="password" placeholder="Mật khẩu" required />
+	        <button type="submit">Đăng Nhập</button>
+	        <div th:if="${param.error}" style="color: red; margin-top: 10px;">
+	            Sai tên đăng nhập hoặc mật khẩu!
+	        </div>
+	        <div th:if="${param.logout}" style="color: green; margin-top: 10px;">
+	            Bạn đã đăng xuất thành công.
+	        </div>
+	        <a id="forgotPasswordLink" href="#" style="display: block; margin-top: 10px;">Quên mật khẩu?</a>
+	    </form>
+	</div>
+
       
       
       <div class="otp-form-wrapper" id="otpContainer" style="display: none;">
@@ -121,12 +128,8 @@
           </div>
          
           </div>
-        </div>
-        
-        
+        </div>     
       </div>
-    
-
     <script th:src="@{/js/script.js}"></script>
   </body>
 </html>

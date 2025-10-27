@@ -53,66 +53,6 @@ function showMessage(message, type = "success") {
 
 
 
-document.addEventListener('DOMContentLoaded', () => {
-	const signinForm = document.getElementById('signinForm');
-	const usernameOrEmailInput = document.querySelector('input[name="usernameOrEmail"]');
-	const passwordInput = document.querySelector('input[name="pwd"]');
-
-	
-
-	signinForm.addEventListener('submit', async (e) => {
-		e.preventDefault();
-
-		const usernameOrEmail = usernameOrEmailInput ? usernameOrEmailInput.value : '';
-		const password = passwordInput ? passwordInput.value : '';
-
-		if (!usernameOrEmail || !password) {
-			showMessage("Vui lòng nhập đầy đủ email/tên đăng nhập và mật khẩu!", "error");
-			return;
-		}
-
-		const data = {
-			usernameOrEmail: usernameOrEmail,
-			password: password
-		};
-
-		try {
-			const response = await fetch('/auth/signin', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(data)
-			});
-
-			const responseText = await response.text();
-
-			if (!response.ok) {
-					try {
-						const errorData = JSON.parse(responseText);
-						showMessage("Đăng nhập thất bại: " + (errorData.message || "Lỗi server"), "error");
-					} catch {
-						showMessage("Đăng nhập thất bại: Phản hồi không phải JSON - " + responseText.substring(0, 100), "error");
-					}
-					return;
-				}
-
-				const result = JSON.parse(responseText);
-				showMessage(result.message || "Đăng nhập thành công!", "success");
-				
-				if (result.token) localStorage.setItem('token', result.token);
-				const token = localStorage.getItem('token');
-				localStorage.setItem('username', result.username);
-				localStorage.setItem('role', result.role);
-				
-				window.location.href = "/admin/users";
-				
-
-		} catch (error) {
-			console.error('Lỗi:', error);
-			showMessage('Đã xảy ra lỗi khi gọi API.', "error");
-		}
-	});
-});
-
 
 
 signUpForm.addEventListener("submit", async (e) => {

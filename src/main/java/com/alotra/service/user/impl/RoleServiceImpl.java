@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.alotra.entity.user.Role;
-import com.alotra.entity.user.User;
 import com.alotra.repository.user.RoleRepository;
 import com.alotra.service.user.IRoleService;
 
@@ -27,6 +26,11 @@ public class RoleServiceImpl implements IRoleService {
 	public Set<Role> getUserRoles(Integer userId) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public Optional<Role> findById(Integer roleid) {
+		return roleRepository.findById(roleid);
 	}
     
   
