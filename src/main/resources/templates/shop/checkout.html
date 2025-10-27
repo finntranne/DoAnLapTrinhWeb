@@ -3,162 +3,298 @@
       th:replace="~{layouts/main :: layout(~{::title}, ~{::section})}">
 <head>
     <title>Thanh Toán - AloTra</title>
+    <link th:href="@{/css/cart.css}" rel="stylesheet">
 </head>
 <body>
 <section>
+    <!-- Breadcrumb -->
     <nav class="breadcrumb-nav bg-light py-2">
         <div class="container">
             <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item"><a th:href="@{/}" class="text-decoration-none"><i class="fa-solid fa-home me-1"></i>Trang chủ</a></li>
-                <li class="breadcrumb-item"><a th:href="@{/cart}" class="text-decoration-none"><i class="fa-solid fa-shopping-cart me-1"></i>Giỏ hàng</a></li>
-                <li class="breadcrumb-item active" aria-current="page"><i class="fa-solid fa-credit-card me-1"></i>Thanh toán</li>
+                <li class="breadcrumb-item">
+                    <a th:href="@{/}" class="text-decoration-none">
+                        <i class="fa-solid fa-home me-1"></i>Trang chủ
+                    </a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a th:href="@{/cart}" class="text-decoration-none">
+                        <i class="fa-solid fa-shopping-cart me-1"></i>Giỏ hàng
+                    </a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    <i class="fa-solid fa-credit-card me-1"></i>Thanh toán
+                </li>
             </ol>
         </div>
     </nav>
 
     <div class="container my-5">
+        <!-- Error/Success Messages -->
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fa-solid fa-exclamation-triangle me-2"></i>
+            <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div class="mb-4">
+            <h1 class="fw-bold mb-2">
+                <i class="fa-solid fa-credit-card text-primary me-2"></i>Thanh Toán
+            </h1>
+        </div>
+
         <form th:action="@{/place-order}" method="POST" id="checkoutForm">
             <div class="row g-4">
-                
+
+                <!-- Left Column - Address, Notes, Payment Method -->
                 <div class="col-lg-7">
-    <div class="card shadow-sm border-0 rounded-3 mb-4">
-        <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center"> <h5 class="mb-0 fw-bold">
-                <i class="fa-solid fa-map-location-dot text-primary me-2"></i>
-                Chọn địa chỉ giao hàng
-            </h5>
-            
-            <a th:href="@{/user/addresses/new(origin='checkout')}" class="btn btn-sm btn-outline-primary">
-                <i class="fa-solid fa-plus me-1"></i> Thêm địa chỉ mới
-            </a>
-            </div>
-        <div class="card-body p-4" id="addressListContainer">
-            <div th:if="${addresses == null or #lists.isEmpty(addresses)}" id="noAddressMessage">
-                <p class="text-muted">Bạn chưa có địa chỉ nào.</p>
-                </div>
-            
-            <div th:each="addr : ${addresses}" class="address-option form-check mb-3 p-3 border rounded-3">
-                <input class="form-check-input mt-0" type="radio" name="addressId" 
-                       th:id="'addr-' + ${addr.addressID}"
-                       th:value="${addr.addressID}"
-                       th:checked="${addr.isDefault()}" required>
-                <label class="form-check-label w-100" th:for="'addr-' + ${addr.addressID}">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="fw-bold fs-6">
-                            <span th:text="${addr.recipientName}"></span>
-                            <span th:if="${addr.isDefault()}" class="badge bg-success ms-2">Mặc định</span>
+                    
+                    <!-- Address Selection Card -->
+                    <div class="card shadow-sm border-0 rounded-3 mb-4">
+                        <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0 fw-bold">
+                                <i class="fa-solid fa-map-location-dot text-primary me-2"></i>
+                                Chọn địa chỉ giao hàng
+                            </h5>
+                            <a th:href="@{/user/addresses/new(origin='checkout')}" class="btn btn-sm btn-outline-primary">
+                                <i class="fa-solid fa-plus me-1"></i> Thêm địa chỉ mới
+                            </a>
+                        </div>
+                        
+                        <div class="card-body p-4" id="addressListContainer">
+                            <!-- No Address Message -->
+                            <div th:if="${addresses == null or #lists.isEmpty(addresses)}" 
+                                 class="text-center py-4" id="noAddressMessage">
+                                <i class="fa-solid fa-map-location-dot fa-3x text-muted mb-3"></i>
+                                <p class="text-muted mb-3">Bạn chưa có địa chỉ giao hàng nào.</p>
+                                <a th:href="@{/user/addresses/new(origin='checkout')}" 
+                                   class="btn btn-primary">
+                                    <i class="fa-solid fa-plus me-2"></i>Thêm địa chỉ
+                                </a>
+                            </div>
+
+                            <!-- Address List -->
+                            <div th:each="addr : ${addresses}" 
+                                 class="address-card mb-3 p-3 border rounded-3"
+                                 style="cursor: pointer; transition: all 0.3s ease;">
+                                <div class="form-check">
+                                    <input class="form-check-input" 
+                                           type="radio" 
+                                           name="addressId"
+                                           th:id="'addr-' + ${addr.addressID}"
+                                           th:value="${addr.addressID}"
+                                           th:checked="${addr.isDefault}" 
+                                           required>
+                                    <label class="form-check-label w-100" 
+                                           th:for="'addr-' + ${addr.addressID}"
+                                           style="cursor: pointer;">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <div class="fw-bold fs-6 mb-1">
+                                                    <span th:text="${addr.recipientName}"></span>
+                                                    <span th:if="${addr.isDefault}" 
+                                                          class="badge bg-success ms-2">Mặc định</span>
+                                                </div>
+                                                <div class="text-muted small">
+                                                    <i class="fa-solid fa-phone me-1"></i>
+                                                    <span th:text="${addr.phoneNumber}"></span>
+                                                </div>
+                                                <div class="text-muted small mt-1">
+                                                    <i class="fa-solid fa-location-dot me-1"></i>
+                                                    <span th:text="${addr.fullAddress}"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="text-muted small mt-1">
-                        <span th:text="${addr.phoneNumber}"></span>
-                        <span class="mx-2">|</span>
-                        <span th:text="${addr.fullAddress}"></span>
+
+                    <!-- Notes Card -->
+                    <div class="card shadow-sm border-0 rounded-3 mb-4">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0 fw-bold">
+                                <i class="fa-solid fa-pencil text-primary me-2"></i>
+                                Ghi chú đơn hàng
+                            </h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <textarea class="form-control" 
+                                      name="notes" 
+                                      rows="3"
+                                      placeholder="Thêm ghi chú cho người bán (Ví dụ: Giao hàng giờ hành chính...)"></textarea>
+                        </div>
                     </div>
-                </label>
-            </div>
-        </div>
-    </div>
 
-    <div class="card shadow-sm border-0 rounded-3 mb-4">
-        <div class="card-header bg-white border-0 py-3">
-            <h5 class="mb-0 fw-bold">
-                <i class="fa-solid fa-pencil-alt text-primary me-2"></i>
-                Ghi chú đơn hàng
-            </h5>
-        </div>
-        <div class="card-body p-4">
-            <textarea class="form-control" name="notes" rows="3" 
-                      placeholder="Thêm hướng dẫn giao hàng..."></textarea>
-        </div>
-    </div>
+                    <!-- Payment Method Card -->
+                    <div class="card shadow-sm border-0 rounded-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0 fw-bold">
+                                <i class="fa-solid fa-wallet text-primary me-2"></i>
+                                Phương thức thanh toán
+                            </h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <!-- COD Payment -->
+                            <div class="form-check mb-3 p-3 border rounded-3" 
+                                 style="cursor: pointer; transition: all 0.3s ease;"
+                                 onclick="document.getElementById('payment_cod').checked = true;">
+                                <input class="form-check-input" 
+                                       type="radio" 
+                                       name="paymentMethod"
+                                       id="payment_cod" 
+                                       value="COD" 
+                                       checked>
+                                <label class="form-check-label fw-semibold w-100" 
+                                       for="payment_cod"
+                                       style="cursor: pointer;">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fa-solid fa-money-bill-wave me-3 text-success fs-4"></i>
+                                        <div>
+                                            <div>Thanh toán khi nhận hàng (COD)</div>
+                                            <small class="text-muted">Thanh toán bằng tiền mặt khi nhận hàng</small>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
 
-    <div class="card shadow-sm border-0 rounded-3">
-        <div class="card-header bg-white border-0 py-3">
-            <h5 class="mb-0 fw-bold">
-                <i class="fa-solid fa-wallet text-primary me-2"></i>
-                Phương thức thanh toán
-            </h5>
-        </div>
-        <div class="card-body p-4">
-            <div class="payment-option form-check mb-3 p-3 border rounded-3">
-                <input class="form-check-input" type="radio" name="paymentMethod" 
-                       id="payment_cash" value="Cash" checked>
-                <label class="form-check-label fw-semibold" for="payment_cash">
-                    <i class="fa-solid fa-money-bill-wave me-2 text-success"></i>
-                    Tiền mặt (COD)
-                </label>
-            </div>
-            
-            <div class="payment-option form-check mb-3 p-3 border rounded-3">
-                <input class="form-check-input" type="radio" name="paymentMethod" 
-                       id="payment_vnpay" value="VNPay">
-                <label class="form-check-label fw-semibold" for="payment_vnpay">
-                    <i class="fa-solid fa-qrcode me-2 text-primary"></i>
-                    VNPAY
-                </label>
-            </div>
-        </div>
-    </div>
-</div>
+                            <!-- VNPay Payment -->
+                            <div class="form-check mb-3 p-3 border rounded-3" 
+                                 style="cursor: pointer; transition: all 0.3s ease;"
+                                 onclick="document.getElementById('payment_vnpay').checked = true;">
+                                <input class="form-check-input" 
+                                       type="radio" 
+                                       name="paymentMethod"
+                                       id="payment_vnpay" 
+                                       value="VNPay">
+                                <label class="form-check-label fw-semibold w-100" 
+                                       for="payment_vnpay"
+                                       style="cursor: pointer;">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fa-solid fa-qrcode me-3 text-primary fs-4"></i>
+                                        <div>
+                                            <div>Thanh toán qua VNPAY</div>
+                                            <small class="text-muted">Thanh toán qua ví điện tử, thẻ ATM, QR Code</small>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
+                <!-- Right Column - Order Summary -->
                 <div class="col-lg-5">
                     <div class="summary-card card shadow-sm border-0 rounded-3 position-sticky" style="top: 20px;">
                         <div class="card-body p-4">
-                            <h5 class="card-title mb-4">
+                            <h5 class="card-title mb-4 fw-bold">
                                 <i class="fa-solid fa-receipt me-2"></i>Tóm tắt đơn hàng
                             </h5>
 
-                            <div class="order-items-summary mb-3" style="max-height: 250px; overflow-y: auto;">
-                                <div th:each="item : ${cartItems}" class="d-flex align-items-center mb-3">
-                                    <img th:if="${item.variant.product.productImages != null and not #lists.isEmpty(item.variant.product.productImages)}"
-                                         th:src="${item.variant.product.productImages[0].imageUrl}"
-                                         class="rounded me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                            <!-- Order Items List -->
+                            <div class="order-items-summary mb-3" 
+                                 style="max-height: 300px; overflow-y: auto;">
+                                <div th:each="item : ${cartItems}" 
+                                     class="d-flex align-items-start mb-3 pb-3 border-bottom">
+                                    <!-- Product Image -->
+                                    <div class="flex-shrink-0 me-3">
+                                        <img th:if="${item.variant.product.images != null and not #lists.isEmpty(item.variant.product.images)}"
+                                             th:src="${item.variant.product.images[0].imageURL}"
+                                             th:alt="${item.variant.product.productName}"
+                                             class="rounded" 
+                                             style="width: 60px; height: 60px; object-fit: cover;">
+                                        <img th:unless="${item.variant.product.images != null and not #lists.isEmpty(item.variant.product.images)}"
+                                             th:src="@{/images/placeholder.png}"
+                                             alt="Placeholder"
+                                             class="rounded" 
+                                             style="width: 60px; height: 60px; object-fit: cover; background-color: #f0f0f0;">
+                                    </div>
+
+                                    <!-- Product Info -->
                                     <div class="flex-grow-1">
-    <div class="fw-bold small" th:text="${item.variant.product.productName}"></div>
-    <small class="text-white-50" th:text="'SL: ' + ${item.quantity} + ' - Size: ' + ${item.variant.size.sizeName}"></small>
-    
-    <div th:if="${not #lists.isEmpty(item.selectedToppings)}" class="mt-1">
-        <small class="text-white-50" style="font-size: 0.8em;">
-            <i class="fa-solid fa-plus-circle me-1 opacity-75"></i>
-            <span th:text="${#strings.listJoin(item.selectedToppings.![toppingName], ', ')}"></span>
-        </small>
-    </div>
-    </div>
-                                    <div class="fw-semibold small"
-                                         th:with="itemPrice=${item.variant.price}, 
-                                                  toppingSum=${#aggregates.sum(item.selectedToppings.![additionalPrice])}, 
-                                                  toppingPrice=${toppingSum ?: T(java.math.BigDecimal).ZERO}"
-                                         th:text="${#numbers.formatDecimal((itemPrice + toppingPrice) * item.quantity, 0, 'POINT', 0, 'COMMA')} + 'đ'">
+                                        <div class="fw-bold mb-1" th:text="${item.variant.product.productName}"></div>
+                                        <small class="text-muted d-block">
+                                            <i class="fa-solid fa-expand me-1"></i>
+                                            Size: <span th:text="${item.variant.size.sizeName}"></span>
+                                        </small>
+                                        <small class="text-muted d-block">
+                                            <i class="fa-solid fa-box me-1"></i>
+                                            Số lượng: <span th:text="${item.quantity}"></span>
+                                        </small>
+
+                                        <!-- Toppings -->
+                                        <div th:if="${not #lists.isEmpty(item.selectedToppings)}" class="mt-1">
+                                            <small class="text-muted">
+                                                <i class="fa-solid fa-plus-circle me-1"></i>
+                                                Topping: <span th:text="${#strings.listJoin(item.selectedToppings.![toppingName], ', ')}"></span>
+                                            </small>
+                                        </div>
+
+                                        <!-- Price -->
+                                        <div class="fw-bold text-danger mt-2"
+                                             th:with="itemPrice=${item.variant.price},
+                                                      toppingSum=${#aggregates.sum(item.selectedToppings.![additionalPrice])},
+                                                      toppingPrice=${toppingSum ?: T(java.math.BigDecimal).ZERO},
+                                                      lineTotal=${(itemPrice.add(toppingPrice)).multiply(new java.math.BigDecimal(item.quantity))}"
+                                             th:text="${#numbers.formatDecimal(lineTotal, 0, 'POINT', 0, 'COMMA')} + 'đ'">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            
+
+                            <!-- Summary -->
                             <ul class="list-group list-group-flush mb-4">
                                 <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                                    <span class="text-white-50">Tạm tính</span>
-                                    <span class="fw-semibold" th:text="${#numbers.formatDecimal(subtotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                                    <span>Tạm tính</span>
+                                    <span class="fw-semibold" 
+                                          th:text="${#numbers.formatDecimal(subtotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
                                 </li>
                                 <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                                    <span class="text-white-50">Phí vận chuyển</span>
-                                    <span class="fw-semibold" th:text="${#numbers.formatDecimal(shippingFee, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                                    <span>Phí vận chuyển</span>
+                                    <span class="fw-semibold" 
+                                          th:text="${#numbers.formatDecimal(shippingFee, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
                                 </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center py-3 border-top border-white border-opacity-25">
+                                <li th:if="${discount != null and discount > 0}"
+                                    class="list-group-item d-flex justify-content-between align-items-center py-3">
+                                    <span>Giảm giá</span>
+                                    <span class="fw-semibold text-success">
+                                        -<span th:text="${#numbers.formatDecimal(discount, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                                    </span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center py-3 border-top">
                                     <span class="fs-5 fw-bold">Tổng cộng</span>
-                                    <span class="price-highlight" th:text="${#numbers.formatDecimal(grandTotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                                    <span class="price-highlight fs-5 fw-bold" 
+                                          th:text="${#numbers.formatDecimal(grandTotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
                                 </li>
                             </ul>
 
+                            <!-- Submit Button -->
                             <div class="d-grid gap-3">
                                 <button type="submit" class="btn btn-light btn-lg py-3 fw-bold">
                                     <i class="fa-solid fa-lock me-2"></i>
                                     Hoàn tất Đặt Hàng
                                 </button>
+                                <a th:href="@{/cart}" class="btn btn-outline-light">
+                                    <i class="fa-solid fa-arrow-left me-2"></i>
+                                    Quay lại giỏ hàng
+                                </a>
+                            </div>
+
+                            <!-- Security Note -->
+                            <div class="mt-4 pt-3 border-top">
+                                <small class="d-flex align-items-start">
+                                    <i class="fa-solid fa-shield-halved me-2 mt-1"></i>
+                                    <span>Thông tin của bạn được bảo mật và mã hóa</span>
+                                </small>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </form>
-        </div>
+    </div>
+
+    <script th:src="@{/js/checkout.js}"></script>
 </section>
 </body>
 </html>

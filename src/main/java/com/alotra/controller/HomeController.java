@@ -324,7 +324,7 @@ public class HomeController {
         Sort newestSort = Sort.by(Sort.Direction.DESC, "createdAt");
         Sort topRatedSort = Sort.by(Sort.Direction.DESC, "averageRating")
                                 .and(Sort.by(Sort.Direction.DESC, "totalReviews"));
-        // Sort topLikedSort = Sort.by(Sort.Direction.DESC, "totalLikes"); // *** XEM XÉT LẠI FIELD NÀY ***
+        Sort topLikedSort = Sort.by(Sort.Direction.DESC, "totalLikes");
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         boolean isAuthenticated = authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getPrincipal());
@@ -335,7 +335,7 @@ public class HomeController {
             model.addAttribute("newestProducts", productService.findProductSaleDataPaginated(PageRequest.of(0, 10, newestSort)).getContent());
             model.addAttribute("topProducts", productService.findProductSaleDataPaginated(PageRequest.of(0, 10, topSellingSort)).getContent());
             model.addAttribute("topRatedProducts", productService.findProductSaleDataPaginated(PageRequest.of(0, 10, topRatedSort)).getContent());
-            // model.addAttribute("topLikedProducts", productService.findProductSaleDataPaginated(PageRequest.of(0, 10, topLikedSort)).getContent()); // *** XEM XÉT LẠI ***
+            model.addAttribute("topLikedProducts", productService.findProductSaleDataPaginated(PageRequest.of(0, 10, topLikedSort)).getContent()); // *** XEM XÉT LẠI ***
         }
         else {
             // Chỉ hiển thị bán chạy cho khách vãng lai
@@ -356,19 +356,19 @@ public class HomeController {
             @RequestParam(name = "sort", required = false, defaultValue = "newest") String sort,
             Model model) {
 
-        int size = 15; // Ví dụ: 3 rows x 5 columns
+        int size = 2; // Ví dụ: 3 rows x 5 columns
         Sort sortOrder = getSort(sort); // Hàm helper getSort vẫn dùng được
         PageRequest pageable = PageRequest.of(page, size, sortOrder);
 
         // Giả sử ProductService trả về Page<ProductSaleDTO>
-        model.addAttribute("productPage", productService.findProductSaleDataPaginated(pageable)); // Đổi tên attribute cho rõ ràng
+        model.addAttribute("newestProductPage", productService.findProductSaleDataPaginated(pageable)); // Đổi tên attribute cho rõ ràng
         model.addAttribute("categories", categoryService.findAll());
         model.addAttribute("isHomePage", false);
         model.addAttribute("cartItemCount", getCurrentCartItemCount()); // Đã sửa
         model.addAttribute("currentSort", sort);
         model.addAttribute("pagePath", "/products/new"); // Thêm path cho pagination
 
-        return "product/product-list"; // Dùng chung view product-list.html
+        return "product/new-products"; // Dùng chung view product-list.html
     }
 
     // === SẢN PHẨM BÁN CHẠY ===
@@ -378,18 +378,18 @@ public class HomeController {
             @RequestParam(name = "sort", required = false, defaultValue = "bestSelling") String sort,
             Model model) {
 
-        int size = 15;
+        int size = 2;
         Sort sortOrder = getSort(sort);
         PageRequest pageable = PageRequest.of(page, size, sortOrder);
 
-        model.addAttribute("productPage", productService.findProductSaleDataPaginated(pageable));
+        model.addAttribute("bestSellingProductPage", productService.findProductSaleDataPaginated(pageable));
         model.addAttribute("categories", categoryService.findAll());
         model.addAttribute("isHomePage", false);
         model.addAttribute("cartItemCount", getCurrentCartItemCount());
         model.addAttribute("currentSort", sort);
         model.addAttribute("pagePath", "/products/best-selling"); // Thêm path cho pagination
 
-        return "product/product-list"; // Dùng chung view product-list.html
+        return "product/best-selling-products"; // Dùng chung view product-list.html
     }
 
     // === SẢN PHẨM ĐÁNH GIÁ CAO ===
@@ -399,18 +399,18 @@ public class HomeController {
             @RequestParam(name = "sort", required = false, defaultValue = "topRated") String sort,
             Model model) {
 
-        int size = 15;
+        int size = 2;
         Sort sortOrder = getSort(sort);
         PageRequest pageable = PageRequest.of(page, size, sortOrder);
 
-        model.addAttribute("productPage", productService.findProductSaleDataPaginated(pageable));
+        model.addAttribute("topRatedProductPage", productService.findProductSaleDataPaginated(pageable));
         model.addAttribute("categories", categoryService.findAll());
         model.addAttribute("isHomePage", false);
         model.addAttribute("cartItemCount", getCurrentCartItemCount());
         model.addAttribute("currentSort", sort);
         model.addAttribute("pagePath", "/products/top-rated"); // Thêm path cho pagination
 
-        return "product/product-list"; // Dùng chung view product-list.html
+        return "product/top-rated-products"; // Dùng chung view product-list.html
     }
 
     // === SẢN PHẨM YÊU THÍCH (NẾU GIỮ LẠI FIELD totalLikes) ===
@@ -434,18 +434,18 @@ public class HomeController {
         }
 
 
-        int size = 15;
+        int size = 2;
         Sort sortOrder = getSort(sort);
         PageRequest pageable = PageRequest.of(page, size, sortOrder);
 
-        model.addAttribute("productPage", productService.findProductSaleDataPaginated(pageable));
+        model.addAttribute("topLikedProductPage", productService.findProductSaleDataPaginated(pageable));
         model.addAttribute("categories", categoryService.findAll());
         model.addAttribute("isHomePage", false);
         model.addAttribute("cartItemCount", getCurrentCartItemCount());
         model.addAttribute("currentSort", sort);
         model.addAttribute("pagePath", "/products/top-liked"); // Thêm path cho pagination
 
-        return "product/product-list"; // Dùng chung view product-list.html
+        return "product/top-liked-products"; // Dùng chung view product-list.html
     }
 
     // === TRANG DANH MỤC ===
@@ -460,7 +460,7 @@ public class HomeController {
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy danh mục"));
 
             Sort sortOrder = getSort(sort);
-            int size = 15; // Số sản phẩm mỗi trang danh mục
+            int size = 1; // Số sản phẩm mỗi trang danh mục
             Pageable pageable = PageRequest.of(page, size, sortOrder);
             // Giả sử ProductService có phương thức này
             Page<ProductSaleDTO> productPage = productService.findProductSaleDataByCategoryPaginated(category, pageable);
@@ -474,7 +474,7 @@ public class HomeController {
             model.addAttribute("cartItemCount", getCurrentCartItemCount()); // Đã sửa
             model.addAttribute("pagePath", "/categories/" + categoryId); // Thêm path cho pagination
 
-            return "product/product-list"; // Dùng chung view product-list.html
+            return "product/category-products"; // Dùng chung view product-list.html
 
         } catch (ResponseStatusException e) {
             // Xử lý lỗi không tìm thấy category (ví dụ: redirect về home)

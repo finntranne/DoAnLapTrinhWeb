@@ -140,7 +140,23 @@ public interface OrderRepository extends JpaRepository<Order, Integer> { // Kh�
 	            @Param("searchQuery") String searchQuery,
 	            Pageable pageable);
 
-    // Bỏ các phương thức dùng Customer từ HEAD
-    // List<Order> findByCustomerOrderByOrderDateDesc(Customer customer);
-	// List<Order> findByCustomerAndOrderStatusOrderByOrderDateDesc(Customer customer, String status);
+	// Ví dụ sửa findByUser_Id trong OrderRepository
+	@Query("SELECT DISTINCT o FROM Order o " +
+	        "LEFT JOIN FETCH o.orderDetails od " +
+	        "LEFT JOIN FETCH od.variant v " +
+	        "LEFT JOIN FETCH v.product p " +
+	        "LEFT JOIN FETCH v.size s " +
+	        "LEFT JOIN FETCH p.images pi " +
+	        "WHERE o.user.id = :userId")
+	 Page<Order> findByUser_Id(@Param("userId") Integer userId, Pageable pageable);
+	
+	 // Tương tự cho findByUser_IdAndOrderStatusIgnoreCase
+	@Query("SELECT DISTINCT o FROM Order o " +
+	        "LEFT JOIN FETCH o.orderDetails od " +
+	        "LEFT JOIN FETCH od.variant v " +
+	        "LEFT JOIN FETCH v.product p " +
+	        "LEFT JOIN FETCH v.size s " +
+	        "LEFT JOIN FETCH p.images pi " +
+	        "WHERE o.user.id = :userId AND LOWER(o.orderStatus) = LOWER(:status)")
+	 Page<Order> findByUser_IdAndOrderStatusIgnoreCase(@Param("userId") Integer userId, @Param("status") String status, Pageable pageable);
 }

@@ -19,21 +19,21 @@
     
     <div class="container my-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="mb-0">Sản Phẩm Đánh Giá Cao</h2>
-    <div class="sort-options">
-        <span>Sắp xếp:</span>
-        <a th:href="@{/products/top-rated(sort='topRated')}"
-           th:classappend="${currentSort == 'topRated' or currentSort == null} ? 'active'">Đánh giá cao nhất</a>
-        <a th:href="@{/products/top-rated(sort='nameAsc')}"
-           th:classappend="${currentSort == 'nameAsc'} ? 'active'">A → Z</a>
-        <a th:href="@{/products/top-rated(sort='nameDesc')}"
-           th:classappend="${currentSort == 'nameDesc'} ? 'active'">Z → A</a>
-        <a th:href="@{/products/top-rated(sort='priceAsc')}"
-           th:classappend="${currentSort == 'priceAsc'} ? 'active'">Giá tăng dần</a>
-        <a th:href="@{/products/top-rated(sort='priceDesc')}"
-           th:classappend="${currentSort == 'priceDesc'} ? 'active'">Giá giảm dần</a>
-    </div>
-</div>
+            <h2 class="mb-0">Sản Phẩm Đánh Giá Cao</h2>
+            <div class="sort-options">
+                <span>Sắp xếp:</span>
+                <a th:href="@{/products/top-rated(sort='topRated')}"
+                   th:classappend="${currentSort == 'topRated' or currentSort == null} ? 'active'">Đánh giá cao nhất</a>
+                <a th:href="@{/products/top-rated(sort='nameAsc')}"
+                   th:classappend="${currentSort == 'nameAsc'} ? 'active'">A → Z</a>
+                <a th:href="@{/products/top-rated(sort='nameDesc')}"
+                   th:classappend="${currentSort == 'nameDesc'} ? 'active'">Z → A</a>
+                <a th:href="@{/products/top-rated(sort='priceAsc')}"
+                   th:classappend="${currentSort == 'priceAsc'} ? 'active'">Giá tăng dần</a>
+                <a th:href="@{/products/top-rated(sort='priceDesc')}"
+                   th:classappend="${currentSort == 'priceDesc'} ? 'active'">Giá giảm dần</a>
+            </div>
+        </div>
 
         <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-4" 
              th:if="${topRatedProductPage != null and not topRatedProductPage.empty}">
@@ -41,12 +41,12 @@
             <div class="col" th:each="sale : ${topRatedProductPage.content}">
                 <div class="product-card h-100">
                 
-                    <a th:href="@{'/products/' + ${sale.product.productId}}" class="product-card-link position-relative">
+                    <a th:href="@{'/products/' + ${sale.product.productID}}" class="product-card-link position-relative">
                         <div th:if="${sale.discountPercentage != null and sale.discountPercentage > 0}" 
                              class="discount-badge" th:text="'-' + ${sale.discountPercentage} + '%'"></div>
                         
-                        <img th:if="${not #lists.isEmpty(sale.product.productImages)}" th:src="${sale.product.productImages[0].imageUrl}" class="card-img-top" th:alt="${sale.product.productName}">
-                        <img th:unless="${not #lists.isEmpty(sale.product.productImages)}" th:src="@{/images/placeholder.png}" class="card-img-top" th:alt="${sale.product.productName}">
+                        <img th:if="${not #lists.isEmpty(sale.product.images)}" th:src="${sale.product.images[0].imageURL}" class="card-img-top" th:alt="${sale.product.productName}">
+                        <img th:unless="${not #lists.isEmpty(sale.product.images)}" th:src="@{/images/placeholder.png}" class="card-img-top" th:alt="${sale.product.productName}">
                     </a>
                     
                     <div class="card-body">
@@ -64,8 +64,8 @@
                             </span>
                             <span class="ms-2" th:text="'(' + (${sale.product.totalReviews} ?: 0) + ' đánh giá)'"></span>
                         </div>
-                        <div class="product-price" th:if="${not #lists.isEmpty(sale.product.productVariants)}">
-                            <th:block th:with="originalPrice=${sale.product.productVariants[0].price}">
+                        <div class="product-price" th:if="${not #lists.isEmpty(sale.product.variants)}">
+                            <th:block th:with="originalPrice=${sale.product.variants[0].price}">
                                 <div th:if="${sale.discountPercentage != null and sale.discountPercentage > 0}">
                                     <span th:text="${#numbers.formatDecimal(originalPrice * (100 - sale.discountPercentage) / 100, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
                                     <span class="original-price" th:text="${#numbers.formatDecimal(originalPrice, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>

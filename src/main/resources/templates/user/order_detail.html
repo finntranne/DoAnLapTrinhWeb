@@ -2,7 +2,7 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{layouts/main :: layout(~{::title}, ~{::section})}">
 <head>
-    <title th:text="'Chi Tiết Đơn Hàng #' + ${order.orderId}">Chi Tiết Đơn Hàng</title>
+    <title th:text="'Chi Tiết Đơn Hàng #' + ${order.orderID}">Chi Tiết Đơn Hàng</title>
 </head>
 <body>
 <section>
@@ -11,15 +11,15 @@
             <ol class="breadcrumb mb-0">
                 <li class="breadcrumb-item"><a th:href="@{/}" class="text-decoration-none">Trang chủ</a></li>
                 <li class="breadcrumb-item"><a th:href="@{/user/orders}" class="text-decoration-none">Lịch sử đơn hàng</a></li>
-                <li class="breadcrumb-item active" aria-current="page" th:text="'Chi tiết Đơn hàng #' + ${order.orderId}"></li>
+                <li class="breadcrumb-item active" aria-current="page" th:text="'Chi tiết Đơn hàng #' + ${order.orderID}"></li>
             </ol>
         </div>
     </nav>
 
     <div class="container my-5" th:if="${order != null}">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="fw-bold" th:text="'Chi Tiết Đơn Hàng #' + ${order.orderId}"></h1>
-            <span class="badge fs-6" 
+            <h1 class="fw-bold" th:text="'Chi Tiết Đơn Hàng #' + ${order.orderID}"></h1>
+            <span class="badge fs-6"
                   th:classappend="${order.orderStatus == 'Completed'} ? 'bg-success' : 'bg-info'"
                   th:text="${order.orderStatus}">
             </span>
@@ -32,10 +32,10 @@
                         <h5 class="mb-0 fw-bold">Các sản phẩm đã mua</h5>
                     </div>
                     <div class="card-body p-0">
-                        <div th:each="item : ${order.items}" class="p-4 border-bottom">
+                        <div th:each="item : ${order.orderDetails}" class="p-4 border-bottom">
                             <div class="row align-items-center g-3">
                                 <div class="col-md-2 col-3">
-                                    <img th:src="${item.variant.product.productImages[0].imageUrl}"
+                                    <img th:src="${item.variant.product.images[0].imageURL}"
                                          th:alt="${item.variant.product.productName}"
                                          class="img-fluid rounded">
                                 </div>
@@ -45,17 +45,21 @@
                                         <span class="badge bg-light text-dark me-1">
                                             Size: <span th:text="${item.variant.size.sizeName}"></span>
                                         </span>
-                                        <div th:if="${item.toppingsSnapshot != null and !item.toppingsSnapshot.isEmpty()}" class="mt-2">
+                                        
+                                        <div th:if="${item.toppings != null and !item.toppings.isEmpty()}" class="mt-2">
                                             <small class="text-muted">
                                                 <i class="fa-solid fa-plus-circle me-1"></i>
-                                                <span th:text="${item.toppingsSnapshot}"></span>
+                                                <span th:each="toppingItem, iterStat : ${item.toppings}">
+                                                    <span th:text="${toppingItem.topping.toppingName}"></span>
+                                                    <span th:if="!${iterStat.last}">, </span>
+                                                </span>
                                             </small>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-2 col-4">
                                     <small class="text-muted d-block">Đơn giá</small>
-                                    <span th:text="${#numbers.formatDecimal(item.price, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                                    <span th:text="${#numbers.formatDecimal(item.unitPrice, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
                                 </div>
                                 <div class="col-md-1 col-3">
                                     <small class="text-muted d-block">SL</small>
@@ -63,7 +67,7 @@
                                 </div>
                                 <div class="col-md-2 col-5 text-end">
                                     <small class="text-muted d-block">Tổng</small>
-                                    <span class="fw-bold fs-6" th:text="${#numbers.formatDecimal(item.getTotalPrice(), 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                                    <span class="fw-bold fs-6" th:text="${#numbers.formatDecimal(item.subtotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
                                 </div>
                             </div>
                         </div>

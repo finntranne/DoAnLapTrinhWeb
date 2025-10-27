@@ -7,7 +7,6 @@
 </head>
 <body>
 <section>
-    <!-- Breadcrumb -->
     <nav class="breadcrumb-nav">
         <div class="container">
             <ol class="breadcrumb mb-0 py-3">
@@ -17,8 +16,7 @@
         </div>
     </nav>
 
-    <!-- Profile Header -->
-    <div class="profile-header" th:if="${customer != null and customer.user != null}">
+    <div class="profile-header" th:if="${customer != null}">
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-3 text-center">
@@ -28,25 +26,20 @@
                     <h2 class="fw-bold mb-2" th:text="${customer.fullName}">Nguyễn Văn A</h2>
                     <p class="mb-2 opacity-90">
                         <i class="fa-solid fa-envelope me-2"></i>
-                        <span th:text="${customer.user.email}">email@example.com</span>
+                        <span th:text="${customer.email}">email@example.com</span>
                     </p>
                     <div class="d-flex flex-wrap gap-2">
-                        <div class="info-badge" th:if="${customer.user.isVerified}">
-                            <i class="fa-solid fa-shield-check"></i>
-                            <span>Tài khoản đã xác thực</span>
-                        </div>
                         <div class="info-badge" th:if="${customer.status == 1}">
                             <i class="fa-solid fa-circle-check"></i>
                             <span>Đang hoạt động</span>
                         </div>
-                    </div>
+                        </div>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="container my-5">
-        <!-- Alerts -->
         <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
             <i class="fa-solid fa-check-circle me-2"></i>
             <span th:text="${successMessage}"></span>
@@ -59,22 +52,20 @@
         </div>
 
         <div class="row">
-            <!-- Main Content -->
             <div class="col-lg-8">
-                <!-- Personal Information Card -->
                 <div class="profile-card">
                     <div class="profile-card-header">
                         <h5><i class="fa-solid fa-user-circle"></i> Thông tin cá nhân</h5>
                     </div>
                     <div class="profile-card-body">
-                        <form th:action="@{/user/profile/update}" method="POST" th:if="${customer != null and customer.user != null}">
+                        <form th:action="@{/user/profile/update}" method="POST" th:if="${customer != null}">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">
                                         <i class="fa-solid fa-user text-muted me-1"></i>
                                         Username
                                     </label>
-                                    <input type="text" class="form-control" th:value="${customer.user.username}" readonly disabled>
+                                    <input type="text" class="form-control" th:value="${customer.username}" readonly disabled>
                                     <small class="text-muted">Tên đăng nhập không thể thay đổi</small>
                                 </div>
 
@@ -83,7 +74,7 @@
                                         <i class="fa-solid fa-envelope text-muted me-1"></i>
                                         Email đăng nhập
                                     </label>
-                                    <input type="text" class="form-control" th:value="${customer.user.email}" readonly disabled>
+                                    <input type="text" class="form-control" th:value="${customer.email}" readonly disabled>
                                     <small class="text-muted">Email đăng nhập không thể thay đổi</small>
                                 </div>
 
@@ -97,17 +88,16 @@
                                 </div>
 
                                 <div class="col-md-6 mb-3">
-                                    <label for="email" class="form-label">
-                                        <i class="fa-solid fa-at text-muted me-1"></i>
-                                        Email liên hệ
+                                    <label for="phoneNumber" class="form-label">
+                                        <i class="fa-solid fa-phone text-muted me-1"></i>
+                                        Số điện thoại
                                     </label>
-                                    <input type="email" class="form-control" id="email" name="email"
-                                           th:value="${customer.email}" placeholder="Email để nhận thông báo">
-                                    <small class="text-muted">Email dùng để nhận thông báo đơn hàng</small>
+                                    <input type="tel" class="form-control" id="phoneNumber" name="phoneNumber"
+                                           th:value="${customer.phoneNumber}" placeholder="Nhập số điện thoại">
+                                    <small class="text-muted">Số điện thoại để nhận thông báo</small>
                                 </div>
                             </div>
 
-                            <!-- Default Address Preview -->
                             <div class="mt-4" th:if="${defaultAddress != null}">
                                 <label class="form-label">
                                     <i class="fa-solid fa-location-dot text-muted me-1"></i>
@@ -149,8 +139,8 @@
                                 </button>
                             </div>
                         </form>
-
-                        <div th:unless="${customer != null and customer.user != null}">
+                        
+                        <div th:unless="${customer != null}">
                             <div class="alert alert-danger">
                                 <i class="fa-solid fa-exclamation-circle me-2"></i>
                                 Lỗi: Không thể tải thông tin hồ sơ người dùng.
@@ -160,10 +150,7 @@
                 </div>
             </div>
 
-            <!-- Sidebar -->
             <div class="col-lg-4">
-
-                <!-- Quick Actions Card -->
                 <div class="profile-card">
                     <div class="profile-card-header">
                         <h5><i class="fa-solid fa-bolt"></i> Thao tác nhanh</h5>
@@ -179,7 +166,6 @@
                                     <small class="text-muted">Cập nhật mật khẩu mới</small>
                                 </div>
                             </a>
-
                             <a href="/user/orders" class="quick-action-btn">
                                 <div class="quick-action-icon">
                                     <i class="fa-solid fa-shopping-bag"></i>
@@ -189,7 +175,6 @@
                                     <small class="text-muted">Xem lịch sử đặt hàng</small>
                                 </div>
                             </a>
-
                             <a href="/user/addresses" class="quick-action-btn">
                                 <div class="quick-action-icon">
                                     <i class="fa-solid fa-location-dot"></i>
@@ -199,13 +184,12 @@
                                     <small class="text-muted">Quản lý địa chỉ giao hàng</small>
                                 </div>
                             </a>
-                            
                             <hr>
-                        <div class="text-center">
-                            <a href="/logout" class="text-danger text-decoration-none">
-                                <i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất
-                            </a>
-                        </div>
+                            <div class="text-center">
+                                <a href="/logout" class="text-danger text-decoration-none">
+                                    <i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>

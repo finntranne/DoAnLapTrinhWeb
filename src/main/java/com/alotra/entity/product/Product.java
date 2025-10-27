@@ -262,7 +262,7 @@ public class Product {
 
     // Quan hệ với ProductImage
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<ProductImage> images = new ArrayList<>();
+    private Set<ProductImage> images = new HashSet<>();
 
     // ✅ THÊM: Quan hệ với PromotionProduct
     @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)

@@ -49,7 +49,7 @@
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <div class="fw-bold fs-6">
                                 <span th:text="${addr.recipientName}"></span>
-                                <span th:if="${addr.isDefault()}" class="badge bg-success ms-2 default-badge">Mặc định</span>
+                                <span th:if="${addr.isDefault}" class="badge bg-success ms-2 default-badge">Mặc định</span>
                             </div>
                         </div>
                         <div class="text-muted small mb-1">
@@ -61,7 +61,7 @@
                     </div>
                     <div class="address-card-footer d-flex justify-content-between align-items-center">
                         <div>
-                            <form th:if="${!addr.isDefault()}" th:action="@{/user/addresses/set-default/{id}(id=${addr.addressID})}" method="POST" class="d-inline">
+                            <form th:if="${!addr.isDefault}" th:action="@{/user/addresses/set-default/{id}(id=${addr.addressID})}" method="POST" class="d-inline">
                                 <button type="submit" class="btn btn-link action-link text-primary p-0">Đặt làm mặc định</button>
                             </form>
                         </div>

@@ -253,7 +253,7 @@ public class ProductController {
 
 			// 2. Lấy danh sách đánh giá
 			// *** SỬA: ReviewService cần phương thức findByProduct ***
-			Pageable reviewPageable = PageRequest.of(0, 5, Sort.by("reviewDate").descending()); // Ví dụ: 5 đánh giá mới
+			Pageable reviewPageable = PageRequest.of(0, 5); // Ví dụ: 5 đánh giá mới
 																								// nhất
 			Page<Review> reviewPage = reviewService.findByProduct(product, reviewPageable); // Cần có method này
 

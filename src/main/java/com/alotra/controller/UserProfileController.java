@@ -217,24 +217,23 @@ public class UserProfileController { // Giữ tên class
     @GetMapping
     public String showProfilePage(Model model) {
         try {
-            User user = getCurrentAuthenticatedUser(); // Lấy User
+            User user = getCurrentAuthenticatedUser(); 
 
-            // Lấy danh sách địa chỉ của User
             List<Address> addresses = addressRepository.findByUserId(user.getId());
 
-            // Tìm địa chỉ mặc định trong danh sách
             Address defaultAddress = addresses.stream()
-                    .filter(address -> address.getIsDefault()) // Thay Address::isDefault bằng lambda
+                    .filter(address -> address.getIsDefault())
                     .findFirst()
                     .orElse(null);
-
-            model.addAttribute("user", user); // *** SỬA: Truyền User ***
+            model.addAttribute("customer", user); 
+            // ===================
+            
             model.addAttribute("defaultAddress", defaultAddress);
-            model.addAttribute("totalAddresses", addresses.size()); // Đếm từ list
+            model.addAttribute("totalAddresses", addresses.size()); 
             model.addAttribute("cartItemCount", getCurrentCartItemCount());
             model.addAttribute("categories", categoryService.findAll());
 
-            return "user/profile"; // View profile.html
+            return "user/profile"; 
 
         } catch (ResponseStatusException | UsernameNotFoundException e) {
             return "redirect:/login";

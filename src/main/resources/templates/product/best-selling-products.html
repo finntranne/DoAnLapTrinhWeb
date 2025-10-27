@@ -44,16 +44,16 @@
                 
                 <div class="col" th:each="sale : ${bestSellingProductPage.content}">
                     <div class="product-card h-100">
-                        <a th:href="@{'/products/' + ${sale.product.productId}}" class="product-card-link">
+                        <a th:href="@{'/products/' + ${sale.product.productID}}" class="product-card-link">
                             <div th:if="${sale.discountPercentage != null and sale.discountPercentage > 0}" 
                                  class="discount-badge" 
                                  th:text="'-' + ${sale.discountPercentage} + '%'"></div>
                             
-                            <img th:if="${not #lists.isEmpty(sale.product.productImages)}" 
-                                 th:src="${sale.product.productImages[0].imageUrl}" 
+                            <img th:if="${not #lists.isEmpty(sale.product.images)}" 
+                                 th:src="${sale.product.images[0].imageURL}" 
                                  class="card-img-top" 
                                  th:alt="${sale.product.productName}">
-                            <img th:unless="${not #lists.isEmpty(sale.product.productImages)}" 
+                            <img th:unless="${not #lists.isEmpty(sale.product.images)}"
                                  th:src="@{/images/placeholder.png}" 
                                  class="card-img-top" 
                                  th:alt="${sale.product.productName}">
@@ -63,8 +63,8 @@
                             <p class="product-brand mb-1">ALOTRA</p>
                             <h5 class="product-title" th:text="${sale.product.productName}">Tên sản phẩm</h5>
                             
-                            <div class="product-price" th:if="${not #lists.isEmpty(sale.product.productVariants)}">
-                                <th:block th:with="originalPrice=${sale.product.productVariants[0].price}">
+                            <div class="product-price" th:if="${not #lists.isEmpty(sale.product.variants)}">
+                                <th:block th:with="originalPrice=${sale.product.variants[0].price}">
                                     <div th:if="${sale.discountPercentage != null and sale.discountPercentage > 0}">
                                         <span th:text="${#numbers.formatDecimal(originalPrice * (100 - sale.discountPercentage) / 100, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
                                         <span class="original-price" 

@@ -636,12 +636,26 @@ public class OrderController {
     @PostMapping("/place-order")
     @Transactional // Quan trọng: Đảm bảo tất cả lưu hoặc không
     public Object placeOrder(
-            @RequestParam Integer addressId, // Địa chỉ giao hàng đã chọn
+    		@RequestParam(required = false) Integer addressId,
             @RequestParam(required = false) String notes, // Ghi chú
-            @RequestParam String paymentMethod, // COD, VNPay, Momo...
+            @RequestParam(required = false) String paymentMethod,
             HttpServletRequest request, // Cần cho VNPay
             HttpSession session,
             RedirectAttributes redirectAttributes) {
+    	
+    	// <<< Thêm: Kiểm tra addressId ngay từ đầu >>>
+        if (addressId == null) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Vui lòng chọn địa chỉ giao hàng.");
+            // Giữ lại session ID nếu có để không mất giỏ hàng
+            // session.keepAttributes("selectedCheckoutItemIds"); // Cân nhắc nếu dùng RedirectAttributes
+            return "redirect:/checkout"; // Quay lại trang checkout báo lỗi
+        }
+        
+     // <<< Thêm kiểm tra paymentMethod >>>
+        if (paymentMethod == null || paymentMethod.isBlank()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Vui lòng chọn phương thức thanh toán.");
+            return "redirect:/checkout";
+        }
 
         Order savedOrder = null; // Khởi tạo để lưu order đã tạo
 
@@ -752,9 +766,29 @@ public class OrderController {
             orderDetailRepository.saveAll(orderDetailList);
              // === Cần kiểm tra lại CascadeType và cách lưu OrderDetailTopping với @EmbeddedId ===
 
-            // 9. XÓA CART ITEMS ĐÃ ĐẶT HÀNG
-            List<Integer> itemIdsToRemove = itemsToOrder.stream().map(CartItem::getCartItemID).collect(Collectors.toList());
-            cartItemRepository.deleteAllById(itemIdsToRemove); // Xóa các CartItem đã chọn
+         // 9. XÓA CART ITEMS ĐÃ ĐẶT HÀNG - PHƯƠNG PHÁP 1 (Khuyến nghị)
+            System.out.println("=== BẮT ĐẦU XÓA CART ITEMS ===");
+            System.out.println("Số items cần xóa: " + itemsToOrder.size());
+
+            // Xóa từng item một để đảm bảo cascade hoạt động đúng
+            for (CartItem item : itemsToOrder) {
+                System.out.println("Đang xóa CartItem ID: " + item.getCartItemID());
+                
+                // Bước 1: Xóa quan hệ với toppings (xóa bản ghi trong bảng trung gian)
+                item.getSelectedToppings().clear();
+                
+                // Bước 2: Xóa quan hệ với Cart
+                cart.removeItem(item); // Sử dụng method helper trong Cart entity
+                
+                // Bước 3: Xóa CartItem khỏi database
+                cartItemRepository.delete(item);
+            }
+
+            // Flush để đảm bảo thay đổi được persist ngay
+            cartItemRepository.flush();
+            cartRepository.save(cart); // Lưu lại cart sau khi xóa items
+
+            System.out.println("=== KẾT THÚC XÓA CART ITEMS ===");
 
             // 10. XÓA SESSION
             session.removeAttribute("selectedCheckoutItemIds");
@@ -762,15 +796,14 @@ public class OrderController {
             // 11. XỬ LÝ THANH TOÁN & CHUYỂN HƯỚNG
             if ("COD".equalsIgnoreCase(paymentMethod)) { // Dùng equalsIgnoreCase
                 // Cập nhật trạng thái cho COD (Ví dụ: Chờ xác nhận)
-                savedOrder.setOrderStatus("Confirmed"); // Hoặc giữ Pending tùy quy trình
+                savedOrder.setOrderStatus("Pending"); // Hoặc giữ Pending tùy quy trình
                 savedOrder.setPaymentStatus("Unpaid");
                 orderRepository.save(savedOrder); // Lưu lại trạng thái mới
                 redirectAttributes.addFlashAttribute("orderId", finalOrderId); // Gửi ID đơn hàng qua flash
                 return "redirect:/order-success"; // Chuyển đến trang thành công
             } else if ("VNPay".equalsIgnoreCase(paymentMethod)) {
-                // Giữ trạng thái Pending, Unpaid cho thanh toán online
-                String paymentUrl = vnPayService.createPaymentUrl(savedOrder, request);
-                return new RedirectView(paymentUrl); // Redirect sang VNPay
+            	String paymentUrl = vnPayService.createPaymentUrl(savedOrder, request);
+                return new RedirectView(paymentUrl);
             }
              // Thêm xử lý cho Momo nếu có
             // else if ("Momo".equalsIgnoreCase(paymentMethod)) { ... }
@@ -788,9 +821,11 @@ public class OrderController {
              // Lỗi nghiệp vụ (không tìm thấy, sai quyền, thiếu shop...)
              System.err.println("Lỗi nghiệp vụ khi đặt hàng: " + e.getMessage());
              e.printStackTrace();
-             redirectAttributes.addFlashAttribute("errorMessage", "Lỗi đặt hàng: " + e.getMessage());
-             // Giữ session để user thử lại nếu là lỗi tạm thời? Hoặc xóa đi?
-             // session.removeAttribute("selectedCheckoutItemIds");
+             if (e instanceof EntityNotFoundException && e.getMessage().contains("Địa chỉ")) {
+                 redirectAttributes.addFlashAttribute("errorMessage", "Địa chỉ đã chọn không hợp lệ.");
+             } else {
+                 redirectAttributes.addFlashAttribute("errorMessage", "Lỗi đặt hàng: " + e.getMessage());
+             }
              return "redirect:/checkout"; // Quay lại trang checkout báo lỗi
         } catch (Exception e) {
              // Lỗi hệ thống khác
