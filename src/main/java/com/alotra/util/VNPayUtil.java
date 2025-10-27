@@ -47,4 +47,18 @@ public class VNPayUtil {
         }
         return ipAdress;
     }
+    
+    public class TestVNPayHash {
+        public static void main(String[] args) {
+            String hashSecret = "ZGXD52K58OCC4GQB2BDFQ0XO9JTLG2UM";
+            String testData = "vnp_Amount=10000000&vnp_Command=pay&vnp_TmnCode=4NI19HF0&vnp_TxnRef=123";
+            
+            String hash = VNPayUtil.hmacSHA512(hashSecret, testData);
+            
+            System.out.println("Test Hash: " + hash);
+            System.out.println("Hash length: " + hash.length());
+        }
+        
+    }
+    
 }
