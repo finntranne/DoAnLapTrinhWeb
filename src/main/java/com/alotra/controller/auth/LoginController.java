@@ -1,4 +1,4 @@
-package com.alotra.controller;
+package com.alotra.controller.auth;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
