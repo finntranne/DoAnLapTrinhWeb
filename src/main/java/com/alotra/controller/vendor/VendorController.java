@@ -219,89 +219,6 @@ public class VendorController {
 		}
 	}
 
-//	@PostMapping("/products/create")
-//	public String createProduct(@AuthenticationPrincipal MyUserDetails userDetails,
-//			@ModelAttribute("product") ProductRequestDTO request, BindingResult result, Model model,
-//			RedirectAttributes redirectAttributes) {
-//
-//		// Debug log - xem dữ liệu nhận được
-//		log.info("=== CREATE PRODUCT REQUEST ===");
-//		log.info("Product name: {}", request.getProductName());
-//		log.info("Category ID: {}", request.getCategoryId());
-//		log.info("Description: {}", request.getDescription());
-//		log.info("Variants count: {}", request.getVariants() != null ? request.getVariants().size() : "NULL");
-//		if (request.getVariants() != null) {
-//			for (int i = 0; i < request.getVariants().size(); i++) {
-//				var v = request.getVariants().get(i);
-//				log.info("Variant[{}]: sizeId={}, price={}, stock={}, sku={}", i, v.getSizeId(), v.getPrice(),
-//						v.getStock(), v.getSku());
-//			}
-//		}
-//		log.info("Images count: {}", request.getImages() != null ? request.getImages().size() : "NULL");
-//		log.info("Primary image index: {}", request.getPrimaryImageIndex());
-//
-//		if (result.hasErrors()) {
-//			log.error("Validation errors: {}", result.getAllErrors());
-//			model.addAttribute("categories", vendorService.getAllCategories());
-//			model.addAttribute("sizes", vendorService.getAllSizesSimple());
-//			model.addAttribute("action", "create");
-//			return "vendor/products/form";
-//		}
-//
-//		try {
-//			Integer shopId = getShopIdOrThrow(userDetails);
-//			Integer userId = getUserIdOrThrow(userDetails);
-//
-//			Set<Topping> selectedToppings = new HashSet<>();
-//			if (request.getAvailableToppingIds() != null && !request.getAvailableToppingIds().isEmpty()) {
-//				// Lấy các Topping entity từ ID
-//				List<Topping> toppingsFromDb = toppingRepository.findAllById(request.getAvailableToppingIds());
-//				// Kiểm tra xem tất cả topping có thuộc shop này không (bảo mật)
-//				for (Topping t : toppingsFromDb) {
-//					if (t.getShop() == null || !t.getShop().getShopId().equals(shopId)) {
-//						throw new IllegalAccessException("Đã phát hiện topping không hợp lệ.");
-//					}
-//				}
-//				selectedToppings.addAll(toppingsFromDb);
-//			}
-//
-//			log.info("Creating product request - Shop ID: {}, User ID: {}", shopId, userId);
-//			log.info("Product name: {}", request.getProductName());
-//			log.info("Category ID: {}", request.getCategoryId());
-//			log.info("Variants count: {}", request.getVariants() != null ? request.getVariants().size() : 0);
-//			log.info("Images count: {}", request.getImages() != null ? request.getImages().size() : 0);
-//
-//			// Validate variants
-//			if (request.getVariants() == null || request.getVariants().isEmpty()) {
-//				redirectAttributes.addFlashAttribute("error", "Sản phẩm phải có ít nhất một biến thể");
-//				return "redirect:/vendor/products/create";
-//			}
-//
-//			// Validate images
-//			if (request.getImages() == null || request.getImages().isEmpty()
-//					|| request.getImages().stream().allMatch(file -> file == null || file.isEmpty())) {
-//				redirectAttributes.addFlashAttribute("error", "Vui lòng upload ít nhất một hình ảnh");
-//				return "redirect:/vendor/products/create";
-//			}
-//
-//			vendorService.requestProductCreation(shopId, request, userId, selectedToppings);
-//
-//			redirectAttributes.addFlashAttribute("success",
-//					"Yêu cầu tạo sản phẩm đã được gửi. Vui lòng chờ admin phê duyệt.");
-//
-//			return "redirect:/vendor/products";
-//
-//		} catch (IllegalStateException e) {
-//			log.error("Auth error: {}", e.getMessage());
-//			redirectAttributes.addFlashAttribute("error", e.getMessage());
-//			return "redirect:/shop/register";
-//		} catch (Exception e) {
-//			log.error("Error creating product", e);
-//			redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
-//			return "redirect:/vendor/products/create";
-//		}
-//	}
-
 	@PostMapping("/products/create")
 	public String createProduct(@AuthenticationPrincipal MyUserDetails userDetails,
 			@ModelAttribute("product") ProductRequestDTO request, BindingResult result, Model model,
@@ -646,14 +563,16 @@ public class VendorController {
 
 	@GetMapping("/promotions")
 	public String listPromotions(@AuthenticationPrincipal MyUserDetails userDetails,
-			@RequestParam(required = false) Byte status, @RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "5") int size, Model model, RedirectAttributes redirectAttributes) {
+			@RequestParam(required = false) Byte status, @RequestParam(required = false) String promotionType,
+			@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "5") int size, Model model,
+			RedirectAttributes redirectAttributes) {
 
 		try {
 			Integer shopId = getShopIdOrThrow(userDetails);
 			Pageable pageable = PageRequest.of(page, size);
 
-			Page<PromotionStatisticsDTO> promotions = vendorService.getShopPromotions(shopId, status, pageable);
+			Page<PromotionStatisticsDTO> promotions = vendorService.getShopPromotions(shopId, status, promotionType,
+					pageable);
 
 			model.addAttribute("promotions", promotions);
 			model.addAttribute("currentPage", page);
@@ -667,42 +586,6 @@ public class VendorController {
 			return "redirect:/shop/register";
 		}
 	}
-
-//	@GetMapping("/promotions/create")
-//	public String showCreatePromotionForm(@AuthenticationPrincipal MyUserDetails userDetails, Model model,
-//			RedirectAttributes redirectAttributes) {
-//
-//		try {
-//			getShopIdOrThrow(userDetails);
-//
-//			model.addAttribute("promotion", new PromotionRequestDTO());
-//			model.addAttribute("action", "create");
-//
-//			return "vendor/promotions/form";
-//
-//		} catch (IllegalStateException e) {
-//			redirectAttributes.addFlashAttribute("error", e.getMessage());
-//			return "redirect:/shop/register";
-//		}
-//	}
-
-//	@GetMapping("/promotions/create")
-//	public String showCreatePromotionForm(@AuthenticationPrincipal MyUserDetails userDetails, Model model,
-//			RedirectAttributes redirectAttributes) {
-//		try {
-//			Integer shopId = getShopIdOrThrow(userDetails);
-//			model.addAttribute("promotion", new PromotionRequestDTO());
-//			model.addAttribute("action", "create");
-//
-//			// *** SỬA: Dùng DTO thay vì Entity ***
-//			model.addAttribute("shopProducts", vendorService.getShopProductsForSelection(shopId));
-//
-//			return "vendor/promotions/form";
-//		} catch (IllegalStateException e) {
-//			redirectAttributes.addFlashAttribute("error", e.getMessage());
-//			return "redirect:/shop/register";
-//		}
-//	}
 
 	@GetMapping("/promotions/create")
 	public String showCreatePromotionForm(@AuthenticationPrincipal MyUserDetails userDetails, Model model,
@@ -749,80 +632,21 @@ public class VendorController {
 		}
 	}
 
-//	@GetMapping("/promotions/edit/{id}")
-//	public String showEditPromotionForm(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
-//			Model model, RedirectAttributes redirectAttributes) {
-//
-//		try {
-//			Integer shopId = getShopIdOrThrow(userDetails);
-//
-//			Promotion promotion = vendorService.getPromotionDetail(shopId, id);
-//			PromotionRequestDTO dto = vendorService.convertPromotionToDTO(promotion);
-//			
-//
-//			model.addAttribute("promotion", dto);
-//			model.addAttribute("action", "edit");
-//			model.addAttribute("promotionId", id);
-//
-//			// Format dates for datetime-local input
-//			if (dto.getStartDate() != null) {
-//				model.addAttribute("formattedStartDate", dto.getStartDate().toString().substring(0, 16)); // yyyy-MM-ddTHH:mm
-//			}
-//			if (dto.getEndDate() != null) {
-//				model.addAttribute("formattedEndDate", dto.getEndDate().toString().substring(0, 16));
-//			}
-//
-//			return "vendor/promotions/form";
-//
-//		} catch (IllegalStateException e) {
-//			redirectAttributes.addFlashAttribute("error", e.getMessage());
-//			return "redirect:/shop/register";
-//		} catch (Exception e) {
-//			log.error("Error loading promotion for edit", e);
-//			redirectAttributes.addFlashAttribute("error", e.getMessage());
-//			return "redirect:/vendor/promotions";
-//		}
-//	}
-
-//	@GetMapping("/promotions/edit/{id}")
-//	public String showEditPromotionForm(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
-//			Model model, RedirectAttributes redirectAttributes) {
-//		try {
-//			Integer shopId = getShopIdOrThrow(userDetails);
-//			Promotion promotion = vendorService.getPromotionDetail(shopId, id);
-//			PromotionRequestDTO dto = vendorService.convertPromotionToDTOWithProducts(promotion);
-//
-//			model.addAttribute("promotion", dto);
-//			model.addAttribute("action", "edit");
-//			model.addAttribute("promotionId", id);
-//
-//			if (dto.getStartDate() != null) {
-//				model.addAttribute("formattedStartDate", dto.getStartDate().toString().substring(0, 16));
-//			}
-//			if (dto.getEndDate() != null) {
-//				model.addAttribute("formattedEndDate", dto.getEndDate().toString().substring(0, 16));
-//			}
-//
-//			// *** SỬA: Dùng DTO thay vì Entity ***
-//			model.addAttribute("shopProducts", vendorService.getShopProductsForSelection(shopId));
-//
-//			return "vendor/promotions/form";
-//		} catch (IllegalStateException e) {
-//			redirectAttributes.addFlashAttribute("error", e.getMessage());
-//			return "redirect:/shop/register";
-//		} catch (Exception e) {
-//			log.error("Error loading promotion for edit", e);
-//			redirectAttributes.addFlashAttribute("error", e.getMessage());
-//			return "redirect:/vendor/promotions";
-//		}
-//	}
-
 	@GetMapping("/promotions/edit/{id}")
 	public String showEditPromotionForm(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
 			Model model, RedirectAttributes redirectAttributes) {
 		try {
 			Integer shopId = getShopIdOrThrow(userDetails);
 			Promotion promotion = vendorService.getPromotionDetail(shopId, id);
+
+			// *** KIỂM TRA PROMOTION TYPE ***
+			if ("PRODUCT".equals(promotion.getPromotionType())) {
+				// Nếu là PRODUCT type → Chỉ hiển thị thông tin (read-only)
+				model.addAttribute("promotion", promotion);
+				model.addAttribute("action", "edit");
+				model.addAttribute("promotionId", id);
+				return "vendor/promotions/form"; // Trả về cùng view nhưng sẽ hiển thị form khác
+			}
 
 			// *** BỎ convertPromotionToDTOWithProducts, CHỈ dùng convertPromotionToDTO ***
 			PromotionRequestDTO dto = vendorService.convertPromotionToDTO(promotion);
@@ -855,15 +679,25 @@ public class VendorController {
 			@Valid @ModelAttribute("promotion") PromotionRequestDTO request, BindingResult result, Model model,
 			RedirectAttributes redirectAttributes) {
 
-		if (result.hasErrors()) {
-			log.error("Validation errors: {}", result.getAllErrors());
-			model.addAttribute("action", "edit");
-			model.addAttribute("promotionId", id);
-			return "vendor/promotions/form";
-		}
-
 		try {
 			Integer shopId = getShopIdOrThrow(userDetails);
+			Promotion promotion = vendorService.getPromotionDetail(shopId, id);
+
+			// *** KIỂM TRA: KHÔNG CHO SỬA PROMOTION PRODUCT TYPE ***
+			if ("PRODUCT".equals(promotion.getPromotionType())) {
+				redirectAttributes.addFlashAttribute("error",
+						"Không thể chỉnh sửa khuyến mãi sản phẩm. Vui lòng sửa ở trang Quản lý sản phẩm.");
+				return "redirect:/vendor/promotions";
+			}
+
+			// *** CHỈ XỬ LÝ ORDER TYPE ***
+			if (result.hasErrors()) {
+				log.error("Validation errors: {}", result.getAllErrors());
+				model.addAttribute("action", "edit");
+				model.addAttribute("promotionId", id);
+				return "vendor/promotions/form";
+			}
+
 			Integer userId = getUserIdOrThrow(userDetails);
 
 			log.info("Updating promotion request - Promotion ID: {}, Shop ID: {}, User ID: {}", id, shopId, userId);

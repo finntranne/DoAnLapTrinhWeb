@@ -398,7 +398,7 @@ public class VendorService {
 					.filter(Objects::nonNull).min(BigDecimal::compareTo).orElse(null);
 
 			// Thêm thông tin basePrice mới vào DTO (optional)
-			// request.setNewBasePrice(newMinPrice);
+//			 request.setNewBasePrice(newMinPrice);
 
 			log.info("New basePrice will be: {}", newMinPrice);
 		}
@@ -703,11 +703,12 @@ public class VendorService {
 
 	// ==================== PROMOTION MANAGEMENT ====================
 
-	public Page<PromotionStatisticsDTO> getShopPromotions(Integer shopId, Byte status, Pageable pageable) {
+	public Page<PromotionStatisticsDTO> getShopPromotions(Integer shopId, Byte status, String promotionType, Pageable pageable) {
 
 		// *** ĐÃ SỬA: Gọi phương thức repository mới và truyền LocalDateTime.now() ***
 		LocalDateTime now = LocalDateTime.now();
-		Page<Promotion> promotions = promotionRepository.findShopPromotionsFiltered(shopId, status, now, pageable);
+		Page<Promotion> promotions = promotionRepository.findShopPromotionsFiltered(
+		        shopId, status, promotionType, now, pageable);
 		// *** KẾT THÚC SỬA ***
 
 		// Phần map sang PromotionListDTO giữ nguyên như trước
@@ -812,141 +813,6 @@ public class VendorService {
 		return dto;
 	}
 
-//	public void requestPromotionCreation(Integer shopId, PromotionRequestDTO request, Integer userId)
-//			throws JsonProcessingException {
-//
-//		Shop shop = shopRepository.findById(shopId).orElseThrow(() -> new RuntimeException("Shop not found"));
-//
-//		User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
-//
-//		// Tạo promotion mới với status = 0 (Inactive)
-//		Promotion promotion = new Promotion();
-//		promotion.setCreatedByUserID(user);
-//		promotion.setCreatedByShopID(shop);
-//		promotion.setPromotionName(request.getPromotionName());
-//		promotion.setDescription(request.getDescription());
-//		promotion.setPromoCode(request.getPromoCode());
-//		promotion.setDiscountType(request.getDiscountType());
-//		promotion.setDiscountValue(request.getDiscountValue());
-//		promotion.setMaxDiscountAmount(request.getMaxDiscountAmount());
-//		promotion.setStartDate(request.getStartDate());
-//		promotion.setEndDate(request.getEndDate());
-//		promotion.setMinOrderValue(request.getMinOrderValue());
-//		promotion.setUsageLimit(request.getUsageLimit());
-//		promotion.setUsedCount(0);
-//		promotion.setStatus((byte) 0); // Inactive until approved
-//		promotion.setCreatedAt(LocalDateTime.now());
-//
-//		promotion = promotionRepository.save(promotion);
-//
-//		// Tạo yêu cầu phê duyệt
-//		PromotionApproval approval = new PromotionApproval();
-//		approval.setPromotion(promotion);
-//		approval.setActionType("CREATE");
-//		approval.setStatus("Pending");
-//		approval.setChangeDetails(objectMapper.writeValueAsString(request));
-//		approval.setRequestedBy(user);
-//		approval.setRequestedAt(LocalDateTime.now());
-//
-//		promotionApprovalRepository.save(approval);
-//
-//		notificationService.notifyAdminsAboutNewApproval("PROMOTION", promotion.getPromotionId());
-//
-//		log.info("Promotion creation requested - Promotion ID: {}, Shop ID: {}", promotion.getPromotionId(), shopId);
-//	}
-//	
-
-//	public void requestPromotionCreation(Integer shopId, PromotionRequestDTO request, Integer userId)
-//			throws JsonProcessingException {
-//
-//		Shop shop = shopRepository.findById(shopId).orElseThrow(() -> new RuntimeException("Shop not found"));
-//		User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
-//
-//		// Kiểm tra logic ngày tháng (có thể làm ở DTO)
-//		if (request.getStartDate().isAfter(request.getEndDate())) {
-//			throw new IllegalArgumentException("Ngày kết thúc phải sau ngày bắt đầu");
-//		}
-//
-//		Promotion promotion = new Promotion();
-//		promotion.setCreatedByUserID(user);
-//		promotion.setCreatedByShopID(shop);
-//		promotion.setPromotionName(request.getPromotionName());
-//		promotion.setDescription(request.getDescription());
-//		promotion.setPromoCode(request.getPromoCode());
-//		promotion.setStartDate(request.getStartDate());
-//		promotion.setEndDate(request.getEndDate());
-//		promotion.setUsageLimit(request.getUsageLimit());
-//		promotion.setPromotionType(request.getPromotionType());
-//		promotion.setStatus((byte) 0); // Luôn là 0 (Pending) khi tạo
-//		// (createdAt được @PrePersist xử lý)
-//
-//		// Tách logic dựa trên loại khuyến mãi
-//		if ("ORDER".equals(request.getPromotionType())) {
-//			// --- LOGIC CHO KHUYẾN MÃI TOÀN ĐƠN ---
-//			if (request.getDiscountType() == null || request.getDiscountValue() == null) {
-//				throw new IllegalArgumentException(
-//						"Loại giảm giá và Giá trị giảm giá là bắt buộc cho khuyến mãi toàn đơn.");
-//			}
-//			promotion.setDiscountType(request.getDiscountType());
-//			promotion.setDiscountValue(request.getDiscountValue());
-//			promotion.setMaxDiscountAmount(request.getMaxDiscountAmount());
-//			promotion.setMinOrderValue(request.getMinOrderValue());
-//		} else if ("PRODUCT".equals(request.getPromotionType())) {
-//			// --- LOGIC CHO KHUYẾN MÃI SẢN PHẨM ---
-//			if (request.getProductDiscounts() == null || request.getProductDiscounts().isEmpty()) {
-//				throw new IllegalArgumentException("Cần chọn ít nhất một sản phẩm để áp dụng khuyến mãi.");
-//			}
-//			// Các trường discount... của Promotion sẽ là NULL (hoặc 0 nếu DB không cho
-//			// phép)
-//			promotion.setMinOrderValue(BigDecimal.ZERO);
-//		} else {
-//			throw new IllegalArgumentException("Loại khuyến mãi không hợp lệ.");
-//		}
-//
-//		Promotion savedPromotion = promotionRepository.save(promotion); // Lưu Promotion
-//
-//		// Nếu là loại SẢN PHẨM, lưu các sản phẩm liên kết
-//		if ("PRODUCT".equals(savedPromotion.getPromotionType()) && request.getProductDiscounts() != null) {
-//			List<PromotionProduct> promoProducts = new ArrayList<>();
-//
-//			List<Integer> productIds = request.getProductDiscounts().stream().map(ProductDiscountDTO::getProductId)
-//					.collect(Collectors.toList());
-//
-//			// Lấy các sản phẩm từ DB
-//			List<Product> products = productRepository.findAllById(productIds);
-//
-//			// Đảm bảo tất cả sản phẩm đều thuộc shop này (bảo mật)
-//			boolean allOwned = products.stream().allMatch(p -> p.getShop().getShopId().equals(shopId));
-//			if (!allOwned || products.size() != request.getProductDiscounts().size()) {
-//				throw new RuntimeException("Phát hiện sản phẩm không hợp lệ hoặc không thuộc sở hữu của shop.");
-//			}
-//
-//			Map<Integer, Product> productMap = products.stream()
-//					.collect(Collectors.toMap(Product::getProductID, p -> p));
-//
-//			for (ProductDiscountDTO dto : request.getProductDiscounts()) {
-//				PromotionProduct pp = new PromotionProduct();
-//				pp.setId(new PromotionProductId(savedPromotion.getPromotionId(), dto.getProductId()));
-//				pp.setPromotion(savedPromotion);
-//				pp.setProduct(productMap.get(dto.getProductId()));
-//				pp.setDiscountPercentage(dto.getDiscountPercentage());
-//				promoProducts.add(pp);
-//			}
-//			promotionProductRepository.saveAll(promoProducts); // Lưu bảng nối
-//		}
-//
-//		// Tạo yêu cầu phê duyệt
-//		PromotionApproval approval = new PromotionApproval();
-//		approval.setPromotion(savedPromotion);
-//		approval.setActionType("CREATE");
-//		approval.setStatus("Pending");
-//		approval.setChangeDetails(objectMapper.writeValueAsString(request)); // DTO giờ đã chứa cả productDiscounts
-//		approval.setRequestedBy(user);
-//
-//		promotionApprovalRepository.save(approval);
-//		notificationService.notifyAdminsAboutNewApproval("PROMOTION", savedPromotion.getPromotionId());
-//	}
-
 	@Transactional
 	public void requestPromotionCreation(Integer shopId, PromotionRequestDTO request, Integer userId)
 			throws JsonProcessingException {
@@ -1002,113 +868,17 @@ public class VendorService {
 				.collect(Collectors.toList());
 	}
 
-//	public void requestPromotionUpdate(Integer shopId, PromotionRequestDTO request, Integer userId)
-//			throws JsonProcessingException {
-//
-//		Promotion promotion = promotionRepository.findById(request.getPromotionId())
-//				.orElseThrow(() -> new RuntimeException("Promotion not found"));
-//
-//		if (!promotion.getCreatedByShopID().getShopId().equals(shopId)) {
-//			throw new RuntimeException("Unauthorized: Promotion does not belong to this shop");
-//		}
-//
-//		// *** ĐÃ SỬA: Kiểm tra bất kỳ yêu cầu pending nào (giống Product) ***
-//		List<PromotionApproval> existingApprovals = promotionApprovalRepository
-//				.findByPromotion_PromotionIdAndStatus(promotion.getPromotionId(), "Pending");
-//
-//		if (!existingApprovals.isEmpty()) {
-//			throw new RuntimeException("Đã có yêu cầu đang chờ phê duyệt cho khuyến mãi này");
-//		}
-//
-//		// Tạo yêu cầu phê duyệt
-//		PromotionApproval approval = new PromotionApproval();
-//		approval.setPromotion(promotion);
-//		approval.setActionType("UPDATE");
-//		approval.setStatus("Pending");
-//		approval.setChangeDetails(objectMapper.writeValueAsString(request));
-//		approval.setRequestedBy(
-//				userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found")));
-//		approval.setRequestedAt(LocalDateTime.now());
-//
-//		promotionApprovalRepository.save(approval);
-//
-//		notificationService.notifyAdminsAboutNewApproval("PROMOTION", promotion.getPromotionId());
-//
-//		log.info("Promotion update requested - Promotion ID: {}, Shop ID: {}", promotion.getPromotionId(), shopId);
-//	}
-
-//	@Transactional
-//	public void requestPromotionUpdate(Integer shopId, PromotionRequestDTO request, Integer userId) throws Exception { // Thêm
-//																														// throws
-//																														// Exception
-//
-//		log.info("Requesting promotion update cho ID: {}", request.getPromotionId());
-//
-//		// 1. Lấy khuyến mãi gốc và kiểm tra quyền sở hữu
-//		Promotion promotion = getPromotionDetail(shopId, request.getPromotionId());
-//		User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
-//
-//		// 2. Kiểm tra xem có yêu cầu nào đang chờ không
-//		List<PromotionApproval> existingApprovals = promotionApprovalRepository
-//				.findByPromotion_PromotionIdAndStatus(promotion.getPromotionId(), "Pending");
-//		if (!existingApprovals.isEmpty()) {
-//			throw new RuntimeException("Đã có yêu cầu đang chờ phê duyệt cho khuyến mãi này");
-//		}
-//
-//		// 3. Kiểm tra logic ngày tháng
-//		if (request.getStartDate().isAfter(request.getEndDate())) {
-//			throw new IllegalArgumentException("Ngày kết thúc phải sau ngày bắt đầu");
-//		}
-//
-//		// 4. Xử lý logic nghiệp vụ cho 2 loại
-//		// (Lưu ý: Logic nghiệp vụ (xóa/thêm) sẽ KHÔNG chạy ngay,
-//		// mà sẽ được lưu vào JSON để Admin duyệt và Stored Procedure xử lý)
-//
-//		if ("ORDER".equals(request.getPromotionType())) {
-//			if (request.getDiscountType() == null || request.getDiscountValue() == null) {
-//				throw new IllegalArgumentException(
-//						"Loại giảm giá và Giá trị giảm giá là bắt buộc cho khuyến mãi toàn đơn.");
-//			}
-//		} else if ("PRODUCT".equals(request.getPromotionType())) {
-//			if (request.getProductDiscounts() == null || request.getProductDiscounts().isEmpty()) {
-//				throw new IllegalArgumentException("Cần chọn ít nhất một sản phẩm để áp dụng khuyến mãi.");
-//			}
-//			// Kiểm tra bảo mật (đảm bảo sản phẩm thuộc shop)
-//			List<Integer> productIds = request.getProductDiscounts().stream().map(ProductDiscountDTO::getProductId)
-//					.collect(Collectors.toList());
-//			List<Product> products = productRepository.findAllById(productIds);
-//			boolean allOwned = products.stream().allMatch(p -> p.getShop().getShopId().equals(shopId));
-//			if (!allOwned || products.size() != request.getProductDiscounts().size()) {
-//				throw new RuntimeException("Phát hiện sản phẩm không hợp lệ hoặc không thuộc sở hữu của shop.");
-//			}
-//		} else {
-//			throw new IllegalArgumentException("Loại khuyến mãi không hợp lệ.");
-//		}
-//
-//		// 5. Tạo yêu cầu phê duyệt
-//		PromotionApproval approval = new PromotionApproval();
-//		approval.setPromotion(promotion);
-//		approval.setActionType("UPDATE");
-//		approval.setStatus("Pending");
-//		// DTO (request) chứa tất cả thông tin mới (loại, giá trị, danh sách sản
-//		// phẩm...)
-//		approval.setChangeDetails(objectMapper.writeValueAsString(request));
-//		approval.setRequestedBy(user);
-//		approval.setRequestedAt(LocalDateTime.now()); // Gán thời gian yêu cầu
-//
-//		promotionApprovalRepository.save(approval);
-//
-//		notificationService.notifyAdminsAboutNewApproval("PROMOTION", promotion.getPromotionId());
-//
-//		log.info("Promotion update requested - Promotion ID: {}, Shop ID: {}", promotion.getPromotionId(), shopId);
-//	}
-
 	@Transactional
 	public void requestPromotionUpdate(Integer shopId, PromotionRequestDTO request, Integer userId) throws Exception {
 
 		Promotion promotion = getPromotionDetail(shopId, request.getPromotionId());
 		User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
 
+		// *** KIỂM TRA: KHÔNG CHO UPDATE PROMOTION PRODUCT TYPE ***
+	    if ("PRODUCT".equals(promotion.getPromotionType())) {
+	        throw new RuntimeException("Không thể chỉnh sửa khuyến mãi sản phẩm. Vui lòng sửa ở trang Quản lý sản phẩm.");
+	    }
+		
 		List<PromotionApproval> existingApprovals = promotionApprovalRepository
 				.findByPromotion_PromotionIdAndStatus(promotion.getPromotionId(), "Pending");
 		if (!existingApprovals.isEmpty()) {

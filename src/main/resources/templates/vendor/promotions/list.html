@@ -43,7 +43,17 @@
 				<div class="card-body">
 					<form th:action="@{/vendor/promotions}" method="get"
 						class="row g-3">
-						<div class="col-md-4">
+						<div class="col-md-3">
+							<label class="form-label">Loại khuyến mãi</label> <select
+								name="promotionType" class="form-select">
+								<option value="">Tất cả loại</option>
+								<option value="ORDER" th:selected="${promotionType == 'ORDER'}">
+									Toàn đơn hàng</option>
+								<option value="PRODUCT"
+									th:selected="${promotionType == 'PRODUCT'}">Sản phẩm</option>
+							</select>
+						</div>
+						<div class="col-md-3">
 							<label class="form-label">Trạng thái</label> <select
 								name="status" class="form-select">
 								<option value="">Tất cả trạng thái</option>
@@ -55,7 +65,7 @@
 									thúc</option>
 							</select>
 						</div>
-						<div class="col-md-8 d-flex align-items-end">
+						<div class="col-md-6 d-flex align-items-end">
 							<button type="submit" class="btn btn-primary me-2">
 								<i class="bi bi-funnel me-1"></i>Lọc
 							</button>
@@ -88,14 +98,14 @@
 							<thead class="table-light">
 								<tr>
 									<th style="width: 5%">#</th>
-									<th style="width: 20%">Tên khuyến mãi</th>
-									<th style="width: 12%">Mã giảm giá</th>
-									<th style="width: 12%">Loại giảm giá</th>
+									<th style="width: 18%">Tên khuyến mãi</th>
+									<th style="width: 10%">Mã giảm giá</th>
+									<th style="width: 10%">Loại</th>
 									<th style="width: 12%">Giá trị</th>
 									<th style="width: 15%">Thời gian</th>
-									<th style="width: 10%">Lượt dùng</th>
+									<th style="width: 8%">Lượt dùng</th>
 									<th style="width: 10%">Trạng thái</th>
-									<th style="width: 10%">Phê duyệt</th>
+									<th style="width: 8%">Phê duyệt</th>
 									<th style="width: 4%">Thao tác</th>
 								</tr>
 							</thead>
@@ -107,24 +117,33 @@
 										th:text="${dto.promotion.description}"></small></td>
 									<td><code class="fs-6"
 											th:text="${dto.promotion.promoCode}"></code></td>
-									<td><span
-										th:if="${dto.promotion.discountType == 'PERCENTAGE'}"
-										class="badge bg-info"> <i class="bi bi-percent me-1"></i>Phần
-											trăm
-									</span> <span th:if="${dto.promotion.discountType == 'FIXED'}"
-										class="badge bg-success"> <i
-											class="bi bi-currency-dollar me-1"></i>Cố định
-									</span></td>
-									<td><span
-										th:if="${dto.promotion.discountType == 'PERCENTAGE'}">
-											<strong th:text="${dto.promotion.discountValue}"></strong>% <br>
-											<small class="text-muted"> Tối đa: <span
-												th:text="${#numbers.formatDecimal(dto.promotion.maxDiscountAmount, 0, 'COMMA', 0, 'POINT')}"></span>đ
-										</small>
-									</span> <span th:if="${dto.promotion.discountType == 'FIXED'}">
-											<strong
-											th:text="${#numbers.formatDecimal(dto.promotion.discountValue, 0, 'COMMA', 0, 'POINT')}"></strong>đ
-									</span></td>
+									<td>
+										<!-- *** HIỂN THỊ LOẠI KHUYẾN MÃI *** --> <span
+										th:if="${dto.promotion.promotionType == 'ORDER'}"
+										class="badge bg-primary"> <i class="bi bi-cart me-1"></i>Toàn
+											đơn
+									</span> <span th:if="${dto.promotion.promotionType == 'PRODUCT'}"
+										class="badge bg-info"> <i class="bi bi-box me-1"></i>Sản
+											phẩm
+									</span>
+									</td>
+									<td>
+										<!-- *** CHỈ HIỂN THỊ CHO ORDER TYPE *** --> <span
+										th:if="${dto.promotion.promotionType == 'ORDER'}"> <span
+											th:if="${dto.promotion.discountType == 'PERCENTAGE'}">
+												<strong th:text="${dto.promotion.discountValue}"></strong>%
+												<br> <small class="text-muted"> Tối đa: <span
+													th:text="${#numbers.formatDecimal(dto.promotion.maxDiscountAmount, 0, 'COMMA', 0, 'POINT')}"></span>đ
+											</small>
+										</span> <span th:if="${dto.promotion.discountType == 'FIXED'}">
+												<strong
+												th:text="${#numbers.formatDecimal(dto.promotion.discountValue, 0, 'COMMA', 0, 'POINT')}"></strong>đ
+										</span>
+									</span> <span th:if="${dto.promotion.promotionType == 'PRODUCT'}"
+										class="text-muted"> <small><i
+												class="bi bi-info-circle me-1"></i>Xem sản phẩm</small>
+									</span>
+									</td>
 									<td><small> <i class="bi bi-calendar-event me-1"></i>
 											<strong>Từ:</strong> <span
 											th:text="${#temporals.format(dto.promotion.startDate, 'dd/MM/yyyy HH:mm')}"></span>
@@ -161,7 +180,6 @@
 										class="badge bg-success" th:if="${dto.approvalStatus == null}">
 											Đã duyệt </span></td>
 
-
 									<td>
 										<div class="dropdown">
 											<button
@@ -175,16 +193,31 @@
 													th:data-bs-target="'#detailModal' + ${dto.promotion.promotionId}">
 														<i class="bi bi-eye me-2"></i>Chi tiết
 												</a></li>
-												<li><a class="dropdown-item"
+
+												<!-- *** CHỈ HIỂN THỊ NÚT SỬA VÀ XÓA CHO ORDER TYPE *** -->
+												<li th:if="${dto.promotion.promotionType == 'ORDER'}">
+													<a class="dropdown-item"
 													th:href="@{/vendor/promotions/edit/{id}(id=${dto.promotion.promotionId})}">
 														<i class="bi bi-pencil me-2"></i>Chỉnh sửa
-												</a></li>
+												</a>
+												</li>
+
+												<!-- *** CHO PRODUCT TYPE: CHỈ CHO XEM *** -->
+												<li th:if="${dto.promotion.promotionType == 'PRODUCT'}">
+													<a class="dropdown-item text-muted disabled" href="#"
+													title="Không thể sửa trực tiếp. Vui lòng sửa ở trang Quản lý sản phẩm">
+														<i class="bi bi-pencil me-2"></i>Xem thông tin
+												</a>
+												</li>
+
 												<li
-													th:if="${dto.promotion.status == 0 || dto.promotion.status == 1}">
+													th:if="${dto.promotion.promotionType == 'ORDER' && 
+												            (dto.promotion.status == 0 || dto.promotion.status == 1)}">
 													<hr class="dropdown-divider">
 												</li>
 												<li
-													th:if="${dto.promotion.status == 0 || dto.promotion.status == 1}">
+													th:if="${dto.promotion.promotionType == 'ORDER' && 
+												            (dto.promotion.status == 0 || dto.promotion.status == 1)}">
 													<a class="dropdown-item text-danger btn-delete-promo"
 													href="#"
 													th:attr="data-promotion-id=${dto.promotion.promotionId}, data-promotion-name=${dto.promotion.promotionName}">
@@ -192,8 +225,7 @@
 												</a>
 												</li>
 											</ul>
-										</div>
-
+										</div> <!-- MODAL CHI TIẾT -->
 										<div class="modal fade"
 											th:id="'detailModal' + ${dto.promotion.promotionId}"
 											tabindex="-1">
@@ -223,44 +255,61 @@
 																<label class="text-muted small">Mô tả</label>
 																<p th:text="${dto.promotion.description}"></p>
 															</div>
+
+															<!-- *** HIỂN THỊ LOẠI KHUYẾN MÃI *** -->
 															<div class="col-md-6">
-																<label class="text-muted small">Loại giảm giá</label>
+																<label class="text-muted small">Loại khuyến mãi</label>
 																<p>
-																	<span
-																		th:if="${dto.promotion.discountType == 'PERCENTAGE'}"
-																		class="badge bg-info">Phần trăm</span> <span
-																		th:if="${dto.promotion.discountType == 'FIXED'}"
-																		class="badge bg-success">Cố định</span>
+																	<span th:if="${dto.promotion.promotionType == 'ORDER'}"
+																		class="badge bg-primary"> Toàn đơn hàng </span> <span
+																		th:if="${dto.promotion.promotionType == 'PRODUCT'}"
+																		class="badge bg-info"> Sản phẩm </span>
 																</p>
 															</div>
-															<div class="col-md-6">
-																<label class="text-muted small">Giá trị giảm</label>
-																<p class="fw-bold">
-																	<span
-																		th:if="${dto.promotion.discountType == 'PERCENTAGE'}">
-																		<span th:text="${dto.promotion.discountValue}"></span>%
-																	</span> <span th:if="${dto.promotion.discountType == 'FIXED'}">
+
+															<!-- *** CHỈ HIỂN THỊ CHI TIẾT CHO ORDER TYPE *** -->
+															<div th:if="${dto.promotion.promotionType == 'ORDER'}">
+																<div class="col-md-6">
+																	<label class="text-muted small">Loại giảm giá</label>
+																	<p>
 																		<span
-																		th:text="${#numbers.formatDecimal(dto.promotion.discountValue, 0, 'COMMA', 0, 'POINT')}"></span>đ
-																	</span>
-																</p>
+																			th:if="${dto.promotion.discountType == 'PERCENTAGE'}"
+																			class="badge bg-info">Phần trăm</span> <span
+																			th:if="${dto.promotion.discountType == 'FIXED'}"
+																			class="badge bg-success">Cố định</span>
+																	</p>
+																</div>
+																<div class="col-md-6">
+																	<label class="text-muted small">Giá trị giảm</label>
+																	<p class="fw-bold">
+																		<span
+																			th:if="${dto.promotion.discountType == 'PERCENTAGE'}">
+																			<span th:text="${dto.promotion.discountValue}"></span>%
+																		</span> <span
+																			th:if="${dto.promotion.discountType == 'FIXED'}">
+																			<span
+																			th:text="${#numbers.formatDecimal(dto.promotion.discountValue, 0, 'COMMA', 0, 'POINT')}"></span>đ
+																		</span>
+																	</p>
+																</div>
+																<div class="col-md-6"
+																	th:if="${dto.promotion.maxDiscountAmount != null}">
+																	<label class="text-muted small">Giảm tối đa</label>
+																	<p class="fw-bold">
+																		<span
+																			th:text="${#numbers.formatDecimal(dto.promotion.maxDiscountAmount, 0, 'COMMA', 0, 'POINT')}"></span>đ
+																	</p>
+																</div>
+																<div class="col-md-6">
+																	<label class="text-muted small">Giá trị đơn
+																		hàng tối thiểu</label>
+																	<p class="fw-bold">
+																		<span
+																			th:text="${#numbers.formatDecimal(dto.promotion.minOrderValue, 0, 'COMMA', 0, 'POINT')}"></span>đ
+																	</p>
+																</div>
 															</div>
-															<div class="col-md-6"
-																th:if="${dto.promotion.maxDiscountAmount != null}">
-																<label class="text-muted small">Giảm tối đa</label>
-																<p class="fw-bold">
-																	<span
-																		th:text="${#numbers.formatDecimal(dto.promotion.maxDiscountAmount, 0, 'COMMA', 0, 'POINT')}"></span>đ
-																</p>
-															</div>
-															<div class="col-md-6">
-																<label class="text-muted small">Giá trị đơn hàng
-																	tối thiểu</label>
-																<p class="fw-bold">
-																	<span
-																		th:text="${#numbers.formatDecimal(dto.promotion.minOrderValue, 0, 'COMMA', 0, 'POINT')}"></span>đ
-																</p>
-															</div>
+
 															<div class="col-md-6">
 																<label class="text-muted small">Thời gian bắt
 																	đầu</label>
@@ -320,7 +369,7 @@
 							<li class="page-item"
 								th:classappend="${currentPage == 0} ? 'disabled'"><a
 								class="page-link"
-								th:href="@{/vendor/promotions(page=${currentPage - 1}, status=${status})}">
+								th:href="@{/vendor/promotions(page=${currentPage - 1}, status=${status}, promotionType=${promotionType})}">
 									<i class="bi bi-chevron-left"></i>
 							</a></li>
 
@@ -328,13 +377,13 @@
 								class="page-item"
 								th:classappend="${i == currentPage} ? 'active'"><a
 								class="page-link"
-								th:href="@{/vendor/promotions(page=${i}, status=${status})}"
+								th:href="@{/vendor/promotions(page=${i}, status=${status}, promotionType=${promotionType})}"
 								th:text="${i + 1}"></a></li>
 
 							<li class="page-item"
 								th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
 								<a class="page-link"
-								th:href="@{/vendor/promotions(page=${currentPage + 1}, status=${status})}">
+								th:href="@{/vendor/promotions(page=${currentPage + 1}, status=${status}, promotionType=${promotionType})}">
 									<i class="bi bi-chevron-right"></i>
 							</a>
 							</li>
@@ -344,6 +393,7 @@
 			</div>
 		</div>
 
+		<!-- MODAL XÓA -->
 		<div class="modal fade" id="deleteModal" tabindex="-1">
 			<div class="modal-dialog">
 				<div class="modal-content">
@@ -354,7 +404,8 @@
 					<div class="modal-body">
 						<p>
 							Bạn có chắc muốn gửi yêu cầu xóa khuyến mãi <strong
-								id="promoNameToDelete"></strong>? </B>
+								id="promoNameToDelete"></strong>?
+						</p>
 						<p class="text-warning">
 							<i class="bi bi-exclamation-triangle"></i> Yêu cầu này cần được
 							phê duyệt bởi Admin.
@@ -372,16 +423,11 @@
 			</div>
 		</div>
 
-		<form id="deleteForm" method="post" style="display: none;">
-			<input type="hidden" name="${_csrf.parameterName}"
-				value="${_csrf.token}" />
-		</form>
-
 		<script>
             document.addEventListener('DOMContentLoaded', function() {
                 document.querySelectorAll('.btn-delete-promo').forEach(button => {
                     button.addEventListener('click', function(event) {
-						event.preventDefault(); // Ngăn hành vi click mặc định của thẻ <a>
+						event.preventDefault();
                         const promotionId = this.getAttribute('data-promotion-id');
                         const promotionName = this.getAttribute('data-promotion-name');
                         confirmDelete(promotionId, promotionName);
