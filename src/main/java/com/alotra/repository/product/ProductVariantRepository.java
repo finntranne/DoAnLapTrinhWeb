@@ -68,4 +68,5 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
 
     @Query("SELECT pv FROM ProductVariant pv WHERE pv.stock < :threshold")
     List<ProductVariant> findLowStockVariants(@Param("threshold") Integer threshold);
+    
 }

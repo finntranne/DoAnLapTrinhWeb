@@ -64,4 +64,9 @@ public interface PromotionRepository extends JpaRepository<Promotion, Integer> {
             "AND p.status = 1 " + // Chỉ lấy các KM đã được duyệt và đang hoạt động
             "AND p.endDate > CURRENT_TIMESTAMP") // Chỉ lấy KM còn hạn
      List<Promotion> findAllActiveProductPromotionsByShop(@Param("shopId") Integer shopId);
+    
+    boolean existsByPromoCode(String promoCode);
+
+	Promotion findByPromoCode(String promoCode);
+
 }

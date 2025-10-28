@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{admin/layouts/admin-layout.html}">
+<head>
+<title>Chi tiết sản phẩm</title>
+</head>
+
+<body>
+	<main class="app-main">
+		<div layout:fragment="content">
+			<!-- Header -->
+			<div class="d-flex justify-content-between align-items-center mb-4">
+				<h2 class="mb-0">
+					<i class="bi bi-file-earmark-text me-2"></i>
+					Chi tiết Yêu cầu Phê duyệt #<span th:text="${approval.approvalId}"></span>
+				</h2>
+				<a th:href="@{/admin/products/approvals}" class="btn btn-outline-secondary">
+					<i class="bi bi-arrow-left me-1"></i>Quay lại
+				</a>
+			</div>
+
+			<!-- Status Badge -->
+			<div class="mb-4">
+				<span class="badge fs-6 px-3 py-2"
+					  th:classappend="${approval.status == 'Pending'} ? 'bg-warning text-dark' : 
+					                  (${approval.status == 'Approved'} ? 'bg-success' : 'bg-danger')">
+					<i class="bi" 
+					   th:classappend="${approval.status == 'Pending'} ? 'bi-clock-fill' : 
+					                   (${approval.status == 'Approved'} ? 'bi-check-circle-fill' : 'bi-x-circle-fill')"></i>
+					<span th:text="${approval.status}"></span>
+				</span>
+			</div>
+
+			<div class="row g-4">
+				<!-- Sản phẩm Hiện tại -->
+				<div class="col-lg-6">
+					<div class="card shadow-sm h-100">
+						<div class="card-header bg-light">
+							<h5 class="mb-0">
+								<i class="bi bi-box-seam me-2"></i>Sản phẩm Hiện tại
+							</h5>
+						</div>
+						<div class="card-body">
+							<div class="mb-3">
+								<label class="text-muted small">Tên sản phẩm</label>
+								<p class="fw-semibold mb-0" th:text="${approval.product?.productName}">-</p>
+							</div>
+							<div class="mb-3">
+								<label class="text-muted small">Giá gốc</label>
+								<p class="fw-semibold text-danger mb-0">
+									<span th:text="${#numbers.formatDecimal(approval.product?.basePrice, 0, 'COMMA', 0, 'POINT')}">0</span>₫
+								</p>
+							</div>
+							<div class="mb-3">
+								<label class="text-muted small">Danh mục</label>
+								<p class="mb-0" th:text="${approval.product?.category?.categoryName}">-</p>
+							</div>
+							<div>
+								<label class="text-muted small">Mô tả</label>
+								<p class="mb-0 text-muted" th:text="${approval.product?.description}">-</p>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Yêu cầu thay đổi -->
+				<div class="col-lg-6">
+					<div class="card shadow-sm h-100">
+						<div class="card-header bg-light">
+							<h5 class="mb-0">
+								<i class="bi bi-pencil-square me-2"></i>
+								Yêu cầu thay đổi 
+								<span class="badge bg-primary ms-2" th:text="${approval.actionType}"></span>
+							</h5>
+						</div>
+						<div class="card-body">
+							<div class="mb-3">
+								<label class="text-muted small">Người yêu cầu</label>
+								<p class="fw-semibold mb-0">
+									<i class="bi bi-person-circle me-1"></i>
+									<span th:text="${approval.requestedBy.username}">-</span>
+								</p>
+							</div>
+							<div class="mb-3">
+								<label class="text-muted small">Thời gian yêu cầu</label>
+								<p class="mb-0">
+									<i class="bi bi-calendar-event me-1"></i>
+									<span th:text="${#temporals.format(approval.requestedAt, 'HH:mm - dd/MM/yyyy')}">-</span>
+								</p>
+							</div>
+							
+							<!-- Reviewed Info (nếu có) -->
+							<div th:if="${approval.reviewedBy != null}" class="border-top pt-3 mt-3">
+								<div class="mb-2">
+									<label class="text-muted small">Người xét duyệt</label>
+									<p class="fw-semibold mb-0">
+										<i class="bi bi-person-check me-1"></i>
+										<span th:text="${approval.reviewedBy.username}">-</span>
+									</p>
+								</div>
+								<div>
+									<label class="text-muted small">Thời gian xét duyệt</label>
+									<p class="mb-0">
+										<i class="bi bi-calendar-check me-1"></i>
+										<span th:text="${#temporals.format(approval.reviewedAt, 'HH:mm - dd/MM/yyyy')}">-</span>
+									</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Chi tiết thay đổi -->
+			<div class="card shadow-sm mt-4">
+				<div class="card-header bg-light">
+					<h5 class="mb-0">
+						<i class="bi bi-list-check me-2"></i>Chi tiết các thay đổi
+					</h5>
+				</div>
+				<div class="card-body">
+					<div id="changesTableContainer">
+						<p th:if="${approval.changeDetails == null or approval.changeDetails.isEmpty()}" 
+						   class="text-muted text-center py-4 mb-0">
+							<i class="bi bi-inbox fs-1 d-block mb-2"></i>
+							Không có chi tiết thay đổi nào được ghi lại.
+						</p>
+					</div>
+					<textarea id="changeDetailsJson" style="display: none;" th:text="${approval.changeDetails}"></textarea>
+				</div>
+			</div>
+
+			<!-- Action Buttons -->
+			<div th:if="${approval.status == 'Pending'}" class="card shadow-sm mt-4">
+				<div class="card-body">
+					<div class="d-flex gap-2 justify-content-end">
+						<form th:action="@{/admin/products/reject/{id}(id=${approval.approvalId})}" 
+							  method="post" 
+							  onsubmit="return confirm('Bạn có chắc chắn muốn từ chối yêu cầu này?')">
+							<button type="submit" class="btn btn-danger">
+								<i class="bi bi-x-circle me-1"></i>Từ chối
+							</button>
+						</form>
+						<form th:action="@{/admin/products/approve/{id}(id=${approval.approvalId})}" 
+							  method="post"
+							  onsubmit="return confirm('Bạn có chắc chắn muốn phê duyệt yêu cầu này?')">
+							<button type="submit" class="btn btn-success">
+								<i class="bi bi-check-circle me-1"></i>Phê duyệt
+							</button>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</main>
+</body>
+
+<th:block layout:fragment="scripts">
+	<script th:inline="javascript">
+		const GLOBAL_TOPPINGS = /*[[${availableGlobalToppings}]]*/ []; 
+		const TOPPING_MAP = {};
+		
+		// Ánh xạ danh sách Entity thành Map<ID, Name>
+		GLOBAL_TOPPINGS.forEach(topping => {
+			// Giả định Topping entity có toppingID và toppingName
+			TOPPING_MAP[topping.toppingID] = topping.toppingName; 
+		});
+        document.addEventListener('DOMContentLoaded', function() {
+            var jsonString = document.getElementById('changeDetailsJson').value;
+            var container = document.getElementById('changesTableContainer');
+            
+            
+            if (!jsonString || jsonString.trim() === '') {
+                return;
+            }
+            
+            try {
+                var changes = JSON.parse(jsonString);
+                var html = '<div class="table-responsive">';
+                html += '<table class="table table-hover table-bordered align-middle mb-0">';
+                html += '<thead class="table-light">';
+                html += '<tr><th style="width: 25%">Trường</th><th style="width: 50%">Giá trị mới</th><th style="width: 25%">Kiểu dữ liệu</th></tr>';
+                html += '</thead><tbody>';
+
+                for (const key in changes) {
+                    if (changes.hasOwnProperty(key)) {
+                        let value = changes[key];
+                        let valueType = typeof value;
+                        let displayValue = value;
+                        if (key === 'availableToppingIds' && Array.isArray(value)) {
+                            valueType = 'Array (Tên Topping)';
+                            
+                            let toppingNames = value.map(id => {
+                                return TOPPING_MAP[id] || `ID_UNKNOWN (${id})`;
+                            });
+                            
+                            
+                            displayValue = toppingNames.join(', \n'); 
+                        } 
+                       
+                        else 
+                        if (Array.isArray(value)) {
+                            valueType = 'Array (' + value.length + ' mục)';
+                            displayValue = JSON.stringify(value, null, 2);
+                        } else if (valueType === 'object' && value !== null) {
+                            valueType = 'Object';
+                            displayValue = JSON.stringify(value, null, 2);
+                        } else if (key.toLowerCase().includes('id') && value !== null) {
+                            valueType = 'ID';
+                        } else if (valueType === 'number') {
+                            valueType = 'Số';
+                        } else if (valueType === 'boolean') {
+                            valueType = 'Boolean';
+                            displayValue = value ? 'true' : 'false';
+                        } else if (valueType === 'string') {
+                            valueType = 'Chuỗi';
+                        }
+                        
+                        const readableKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+
+                        html += '<tr>';
+                        html += '<td class="fw-semibold">' + readableKey + '</td>';
+                        
+                        // Bổ sung điều kiện cho availableToppingIds
+                        if (key === 'availableToppingIds' || Array.isArray(value) || valueType === 'Object') {
+                            html += '<td><pre class="mb-0 small bg-light p-2 rounded border" style="max-height: 200px; overflow-y: auto;">' + displayValue + '</pre></td>';
+                        } else {
+                            html += '<td>' + displayValue + '</td>';
+                        }
+                        
+                        html += '<td><span class="badge bg-secondary">' + valueType + '</span></td>';
+                        html += '</tr>';
+                    }
+                }
+
+                html += '</tbody></table></div>';
+                container.innerHTML = html;
+                
+            } catch (e) {
+                console.error("Lỗi phân tích JSON changeDetails:", e);
+                container.innerHTML = '<div class="alert alert-danger" role="alert">' +
+                                     '<i class="bi bi-exclamation-triangle-fill me-2"></i>' +
+                                     '<strong>Lỗi:</strong> Không thể phân tích chuỗi JSON này. Vui lòng kiểm tra lại định dạng dữ liệu.' +
+                                     '</div>' +
+                                     '<pre class="bg-light p-3 border rounded small" style="max-height: 300px; overflow-y: auto;">' + jsonString + '</pre>';
+            }
+        });
+    </script>
+</th:block>
+</html>

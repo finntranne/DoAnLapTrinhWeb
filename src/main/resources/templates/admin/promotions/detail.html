@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layouts/admin-layout.html}">
+<head>
+    <title>Chi tiết khuyến mãi</title>
+</head>
+
+<body>
+    <main class="app-main">
+        <div layout:fragment="content">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">
+                    <i class="bi bi-gift me-2"></i>
+                    Chi tiết Khuyến mãi #<span th:text="${promotion.promotionId}"></span>
+                </h2>
+                <div>
+                    <a th:href="@{/admin/promotions}" class="btn btn-outline-secondary me-2">
+                        <i class="bi bi-arrow-left me-1"></i>Quay lại
+                    </a>
+                   
+                </div>
+            </div>
+
+            <!-- Status and Type Badges -->
+            <div class="mb-4">
+                <span class="badge fs-6 px-3 py-2 me-2"
+                      th:classappend="${promotion.status == 1} ? 'bg-success' : 'bg-secondary'">
+                    <i class="bi" th:classappend="${promotion.status == 1} ? 'bi-check-circle-fill' : 'bi-x-circle-fill'"></i>
+                    <span th:text="${promotion.status == 1} ? 'Đang hoạt động' : 'Tạm ngưng'"></span>
+                </span>
+                <span class="badge bg-primary fs-6 px-3 py-2 me-2">
+                    <i class="bi bi-tag-fill me-1"></i>
+                    <span th:text="${promotion.promotionType}"></span>
+                </span>
+                <span class="badge bg-info fs-6 px-3 py-2" th:if="${promotion.discountType != null}">
+                    <i class="bi bi-percent me-1"></i>
+                    <span th:text="${promotion.discountType}"></span>
+                </span>
+            </div>
+
+            <div class="row g-4">
+                <!-- Thông tin chính -->
+                <div class="col-lg-8">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="bi bi-info-circle me-2"></i>Thông tin chính
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="text-muted small">Tên khuyến mãi</label>
+                                    <p class="fw-semibold mb-0" th:text="${promotion.promotionName}">-</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted small">Mã khuyến mãi</label>
+                                    <p class="mb-0">
+                                        <code class="fs-5 text-danger" th:text="${promotion.promoCode}">-</code>
+                                        <button class="btn btn-sm btn-outline-secondary ms-2" 
+                                                onclick="copyPromoCode()" title="Sao chép mã">
+                                            <i class="bi bi-clipboard"></i>
+                                        </button>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="text-muted small">Mô tả</label>
+                                <p class="mb-0" th:text="${promotion.description}">-</p>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label class="text-muted small">Loại giảm giá</label>
+                                    <p class="mb-0">
+                                        <span class="badge bg-secondary" th:text="${promotion.discountType}">-</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="text-muted small">Giá trị giảm</label>
+                                    <p class="fw-bold text-danger mb-0">
+                                        <span th:if="${promotion.discountType == 'Percentage'}">
+                                            <span th:text="${promotion.discountValue}">0</span>%
+                                        </span>
+                                        <span th:if="${promotion.discountType == 'FixedAmount'}">
+                                            <span th:text="${#numbers.formatDecimal(promotion.discountValue, 0, 'COMMA', 0, 'POINT')}">0</span>₫
+                                        </span>
+                                        <span th:if="${promotion.discountType == 'FreeShip'}">
+                                            Miễn phí ship
+                                        </span>
+                                    </p>
+                                </div>
+                                <div class="col-md-4" th:if="${promotion.maxDiscountAmount != null}">
+                                    <label class="text-muted small">Giảm tối đa</label>
+                                    <p class="fw-bold text-danger mb-0">
+                                        <span th:text="${#numbers.formatDecimal(promotion.maxDiscountAmount, 0, 'COMMA', 0, 'POINT')}">0</span>₫
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="text-muted small">Đơn hàng tối thiểu</label>
+                                    <p class="mb-0">
+                                        <i class="bi bi-cart-check me-1"></i>
+                                        <span th:text="${#numbers.formatDecimal(promotion.minOrderValue, 0, 'COMMA', 0, 'POINT')}">0</span>₫
+                                    </p>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="text-muted small">Giới hạn sử dụng</label>
+                                    <p class="mb-0">
+                                        <i class="bi bi-people me-1"></i>
+                                        <span th:text="${promotion.usageLimit != null ? promotion.usageLimit : 'Không giới hạn'}">-</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="text-muted small">Đã sử dụng</label>
+                                    <p class="mb-0">
+                                        <i class="bi bi-graph-up me-1"></i>
+                                        <span class="fw-bold" th:text="${promotion.usedCount}">0</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Thời gian -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="bi bi-calendar-range me-2"></i>Thời gian áp dụng
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="text-muted small">Ngày bắt đầu</label>
+                                    <p class="mb-0">
+                                        <i class="bi bi-calendar-check text-success me-1"></i>
+                                        <span th:text="${#temporals.format(promotion.startDate, 'HH:mm - dd/MM/yyyy')}">-</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted small">Ngày kết thúc</label>
+                                    <p class="mb-0">
+                                        <i class="bi bi-calendar-x text-danger me-1"></i>
+                                        <span th:text="${#temporals.format(promotion.endDate, 'HH:mm - dd/MM/yyyy')}">-</span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Progress bar -->
+                            <div class="mt-3" th:if="${promotion.usageLimit != null}">
+                                <label class="text-muted small">Tiến độ sử dụng</label>
+                                <div class="progress" style="height: 25px;">
+                                    <div class="progress-bar" 
+                                         role="progressbar" 
+                                         th:style="'width: ' + ${promotion.usedCount * 100.0 / promotion.usageLimit} + '%'"
+                                         th:classappend="${promotion.usedCount >= promotion.usageLimit} ? 'bg-danger' : 'bg-success'">
+                                        <span th:text="${promotion.usedCount} + '/' + ${promotion.usageLimit}"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Thông báo khi không giới hạn -->
+                            <div class="mt-3" th:if="${promotion.usageLimit == null}">
+                                <div class="alert alert-success mb-0">
+                                    <i class="bi bi-infinity me-2"></i>
+                                    <strong>Không giới hạn số lượng sử dụng</strong>
+                                    <br>
+                                    <small>Đã sử dụng: <span class="fw-bold" th:text="${promotion.usedCount}">0</span> lần</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thông tin người tạo -->
+                <div class="col-lg-4">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="bi bi-person-circle me-2"></i>Người tạo
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="text-muted small">Tên người dùng</label>
+                                <p class="fw-semibold mb-0">
+                                    <i class="bi bi-person-fill me-1"></i>
+                                    <span th:text="${promotion.createdByUserID.username}">-</span>
+                                </p>
+                            </div>
+                            <div class="mb-3" th:if="${promotion.createdByShopID != null}">
+                                <label class="text-muted small">Cửa hàng</label>
+                                <p class="mb-0">
+                                    <i class="bi bi-shop me-1"></i>
+                                    <span th:text="${promotion.createdByShopID.shopName}">-</span>
+                                </p>
+                            </div>
+                            <div th:if="${promotion.createdByShopID == null}">
+                                <div class="alert alert-info mb-0">
+                                    <i class="bi bi-shield-check me-2"></i>
+                                    <small>Khuyến mãi toàn hệ thống (Admin)</small>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <label class="text-muted small">Ngày tạo</label>
+                                <p class="mb-0">
+                                    <i class="bi bi-clock me-1"></i>
+                                    <span th:text="${#temporals.format(promotion.createdAt, 'HH:mm - dd/MM/yyyy')}">-</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Statistics -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="bi bi-bar-chart me-2"></i>Thống kê
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                                <div>
+                                    <small class="text-muted d-block">Tổng lượt dùng</small>
+                                    <h4 class="mb-0 text-primary" th:text="${promotion.usedCount}">0</h4>
+                                </div>
+                                <i class="bi bi-graph-up-arrow fs-1 text-primary"></i>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                                <div>
+                                    <small class="text-muted d-block">Còn lại</small>
+                                    <h4 class="mb-0 text-success" 
+                                        th:text="${promotion.usageLimit != null ? (promotion.usageLimit - promotion.usedCount) : '∞'}">0</h4>
+                                </div>
+                                <i class="bi bi-hourglass-split fs-1 text-success"></i>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <small class="text-muted d-block">Tỷ lệ sử dụng</small>
+                                    <h4 class="mb-0 text-info" 
+                                        th:text="${promotion.usageLimit != null ? (#numbers.formatDecimal(promotion.usedCount * 100.0 / promotion.usageLimit, 1, 'POINT', 1, 'POINT') + '%') : 'N/A'}">0%</h4>
+                                </div>
+                                <i class="bi bi-pie-chart-fill fs-1 text-info"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sản phẩm áp dụng (nếu là PRODUCT promotion) -->
+            <div class="card shadow-sm mt-4" th:if="${promotion.promotionType == 'PRODUCT'}">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="bi bi-box-seam me-2"></i>Sản phẩm áp dụng
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Tên sản phẩm</th>
+                                    <th>Giá gốc</th>
+                                    <th>Phần trăm giảm</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="pp : ${promotionProducts}">
+                                    <td th:text="${pp.product.productID}">1</td>
+                                    <td>
+                                        <a th:href="@{/admin/products/selling/detail/{id}(id=${pp.product.productID})}" 
+                                           th:text="${pp.product.productName}">Product Name</a>
+                                    </td>
+                                    <td>
+                                        <span th:text="${#numbers.formatDecimal(pp.product.basePrice, 0, 'COMMA', 0, 'POINT')}">0</span>₫
+                                    </td>
+                                    <td class="text-danger fw-bold">
+                                        <span class="badge bg-danger me-1">
+									        <span th:text="${pp.discountPercentage}">0</span>%
+									    </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge" 
+                                              th:classappend="${pp.product.status == 1} ? 'bg-success' : 'bg-secondary'"
+                                              th:text="${pp.product.status == 1} ? 'Hoạt động' : 'Tạm ngưng'">-</span>
+                                    </td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(promotionProducts)}">
+                                    <td colspan="5" class="text-center text-muted py-4">
+                                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                        Chưa có sản phẩm nào được áp dụng
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+           
+        </div>
+    </main>
+</body>
+
+<th:block layout:fragment="scripts">
+    <script th:inline="javascript">
+        function copyPromoCode() {
+            const promoCode = /*[[${promotion.promoCode}]]*/ '';
+            navigator.clipboard.writeText(promoCode).then(() => {
+                alert('Đã sao chép mã: ' + promoCode);
+            });
+        }
+    </script>
+</th:block>
+</html>

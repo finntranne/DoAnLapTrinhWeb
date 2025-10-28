@@ -260,5 +260,10 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
 	@Query("SELECT p FROM Product p WHERE p.shop.shopId = :shopId AND p.status = 1 ORDER BY p.productName")
     List<Product> findActiveProductsByShop(@Param("shopId") Integer shopId);
 
+	Page<Product> findByStatus(Integer status, Pageable pageable);
+	
+	@Query("SELECT p.productID FROM Product p WHERE p.shop.shopId IN :shopIds")
+    List<Integer> findProductIdsByShopIds(List<Integer> shopIds);
+
 
 }

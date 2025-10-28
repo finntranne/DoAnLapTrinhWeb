@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{admin/layouts/admin-layout.html}">
+
+<head>
+<title>Quản lý Toppings</title>
+</head>
+
+<body>
+	<main class="app-main">
+		<div layout:fragment="content">
+			<div class="container mt-4">
+				<div class="d-flex justify-content-between align-items-center mb-3">
+					<h3 class="fw-bold mb-0">Quản lý Topping</h3>
+				</div>
+
+				<div class="mb-3">
+					<a th:href="@{/admin/toppings/selling}"
+						class="btn btn-success me-2"> Sản phẩm đang bán </a> <a
+						th:href="@{/admin/toppings/pending}" class="btn btn-warning me-2">
+						Chờ phê duyệt </a>
+
+				</div>
+
+
+
+
+
+
+
+
+				<div class="table-responsive shadow-sm rounded">
+					<table class="table  table-hover align-middle">
+						<thead class="table-success">
+							<tr>
+								<th scope="col">ID</th>
+								<th scope="col">Hình ảnh</th>
+								<th scope="col">Tên topping</th>
+								<th scope="col">Giá thêm</th>
+								<th scope="col">Shop/Admin</th>
+								<th scope="col">Thao tác</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr th:each="topping, iterStat : ${toppings}">
+
+
+								<td th:text="${topping.toppingID}"></td>
+								
+								<td>
+								    <img th:src="${topping.imageURL != null and topping.imageURL != '' ? topping.imageURL : '/images/placeholder.png'}"
+								         alt="Topping Image"
+								         class="img-thumbnail"
+								         style="width: 60px; height: 60px; object-fit: cover;">
+								</td>
+								
+								<td th:text="${topping.toppingName}"></td>
+
+								<td th:text="${#numbers.formatDecimal(topping.additionalPrice, 0, 0)} + ' đ'"></td>
+
+								<td th:text="${topping.shop != null ? topping.shop.shopName : 'Admin'}"></td>
+
+
+								
+
+
+								<td>
+									<div class="d-flex gap-2 justify-content-start">
+										<a
+											th:href="@{'/admin/toppings/selling/detail/' + ${topping.toppingID}}"
+											class="btn btn-outline-info btn-sm "> <i
+											class="bi bi-eye"></i>
+										</a> <a
+											th:href="@{'/admin/toppings/delete/' + ${topping.toppingID}(page=${currentPage})}"
+											class="btn btn-outline-danger btn-sm"> <i
+											class="bi bi-trash3"></i>
+										</a>
+
+
+									</div>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+
+
+			<nav th:if="${totalPages > 1}" class="mt-4">
+				<ul class="pagination justify-content-center flex-wrap">
+					<li class="page-item"
+						th:classappend="${currentPage == 1} ? 'disabled'"><a
+						class="page-link rounded-pill shadow-sm border-0"
+						th:href="@{'/admin/products?page=' + ${currentPage - 1}}"> <i
+							class="bi bi-chevron-double-left"></i>
+					</a></li>
+
+					<li class="page-item" th:if="${currentPage > 3}"><a
+						class="page-link rounded-pill shadow-sm border-0"
+						th:href="@{'/admin/products?page=1'}">1</a></li>
+
+					<li class="page-item disabled" th:if="${currentPage > 4}"><span
+						class="page-link border-0 bg-transparent">...</span></li>
+
+					<li class="page-item mx-1"
+						th:each="page : ${#numbers.sequence(currentPage - 1, currentPage + 1)}"
+						th:if="${page >= 1 and page <= totalPages}"
+						th:classappend="${page == currentPage} ? 'active'"><a
+						class="page-link rounded-pill shadow-sm border-0 fw-semibold"
+						th:href="@{'/admin/products?page=' + ${page}}" th:text="${page}"></a>
+					</li>
+
+					<li class="page-item disabled"
+						th:if="${currentPage < totalPages - 3}"><span
+						class="page-link border-0 bg-transparent">...</span></li>
+
+					<li class="page-item" th:if="${currentPage < totalPages - 2}">
+						<a class="page-link rounded-pill shadow-sm border-0"
+						th:href="@{'/admin/products?page=' + ${totalPages}}"
+						th:text="${totalPages}"></a>
+					</li>
+
+					<li class="page-item"
+						th:classappend="${currentPage == totalPages} ? 'disabled'"><a
+						class="page-link rounded-pill shadow-sm border-0"
+						th:href="@{'/admin/products?page=' + ${currentPage + 1}}"> <i
+							class="bi bi-chevron-double-right"></i>
+					</a></li>
+				</ul>
+			</nav>
+		</div>
+
+
+	</main>
+
+	
+
+</body>
+</html>
