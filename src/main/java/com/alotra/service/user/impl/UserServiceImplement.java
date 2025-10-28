@@ -3,6 +3,7 @@ package com.alotra.service.user.impl;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 
@@ -119,6 +120,35 @@ public class UserServiceImplement implements IUserService{
 	@Override
 	public boolean existsByEmail(String email) {
 		return userRepository.existsByEmail(email);
+	}
+
+	@Override
+	public Long countUsersForMonth(YearMonth yearMonth) {
+		LocalDateTime startDate = yearMonth.atDay(1).atStartOfDay(); 
+        LocalDateTime endDate = yearMonth.plusMonths(1).atDay(1).atStartOfDay(); 
+
+        Long userCount = userRepository.countUsersCreatedInTimeRange(startDate, endDate);
+        return userCount != null ? userCount : 0L;
+	}
+
+	@Override
+	public long getTotalNewUsersCurrentMonth() {
+		return countUsersForMonth(YearMonth.now());
+	}
+
+	@Override
+	public double calculateUserChangeRate() {
+		Long currentUsers = getTotalNewUsersCurrentMonth();
+        Long previousUsers = countUsersForMonth(YearMonth.now().minusMonths(1));
+
+        if (previousUsers == 0) {
+            return currentUsers > 0 ? 1.0 : 0.0; 
+        }
+        
+        double difference = currentUsers - previousUsers;
+        double changeRate = difference / previousUsers;
+        
+        return changeRate;
 	}
 
 }

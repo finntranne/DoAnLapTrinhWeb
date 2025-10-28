@@ -63,5 +63,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
     	        @Param("endDate") LocalDateTime endDate,
     	        Pageable pageable
     	);
+    
+    
+    @Query("SELECT COUNT(u) FROM User u WHERE u.createdAt >= :startDate AND u.createdAt < :endDate")
+    Long countUsersCreatedInTimeRange(
+        @Param("startDate") LocalDateTime startDate, 
+        @Param("endDate") LocalDateTime endDate
+    );
 
 }

@@ -161,7 +161,7 @@
 						role="navigation" aria-label="Main navigation">
 						<li class="nav-item"
 							th:classappend="${activeMenu == 'dashboard'} ? 'active' : ''">
-							<a th:href="@{/dashboard.html}"
+							<a th:href="@{/admin/dashboard}"
 							th:classappend="${activeMenu == 'dashboard'} ? 'active' : ''"
 							class="nav-link"> <i class="nav-icon bi bi-house-door-fill"></i>
 								<p>Trang chủ Admin</p>
@@ -173,7 +173,7 @@
 							th:href="@{/admin/users}"
 							th:classappend="${activeMenu == 'users'} ? 'active' : ''"
 							class="nav-link"> <i class="nav-icon bi bi-people-fill"></i>
-								<p>Người dùng</p>
+								<p>Quản lý người dùng</p>
 						</a></li>
 
 						<li class="nav-item"
@@ -181,7 +181,7 @@
 							<a th:href="@{/admin/categories}"
 							th:classappend="${activeMenu == 'categories'} ? 'active' : ''"
 							class="nav-link"> <i class="nav-icon bi bi-tags-fill"></i>
-								<p>Danh mục</p>
+								<p>Quản lý danh mục</p>
 						</a>
 						</li>
 
@@ -191,7 +191,7 @@
 							<a th:href="@{/admin/products}"
 							th:classappend="${activeMenu == 'products'} ? 'active' : ''"
 							class="nav-link"> <i class="nav-icon bi bi-box-seam"></i>
-								<p>Sản phẩm</p>
+								<p>Quản lý sản phẩm</p>
 						</a>
 						
 						<li class="nav-item"
@@ -199,30 +199,30 @@
 							<a th:href="@{/admin/toppings}"
 							th:classappend="${activeMenu == 'toppings'} ? 'active' : ''"
 							class="nav-link"> <i class="nav-icon bi bi-box-seam"></i>
-								<p>Topping</p>
+								<p>Quản lý topping</p>
 						</a>
 						
 						
 						</li>
 
 						<li class="nav-item"
-							th:classappend="${activeMenu == 'discountPolicies'} ? 'active' : ''">
-							<a th:href="@{/admin/discountPolicies}"
-							th:classappend="${activeMenu == 'discountPolicies'} ? 'active' : ''"
-							class="nav-link"> <i class="nav-icon bi bi-cash-coin"></i>
-								<p>Chiết khấu</p>
+							th:classappend="${activeMenu == 'shops'} ? 'active' : ''">
+							<a th:href="@{/admin/shops}"
+							th:classappend="${activeMenu == 'shops'} ? 'active' : ''"
+							class="nav-link"> <i class="nav-icon bi bi-shop-window me-2"></i>
+								<p>Quản lý cửa hàng</p>
 						</a>
 						</li>
 						<li class="nav-item"><a th:href="@{/admin/promotions}"
 							class="nav-link"> <i class="nav-icon bi bi-gift-fill"></i>
-								<p>Khuyến mãi</p>
+								<p>Quản lý khuyến mãi</p>
 						</a></li>
 						<li class="nav-item"
 							th:classappend="${activeMenu == 'shippingProviders'} ? 'active' : ''">
 							<a th:href="@{/admin/shippingProviders}"
 							th:classappend="${activeMenu == 'shippingProviders'} ? 'active' : ''"
 							class="nav-link"> <i class="nav-icon bi bi-truck"></i>
-								<p>Nhà vận chuyển</p>
+								<p>Quản lý nhà vận chuyển</p>
 						</a>
 						</li>
 					</ul>

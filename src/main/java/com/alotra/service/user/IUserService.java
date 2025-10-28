@@ -1,6 +1,7 @@
 package com.alotra.service.user;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,4 +37,7 @@ public interface IUserService {
     Optional<User> findByEmail(String email);
     User updateUser(Integer id, User user);
 
+    Long countUsersForMonth(YearMonth yearMonth);
+    long getTotalNewUsersCurrentMonth();
+    double calculateUserChangeRate();
 }

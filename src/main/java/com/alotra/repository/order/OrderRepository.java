@@ -75,6 +75,8 @@
 
 package com.alotra.repository.order; // Giữ package này
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -143,4 +145,36 @@ public interface OrderRepository extends JpaRepository<Order, Integer> { // Kh�
     // Bỏ các phương thức dùng Customer từ HEAD
     // List<Order> findByCustomerOrderByOrderDateDesc(Customer customer);
 	// List<Order> findByCustomerAndOrderStatusOrderByOrderDateDesc(Customer customer, String status);
+	
+	
+	
+	//Tinh doanh thu trong thang cua tat ca shop
+	@Query("SELECT SUM(o.grandTotal) FROM Order o WHERE o.orderDate >= :startDate AND o.orderDate < :endDate AND o.orderStatus = 'Completed'")
+    BigDecimal calculateMonthlyRevenue(
+        @Param("startDate") LocalDateTime startDate, 
+        @Param("endDate") LocalDateTime endDate
+    );
+	
+	@Query("SELECT COUNT(o) FROM Order o WHERE o.orderDate >= :startDate AND o.orderDate < :endDate AND o.orderStatus = 'Completed'")
+    Long countOrdersCreatedInTimeRange(
+        @Param("startDate") LocalDateTime startDate, 
+        @Param("endDate") LocalDateTime endDate
+    );
+	
+	@Query("SELECT SUM(o.grandTotal * o.shop.commissionRate / 100) FROM Order o " + 
+		       "WHERE o.orderDate >= :startDate AND o.orderDate < :endDate AND o.orderStatus = 'Completed'")
+	BigDecimal calculateMonthlyProfit(
+	    @Param("startDate") LocalDateTime startDate, 
+	    @Param("endDate") LocalDateTime endDate
+	);
+	
+	@Query("SELECT s.shopName, SUM(o.grandTotal) " +
+	           "FROM Order o JOIN o.shop s " + 
+	           "WHERE o.orderDate >= :startDate AND o.orderDate < :endDate AND o.orderStatus = 'Completed' " + 
+	           "GROUP BY s.shopName " + 
+	           "ORDER BY SUM(o.grandTotal) DESC")
+    List<Object[]> getShopRankingByRevenueWithoutDTO(
+        @Param("startDate") LocalDateTime startDate, 
+        @Param("endDate") LocalDateTime endDate
+    );
 }
