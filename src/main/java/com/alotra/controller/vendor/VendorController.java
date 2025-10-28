@@ -8,6 +8,7 @@ import com.alotra.dto.response.ApprovalResponseDTO;
 import com.alotra.dto.shop.CategoryRevenueDTO;
 import com.alotra.dto.shop.ShopDashboardDTO;
 import com.alotra.dto.shop.ShopOrderDTO;
+import com.alotra.dto.shop.ShopProfileDTO;
 import com.alotra.dto.shop.ShopRevenueDTO;
 import com.alotra.dto.topping.ToppingRequestDTO;
 import com.alotra.dto.topping.ToppingStatisticsDTO;
@@ -89,7 +90,7 @@ public class VendorController {
 		}
 		return userDetails.getUser().getId();
 	}
-
+	
 	// ==================== DASHBOARD ====================
 
 	@GetMapping("/dashboard")
@@ -1014,5 +1015,64 @@ public class VendorController {
 			redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra khi tải trang phê duyệt.");
 			return "redirect:/vendor/dashboard"; // Redirect to dashboard on general error
 		}
+	}
+	
+	// ==================== SHOP PROFILE MANAGEMENT ====================
+	// Thêm vào VendorController.java
+
+	@GetMapping("/shop-profile")
+	public String viewShopProfile(@AuthenticationPrincipal MyUserDetails userDetails, 
+	                               Model model, 
+	                               RedirectAttributes redirectAttributes) {
+	    try {
+	        Integer shopId = getShopIdOrThrow(userDetails);
+	        
+	        ShopProfileDTO shopProfile = vendorService.getShopProfile(shopId);
+	        
+	        model.addAttribute("shop", shopProfile);
+	        
+	        return "vendor/shop-profile";
+	        
+	    } catch (IllegalStateException e) {
+	        redirectAttributes.addFlashAttribute("error", e.getMessage());
+	        return "redirect:/shop/register";
+	    } catch (Exception e) {
+	        log.error("Error loading shop profile", e);
+	        redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra khi tải thông tin cửa hàng.");
+	        return "redirect:/vendor/dashboard";
+	    }
+	}
+
+	@PostMapping("/shop-profile/update")
+	public String updateShopProfile(@AuthenticationPrincipal MyUserDetails userDetails,
+	                                 @Valid @ModelAttribute("shop") ShopProfileDTO request,
+	                                 BindingResult result,
+	                                 RedirectAttributes redirectAttributes) {
+	    
+	    if (result.hasErrors()) {
+	        log.error("Validation errors: {}", result.getAllErrors());
+	        redirectAttributes.addFlashAttribute("error", "Vui lòng kiểm tra lại thông tin.");
+	        return "redirect:/vendor/shop-profile";
+	    }
+	    
+	    try {
+	        Integer shopId = getShopIdOrThrow(userDetails);
+	        Integer userId = getUserIdOrThrow(userDetails);
+	        
+	        vendorService.updateShopProfile(shopId, request, userId);
+	        
+	        redirectAttributes.addFlashAttribute("success", "Cập nhật thông tin cửa hàng thành công!");
+	        
+	        return "redirect:/vendor/shop-profile";
+	        
+	    } catch (IllegalStateException e) {
+	        log.error("Auth error: {}", e.getMessage());
+	        redirectAttributes.addFlashAttribute("error", e.getMessage());
+	        return "redirect:/shop/register";
+	    } catch (Exception e) {
+	        log.error("Error updating shop profile", e);
+	        redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+	        return "redirect:/vendor/shop-profile";
+	    }
 	}
 }
