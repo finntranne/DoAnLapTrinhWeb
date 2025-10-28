@@ -160,8 +160,16 @@
 												</td>
 												<td><span th:text="${variant.stock}"></span></td>
 												<td><span class="badge"
-													th:classappend="${variant.stock > 50} ? 'bg-success' : (variant.stock > 0 ? 'bg-warning text-dark' : 'bg-danger')"
-													th:text="${variant.stock > 50} ? 'Còn hàng' : (variant.stock > 0 ? 'Sắp hết' : 'Hết hàng')">
+													th:classappend="${
+												              (variant.stock != null and variant.stock > 50) ? 'bg-success' :
+												              (variant.stock != null and variant.stock > 0) ? 'bg-warning text-dark' :
+												              'bg-danger'
+												          }"
+													th:text="${
+												              (variant.stock != null and variant.stock > 50) ? 'Còn hàng' :
+												              (variant.stock != null and variant.stock > 0) ? 'Sắp hết' :
+												              'Hết hàng'
+												          }">
 												</span></td>
 										</tbody>
 									</table>
@@ -175,16 +183,52 @@
 								<div class="card border-0 shadow-sm rounded-3 p-4">
 									<h4 class="fw-bold mb-3 text-dark">Topping của sản phẩm</h4>
 
-									<table class="table table-hover align-middle">
-										<thead class="table-light">
-											<tr>
+									<div
+										th:if="${product.availableToppings != null && !product.availableToppings.isEmpty()}">
+										<div class="row g-3">
+											<div class="col-md-12"
+												th:each="topping : ${product.availableToppings}">
+												<div class="card border shadow-sm">
+													<div class="card-body">
+														<div class="d-flex align-items-center gap-3">
 
-											</tr>
-										</thead>
-										<tbody>
+															<!-- Hình ảnh topping -->
+															<div
+																class="rounded-circle bg-light d-flex align-items-center justify-content-center"
+																th:if="${topping.imageURL == null || topping.imageURL.isEmpty()}">
+																<i class="bi bi-cup-straw fs-3 text-muted"></i>
+															</div>
 
-										</tbody>
-									</table>
+															<img
+																th:if="${topping.imageURL != null && !topping.imageURL.isEmpty()}"
+																th:src="${topping.imageURL}"
+																class="rounded-circle border" alt="Topping" width="70"
+																height="70">
+
+															<!-- Thông tin topping -->
+															<div class="flex-grow-1">
+																<h5 class="mb-1 fw-semibold"
+																	th:text="${topping.toppingName}"></h5>
+																<p class="text-danger fw-bold mb-1 fs-5">
+																	+<span
+																		th:text="${#numbers.formatDecimal(topping.additionalPrice, 0, 'COMMA', 0, 'POINT')}">0</span>₫
+																</p>
+																<span class="badge"
+																	th:classappend="${topping.status == 1} ? 'bg-success' : 'bg-secondary'"
+																	th:text="${topping.status == 1} ? 'Còn hàng' : 'Hết hàng'">
+																</span>
+															</div>
+
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+
+									<p
+										th:if="${product.availableToppings == null || product.availableToppings.isEmpty()}"
+										class="text-muted fst-italic">Không có topping nào.</p>
 
 								</div>
 							</div>

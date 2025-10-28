@@ -33,4 +33,11 @@ public interface ToppingApprovalRepository extends JpaRepository<ToppingApproval
 	@Modifying
 	@Query(value = "EXEC sp_ApproveToppingChange @ApprovalID = :approvalId, @ReviewedByUserID = :reviewedByUserId", nativeQuery = true)
 	void approveToppingChange(@Param("approvalId") Integer approvalId, @Param("reviewedByUserId") Integer reviewedByUserId);
+    
+    @Transactional
+    @Modifying
+    @Query(value = "EXEC sp_RejectToppingChange @ApprovalID = :approvalId, @ReviewedByUserID = :reviewedByUserId, @RejectionReason = :reason", nativeQuery = true)
+    void rejectToppingChange(@Param("approvalId") Integer approvalId,
+                             @Param("reviewedByUserId") Integer reviewedByUserId,
+                             @Param("reason") String rejectionReason);
 }

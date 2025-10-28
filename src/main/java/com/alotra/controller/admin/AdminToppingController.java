@@ -108,6 +108,8 @@ public class AdminToppingController {
 		        e.printStackTrace(); 
 		    }
 		}
+		
+		System.out.print(changeMap);
 
 		model.addAttribute("approval", approval);
 
@@ -134,6 +136,24 @@ public class AdminToppingController {
 
 		return "redirect:/admin/toppings/pending";
 
+	}
+	
+	@PostMapping("/reject/{id}")
+	public String rejectProduct(@PathVariable("id") Integer approvalId,
+	                            @RequestParam("reason") String rejectionReason,
+	                            RedirectAttributes redirectAttributes,
+	                            Authentication authentication) {
+
+	    Integer reviewedByUserId = 1; 
+
+	    try {
+	        toppingApprovalService.rejectToppingChange(approvalId, reviewedByUserId, rejectionReason);
+	        redirectAttributes.addFlashAttribute("success", "Từ chối yêu cầu #" + approvalId + " thành công!");
+	    } catch (RuntimeException e) {
+	        redirectAttributes.addFlashAttribute("error", "Từ chối thất bại. Chi tiết: " + e.getMessage());
+	    }
+
+	    return "redirect:/admin/toppings/pending";
 	}
 
 }

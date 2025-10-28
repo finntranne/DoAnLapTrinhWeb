@@ -33,12 +33,12 @@
 			</div>
 
 			<div class="row g-4">
-				<!-- Sản phẩm Hiện tại -->
+				<!-- Thông tin cơ bản -->
 				<div class="col-lg-6">
 					<div class="card shadow-sm h-100">
 						<div class="card-header bg-light">
 							<h5 class="mb-0">
-								<i class="bi bi-box-seam me-2"></i>Sản phẩm Hiện tại
+								<i class="bi bi-box-seam me-2"></i>Thông tin Sản phẩm
 							</h5>
 						</div>
 						<div class="card-body">
@@ -55,6 +55,13 @@
 							<div class="mb-3">
 								<label class="text-muted small">Danh mục</label>
 								<p class="mb-0" th:text="${approval.product?.category?.categoryName}">-</p>
+							</div>
+							<div class="mb-3">
+								<label class="text-muted small">Cửa hàng</label>
+								<p class="mb-0">
+									<i class="bi bi-shop me-1"></i>
+									<span th:text="${approval.product?.shop?.shopName}">-</span>
+								</p>
 							</div>
 							<div>
 								<label class="text-muted small">Mô tả</label>
@@ -112,22 +119,149 @@
 				</div>
 			</div>
 
-			<!-- Chi tiết thay đổi -->
-			<div class="card shadow-sm mt-4">
+			<!-- Hình ảnh sản phẩm -->
+			<div class="card shadow-sm mt-4" th:if="${approval.product?.images != null && !approval.product.images.isEmpty()}">
 				<div class="card-header bg-light">
 					<h5 class="mb-0">
-						<i class="bi bi-list-check me-2"></i>Chi tiết các thay đổi
+						<i class="bi bi-images me-2"></i>Hình ảnh sản phẩm
 					</h5>
 				</div>
 				<div class="card-body">
-					<div id="changesTableContainer">
-						<p th:if="${approval.changeDetails == null or approval.changeDetails.isEmpty()}" 
-						   class="text-muted text-center py-4 mb-0">
-							<i class="bi bi-inbox fs-1 d-block mb-2"></i>
-							Không có chi tiết thay đổi nào được ghi lại.
-						</p>
+					<div class="row g-3">
+						<div class="col-md-3" th:each="image : ${approval.product.images}">
+							<div class="position-relative">
+								<img th:src="${image.imageURL}" 
+									 class="img-fluid rounded border" 
+									 alt="Product Image"
+									 style="width: 100%; height: 200px; object-fit: cover;">
+								<span th:if="${image.isPrimary}" 
+									  class="badge bg-primary position-absolute top-0 end-0 m-2">
+									Ảnh chính
+								</span>
+							</div>
+						</div>
 					</div>
-					<textarea id="changeDetailsJson" style="display: none;" th:text="${approval.changeDetails}"></textarea>
+				</div>
+			</div>
+
+			<!-- Biến thể sản phẩm -->
+			<div class="card shadow-sm mt-4" th:if="${approval.product?.variants != null && !approval.product.variants.isEmpty()}">
+				<div class="card-header bg-light">
+					<h5 class="mb-0">
+						<i class="bi bi-list-ul me-2"></i>Biến thể sản phẩm
+					</h5>
+				</div>
+				<div class="card-body">
+					<div class="table-responsive">
+						<table class="table table-hover">
+							<thead class="table-light">
+								<tr>
+									<th>Kích thước</th>
+									<th>SKU</th>
+									<th>Giá</th>
+									<th>Tồn kho</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr th:each="variant : ${approval.product.variants}">
+									<td>
+										<i class="bi bi-cup me-1"></i>
+										<span th:text="${variant.size?.sizeName}">-</span>
+									</td>
+									<td>
+										<code th:text="${variant.sku}">-</code>
+									</td>
+									<td class="text-danger fw-semibold">
+										<span th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT')}">0</span>₫
+									</td>
+									<td>
+										<span class="badge" 
+											  th:classappend="${variant.stock > 0} ? 'bg-success' : 'bg-danger'">
+											<span th:text="${variant.stock}">0</span> sản phẩm
+										</span>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<!-- Topping khả dụng -->
+			<div class="card shadow-sm mt-4" th:if="${approval.product?.availableToppings != null && !approval.product.availableToppings.isEmpty()}">
+				<div class="card-header bg-light">
+					<h5 class="mb-0">
+						<i class="bi bi-plus-circle me-2"></i>Topping khả dụng
+					</h5>
+				</div>
+				<div class="card-body">
+					<div class="row g-3">
+						<div class="col-md-4 col-lg-3" th:each="topping : ${approval.product.availableToppings}">
+							<div class="card h-100 border-0 shadow-sm">
+								<div class="card-body text-center p-3">
+									<div class="mb-2">
+										<img th:src="${topping.imageURL}" 
+											 th:if="${topping.imageURL != null && !topping.imageURL.isEmpty()}"
+											 class="img-fluid rounded-circle border" 
+											 alt="Topping"
+											 style="width: 80px; height: 80px; object-fit: cover;">
+										<div th:unless="${topping.imageURL != null && !topping.imageURL.isEmpty()}"
+											 class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto"
+											 style="width: 80px; height: 80px;">
+											<i class="bi bi-cup-straw fs-2 text-muted"></i>
+										</div>
+									</div>
+									<h6 class="mb-2 fw-semibold" th:text="${topping.toppingName}">-</h6>
+									<p class="text-danger fw-bold mb-1">
+										+<span th:text="${#numbers.formatDecimal(topping.additionalPrice, 0, 'COMMA', 0, 'POINT')}">0</span>₫
+									</p>
+									<span class="badge" 
+										  th:classappend="${topping.status == 1} ? 'bg-success' : 'bg-secondary'"
+										  th:text="${topping.status == 1} ? 'Còn hàng' : 'Hết hàng'">
+									</span>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Khuyến mãi -->
+			<div class="card shadow-sm mt-4" th:if="${approval.product?.promotionProducts != null && !approval.product.promotionProducts.isEmpty()}">
+				<div class="card-header bg-light">
+					<h5 class="mb-0">
+						<i class="bi bi-gift me-2"></i>Khuyến mãi đang áp dụng
+					</h5>
+				</div>
+				<div class="card-body">
+					<div class="table-responsive">
+						<table class="table table-hover">
+							<thead class="table-light">
+								<tr>
+									<th>Tên chương trình</th>
+									<th>Giảm giá</th>
+									<th>Thời gian</th>
+									
+								</tr>
+							</thead>
+							<tbody>
+								<tr th:each="promo : ${approval.product.promotionProducts}">
+									<td th:text="${promo.promotion?.promotionName}">-</td>
+									<td class="text-danger fw-bold">
+										-<span th:text="${promo.discountPercentage}">0</span>%
+									</td>
+									<td>
+										<small>
+											<span th:text="${#temporals.format(promo.promotion?.startDate, 'dd/MM/yyyy')}">-</span>
+											-
+											<span th:text="${#temporals.format(promo.promotion?.endDate, 'dd/MM/yyyy')}">-</span>
+										</small>
+									</td>
+									
+								</tr>
+							</tbody>
+						</table>
+					</div>
 				</div>
 			</div>
 
@@ -156,96 +290,4 @@
 	</main>
 </body>
 
-<th:block layout:fragment="scripts">
-	<script th:inline="javascript">
-		const GLOBAL_TOPPINGS = /*[[${availableGlobalToppings}]]*/ []; 
-		const TOPPING_MAP = {};
-		
-		// Ánh xạ danh sách Entity thành Map<ID, Name>
-		GLOBAL_TOPPINGS.forEach(topping => {
-			// Giả định Topping entity có toppingID và toppingName
-			TOPPING_MAP[topping.toppingID] = topping.toppingName; 
-		});
-        document.addEventListener('DOMContentLoaded', function() {
-            var jsonString = document.getElementById('changeDetailsJson').value;
-            var container = document.getElementById('changesTableContainer');
-            
-            
-            if (!jsonString || jsonString.trim() === '') {
-                return;
-            }
-            
-            try {
-                var changes = JSON.parse(jsonString);
-                var html = '<div class="table-responsive">';
-                html += '<table class="table table-hover table-bordered align-middle mb-0">';
-                html += '<thead class="table-light">';
-                html += '<tr><th style="width: 25%">Trường</th><th style="width: 50%">Giá trị mới</th><th style="width: 25%">Kiểu dữ liệu</th></tr>';
-                html += '</thead><tbody>';
-
-                for (const key in changes) {
-                    if (changes.hasOwnProperty(key)) {
-                        let value = changes[key];
-                        let valueType = typeof value;
-                        let displayValue = value;
-                        if (key === 'availableToppingIds' && Array.isArray(value)) {
-                            valueType = 'Array (Tên Topping)';
-                            
-                            let toppingNames = value.map(id => {
-                                return TOPPING_MAP[id] || `ID_UNKNOWN (${id})`;
-                            });
-                            
-                            
-                            displayValue = toppingNames.join(', \n'); 
-                        } 
-                       
-                        else 
-                        if (Array.isArray(value)) {
-                            valueType = 'Array (' + value.length + ' mục)';
-                            displayValue = JSON.stringify(value, null, 2);
-                        } else if (valueType === 'object' && value !== null) {
-                            valueType = 'Object';
-                            displayValue = JSON.stringify(value, null, 2);
-                        } else if (key.toLowerCase().includes('id') && value !== null) {
-                            valueType = 'ID';
-                        } else if (valueType === 'number') {
-                            valueType = 'Số';
-                        } else if (valueType === 'boolean') {
-                            valueType = 'Boolean';
-                            displayValue = value ? 'true' : 'false';
-                        } else if (valueType === 'string') {
-                            valueType = 'Chuỗi';
-                        }
-                        
-                        const readableKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-
-                        html += '<tr>';
-                        html += '<td class="fw-semibold">' + readableKey + '</td>';
-                        
-                        // Bổ sung điều kiện cho availableToppingIds
-                        if (key === 'availableToppingIds' || Array.isArray(value) || valueType === 'Object') {
-                            html += '<td><pre class="mb-0 small bg-light p-2 rounded border" style="max-height: 200px; overflow-y: auto;">' + displayValue + '</pre></td>';
-                        } else {
-                            html += '<td>' + displayValue + '</td>';
-                        }
-                        
-                        html += '<td><span class="badge bg-secondary">' + valueType + '</span></td>';
-                        html += '</tr>';
-                    }
-                }
-
-                html += '</tbody></table></div>';
-                container.innerHTML = html;
-                
-            } catch (e) {
-                console.error("Lỗi phân tích JSON changeDetails:", e);
-                container.innerHTML = '<div class="alert alert-danger" role="alert">' +
-                                     '<i class="bi bi-exclamation-triangle-fill me-2"></i>' +
-                                     '<strong>Lỗi:</strong> Không thể phân tích chuỗi JSON này. Vui lòng kiểm tra lại định dạng dữ liệu.' +
-                                     '</div>' +
-                                     '<pre class="bg-light p-3 border rounded small" style="max-height: 300px; overflow-y: auto;">' + jsonString + '</pre>';
-            }
-        });
-    </script>
-</th:block>
 </html>

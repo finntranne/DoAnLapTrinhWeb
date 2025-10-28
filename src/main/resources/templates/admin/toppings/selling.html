@@ -93,13 +93,13 @@
 					<li class="page-item"
 						th:classappend="${currentPage == 1} ? 'disabled'"><a
 						class="page-link rounded-pill shadow-sm border-0"
-						th:href="@{'/admin/products?page=' + ${currentPage - 1}}"> <i
+						th:href="@{'/admin/toppings?page=' + ${currentPage - 1}}"> <i
 							class="bi bi-chevron-double-left"></i>
 					</a></li>
 
 					<li class="page-item" th:if="${currentPage > 3}"><a
 						class="page-link rounded-pill shadow-sm border-0"
-						th:href="@{'/admin/products?page=1'}">1</a></li>
+						th:href="@{'/admin/toppings?page=1'}">1</a></li>
 
 					<li class="page-item disabled" th:if="${currentPage > 4}"><span
 						class="page-link border-0 bg-transparent">...</span></li>
@@ -109,7 +109,7 @@
 						th:if="${page >= 1 and page <= totalPages}"
 						th:classappend="${page == currentPage} ? 'active'"><a
 						class="page-link rounded-pill shadow-sm border-0 fw-semibold"
-						th:href="@{'/admin/products?page=' + ${page}}" th:text="${page}"></a>
+						th:href="@{'/admin/toppings?page=' + ${page}}" th:text="${page}"></a>
 					</li>
 
 					<li class="page-item disabled"
@@ -118,14 +118,14 @@
 
 					<li class="page-item" th:if="${currentPage < totalPages - 2}">
 						<a class="page-link rounded-pill shadow-sm border-0"
-						th:href="@{'/admin/products?page=' + ${totalPages}}"
+						th:href="@{'/admin/toppings?page=' + ${totalPages}}"
 						th:text="${totalPages}"></a>
 					</li>
 
 					<li class="page-item"
 						th:classappend="${currentPage == totalPages} ? 'disabled'"><a
 						class="page-link rounded-pill shadow-sm border-0"
-						th:href="@{'/admin/products?page=' + ${currentPage + 1}}"> <i
+						th:href="@{'/admin/toppings?page=' + ${currentPage + 1}}"> <i
 							class="bi bi-chevron-double-right"></i>
 					</a></li>
 				</ul>

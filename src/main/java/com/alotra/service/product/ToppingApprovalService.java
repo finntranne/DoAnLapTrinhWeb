@@ -28,5 +28,9 @@ public class ToppingApprovalService {
 	public void approveToppingChange(Integer approvalId, Integer reviewedByUserId) {
 		approvalRepository.approveToppingChange(approvalId, reviewedByUserId);
     }
+	
+	public void rejectToppingChange(Integer approvalId, Integer reviewedByUserId, String rejectionReason) {
+		approvalRepository.rejectToppingChange(approvalId, reviewedByUserId, rejectionReason);
+    }
 
 }
