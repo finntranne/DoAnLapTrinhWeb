@@ -101,6 +101,9 @@ public class LoginController {
 		if (authorities.stream().anyMatch(a -> a.getAuthority().equals("VENDOR"))) {
 			return "/vendor/dashboard";
 		}
+		if (authorities.stream().anyMatch(a -> a.getAuthority().equals("SHIPPER"))) {
+			return "/shipper/orders";
+		}
 		if (authorities.stream().anyMatch(a -> a.getAuthority().equals("CUSTOMER"))) {
 			return "/";
 		}

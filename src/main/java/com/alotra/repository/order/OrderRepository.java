@@ -139,6 +139,52 @@ public interface OrderRepository extends JpaRepository<Order, Integer> { // Kh�
 	            @Param("status") String status,
 	            @Param("searchQuery") String searchQuery,
 	            Pageable pageable);
+	
+	 // Tìm đơn hàng theo shop
+    Page<Order> findByShop_ShopId(Integer shopId, Pageable pageable);
+    
+    // Tìm đơn hàng theo shop và trạng thái
+    Page<Order> findByShop_ShopIdAndOrderStatus(Integer shopId, String orderStatus, Pageable pageable);
+    
+    // Tìm đơn hàng theo shipper
+    Page<Order> findByShipper_Id(Integer shipperId, Pageable pageable);
+    
+    // Tìm đơn hàng theo shipper và trạng thái
+    Page<Order> findByShipper_IdAndOrderStatus(Integer shipperId, String orderStatus, Pageable pageable);
+    
+    // Tìm đơn hàng của shipper với filter
+    @Query("SELECT o FROM Order o WHERE o.shipper.id = :shipperId " +
+           "AND (:status IS NULL OR o.orderStatus = :status) " +
+           "AND (:search IS NULL OR :search = '' OR " +
+           "     LOWER(o.recipientName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "     LOWER(o.recipientPhone) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "     LOWER(o.user.fullName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "     CAST(o.orderID AS string) LIKE CONCAT('%', :search, '%'))")
+    Page<Order> findShipperOrdersFiltered(
+            @Param("shipperId") Integer shipperId,
+            @Param("status") String status,
+            @Param("search") String search,
+            Pageable pageable);
+    
+    // Đếm số đơn hàng theo trạng thái của shipper
+    Long countByShipper_IdAndOrderStatus(Integer shipperId, String orderStatus);
+    
+//    // Tìm đơn hàng của shop với filter
+//    @Query("SELECT o FROM Order o WHERE o.shop.shopId = :shopId " +
+//           "AND (:status IS NULL OR o.orderStatus = :status) " +
+//           "AND (:search IS NULL OR :search = '' OR " +
+//           "     LOWER(o.recipientName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+//           "     LOWER(o.recipientPhone) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+//           "     LOWER(o.user.fullName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+//           "     LOWER(o.user.phoneNumber) LIKE LOWER(CONCAT('%', :search, '%')))")
+//    Page<Order> findShopOrdersFiltered(
+//            @Param("shopId") Integer shopId,
+//            @Param("status") String status,
+//            @Param("search") String search,
+//            Pageable pageable);
+//}
+    
+    Long countByShipper_Id(Integer shipperId);
 
     // Bỏ các phương thức dùng Customer từ HEAD
     // List<Order> findByCustomerOrderByOrderDateDesc(Customer customer);

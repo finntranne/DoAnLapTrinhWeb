@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{shipper/layouts/shipper-layout}" lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Chi tiết đơn hàng - Shipper | AloTra</title>
+
+<style>
+.status-badge {
+	font-size: 0.9rem;
+	padding: 0.5em 1em;
+}
+
+.info-card {
+	border-left: 4px solid #0d6efd;
+}
+
+.timeline {
+	position: relative;
+	padding: 20px 0;
+}
+
+.timeline-item {
+	position: relative;
+	padding-left: 40px;
+	padding-bottom: 30px;
+}
+
+.timeline-item:last-child {
+	padding-bottom: 0;
+}
+
+.timeline-item::before {
+	content: '';
+	position: absolute;
+	left: 8px;
+	top: 0;
+	bottom: -30px;
+	width: 2px;
+	background: #dee2e6;
+}
+
+.timeline-item:last-child::before {
+	display: none;
+}
+
+.timeline-icon {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	background: #0d6efd;
+	border: 3px solid #fff;
+	box-shadow: 0 0 0 2px #dee2e6;
+}
+
+.timeline-item.success .timeline-icon {
+	background: #198754;
+}
+
+.timeline-item.warning .timeline-icon {
+	background: #ffc107;
+}
+
+.timeline-item.danger .timeline-icon {
+	background: #dc3545;
+}
+
+.action-buttons .btn {
+	min-width: 150px;
+}
+
+.amount-highlight {
+	font-size: 2rem;
+	font-weight: bold;
+	color: #dc3545;
+}
+
+.info-icon {
+	width: 24px;
+	text-align: center;
+	display: inline-block;
+}
+</style>
+</head>
+<body>
+
+	<div layout:fragment="content">
+
+		<div
+			class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+			<h1 class="h2">
+				<i class="bi bi-receipt"></i> Chi tiết đơn hàng #<span
+					th:text="${order.orderId}"></span>
+			</h1>
+			<a th:href="@{/shipper/orders}" class="btn btn-outline-secondary">
+				<i class="bi bi-arrow-left"></i> Quay lại
+			</a>
+		</div>
+
+		<div th:if="${success}"
+			class="alert alert-success alert-dismissible fade show">
+			<i class="bi bi-check-circle"></i> <span th:text="${success}"></span>
+			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+		</div>
+
+		<div th:if="${error}"
+			class="alert alert-danger alert-dismissible fade show">
+			<i class="bi bi-exclamation-triangle"></i> <span th:text="${error}"></span>
+			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+		</div>
+
+		<div class="row">
+			<!-- Cột trái: Thông tin đơn hàng -->
+			<div class="col-lg-8">
+				<!-- Thông tin người nhận -->
+				<div class="card info-card mb-4">
+					<div class="card-header bg-primary text-white">
+						<h5 class="mb-0">
+							<i class="bi bi-person-circle"></i> Thông tin người nhận
+						</h5>
+					</div>
+					<div class="card-body">
+						<div class="row">
+							<div class="col-md-6 mb-3">
+								<label class="text-muted small">Họ tên</label>
+								<div class="fw-bold" th:text="${order.recipientName}"></div>
+							</div>
+							<div class="col-md-6 mb-3">
+								<label class="text-muted small">Số điện thoại</label>
+								<div class="fw-bold">
+									<a th:href="'tel:' + ${order.recipientPhone}"
+										class="text-decoration-none"> <i
+										class="bi bi-telephone-fill text-success"></i> <span
+										th:text="${order.recipientPhone}"></span>
+									</a>
+								</div>
+							</div>
+							<div class="col-12">
+								<label class="text-muted small">Địa chỉ giao hàng</label>
+								<div class="fw-bold">
+									<i class="bi bi-geo-alt-fill text-danger"></i> <span
+										th:text="${order.shippingAddress}"></span>
+								</div>
+								<a
+									th:href="'https://www.google.com/maps/search/?api=1&query=' + ${order.shippingAddress}"
+									target="_blank" class="btn btn-sm btn-outline-primary mt-2">
+									<i class="bi bi-map"></i> Xem bản đồ
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Thông tin shop -->
+				<div class="card info-card mb-4" style="border-left-color: #198754;">
+					<div class="card-header bg-success text-white">
+						<h5 class="mb-0">
+							<i class="bi bi-shop"></i> Thông tin lấy hàng
+						</h5>
+					</div>
+					<div class="card-body">
+						<div class="row">
+							<div class="col-md-6 mb-3">
+								<label class="text-muted small">Tên cửa hàng</label>
+								<div class="fw-bold" th:text="${order.shopName}"></div>
+							</div>
+							<div class="col-md-6 mb-3" th:if="${order.shopPhone != null}">
+								<label class="text-muted small">Số điện thoại</label>
+								<div class="fw-bold">
+									<a th:href="'tel:' + ${order.shopPhone}"
+										class="text-decoration-none"> <i
+										class="bi bi-telephone-fill text-success"></i> <span
+										th:text="${order.shopPhone}"></span>
+									</a>
+								</div>
+							</div>
+							<div class="col-12" th:if="${order.shopAddress != null}">
+								<label class="text-muted small">Địa chỉ lấy hàng</label>
+								<div class="fw-bold">
+									<i class="bi bi-geo-alt-fill text-success"></i> <span
+										th:text="${order.shopAddress}"></span>
+								</div>
+								<a
+									th:href="'https://www.google.com/maps/search/?api=1&query=' + ${order.shopAddress}"
+									target="_blank" class="btn btn-sm btn-outline-success mt-2">
+									<i class="bi bi-map"></i> Xem bản đồ
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Ghi chú -->
+				<div class="card mb-4"
+					th:if="${order.notes != null and !#strings.isEmpty(order.notes)}">
+					<div class="card-header bg-warning">
+						<h5 class="mb-0">
+							<i class="bi bi-chat-left-text"></i> Ghi chú từ khách hàng
+						</h5>
+					</div>
+					<div class="card-body">
+						<p class="mb-0" th:text="${order.notes}"></p>
+					</div>
+				</div>
+
+				<!-- Lịch sử giao hàng -->
+				<div class="card mb-4">
+					<div class="card-header bg-light">
+						<h5 class="mb-0">
+							<i class="bi bi-clock-history"></i> Lịch sử giao hàng
+						</h5>
+					</div>
+					<div class="card-body">
+						<div class="timeline" th:if="${!shippingHistory.isEmpty()}">
+							<div class="timeline-item" th:each="history : ${shippingHistory}"
+								th:classappend="${history.status == 'Delivered' ? 'success' : 
+								                 (history.status == 'Failed_Delivery' ? 'danger' : 
+								                 (history.status == 'Assigned' ? 'warning' : ''))}">
+								<div class="timeline-icon"></div>
+								<div>
+									<div class="d-flex justify-content-between align-items-start">
+										<div>
+											<h6 class="mb-1" th:switch="${history.status}">
+												<span th:case="'Assigned'">Đã nhận đơn hàng</span> <span
+													th:case="'Picking_Up'">Đang lấy hàng</span> <span
+													th:case="'Delivering'">Đang giao hàng</span> <span
+													th:case="'Delivery_Attempt'">Đã giao hàng (thử lại)</span>
+												<span th:case="'Delivered'">Giao hàng thành công</span> <span
+													th:case="'Failed_Delivery'">Giao hàng thất bại</span> <span
+													th:case="*" th:text="${history.status}"></span>
+											</h6>
+											<small class="text-muted"> <i class="bi bi-clock"></i>
+												<span
+												th:text="${#temporals.format(history.timestamp, 'dd/MM/yyyy HH:mm:ss')}"></span>
+											</small>
+										</div>
+									</div>
+									<p class="mt-2 mb-0"
+										th:if="${history.notes != null and !#strings.isEmpty(history.notes)}"
+										th:text="${history.notes}"></p>
+									<div th:if="${history.imageURL != null}">
+										<img th:src="${history.imageURL}" class="img-thumbnail mt-2"
+											style="max-width: 200px;" alt="Ảnh chứng minh">
+									</div>
+								</div>
+							</div>
+						</div>
+						<p class="text-muted mb-0" th:if="${shippingHistory.isEmpty()}">
+							Chưa có lịch sử giao hàng</p>
+					</div>
+				</div>
+			</div>
+
+			<!-- Cột phải: Thông tin thanh toán và hành động -->
+			<div class="col-lg-4">
+				<!-- Số tiền cần thu -->
+				<div class="card mb-4 text-center">
+					<div class="card-body">
+						<h6 class="text-muted mb-3">Số tiền cần thu</h6>
+						<div class="amount-highlight">
+							<span
+								th:text="${#numbers.formatDecimal(order.grandTotal, 0, 'COMMA', 0, 'POINT')}"></span>đ
+						</div>
+
+						<hr>
+
+						<div class="d-flex justify-content-between mb-2">
+							<span>Phương thức:</span> <span class="badge bg-secondary"
+								th:text="${order.paymentMethod}"></span>
+						</div>
+						<div class="d-flex justify-content-between mb-2">
+							<span>Trạng thái:</span> <span class="badge"
+								th:classappend="${order.paymentStatus == 'Paid' ? 'bg-success' : 'bg-warning text-dark'}">
+								<span th:if="${order.paymentStatus == 'Paid'}">Đã thanh
+									toán</span> <span th:unless="${order.paymentStatus == 'Paid'}">Chưa
+									thanh toán</span>
+							</span>
+						</div>
+						<div class="d-flex justify-content-between">
+							<span>Số sản phẩm:</span> <span class="fw-bold"> <i
+								class="bi bi-box"></i> <span th:text="${order.totalItems}"></span>
+							</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Trạng thái hiện tại -->
+				<div class="card mb-4">
+					<div class="card-header">
+						<h6 class="mb-0">
+							<i class="bi bi-info-circle"></i> Trạng thái hiện tại
+						</h6>
+					</div>
+					<div class="card-body text-center">
+						<span class="badge status-badge"
+							th:classappend="${order.currentShippingStatus == 'Assigned' ? 'bg-warning text-dark' :
+							                 (order.currentShippingStatus == 'Picking_Up' ? 'bg-info' :
+							                 (order.currentShippingStatus == 'Delivering' ? 'bg-primary' :
+							                 (order.currentShippingStatus == 'Delivered' ? 'bg-success' : 'bg-secondary')))}"
+							th:switch="${order.currentShippingStatus}"> <span
+							th:case="'Assigned'">Đã nhận đơn</span> <span
+							th:case="'Picking_Up'">Đang lấy hàng</span> <span
+							th:case="'Delivering'">Đang giao hàng</span> <span
+							th:case="'Delivery_Attempt'">Đã giao (thử lại)</span> <span
+							th:case="'Delivered'">Đã giao thành công</span> <span
+							th:case="'Failed_Delivery'">Giao thất bại</span> <span
+							th:case="*">Chờ xử lý</span>
+						</span>
+					</div>
+				</div>
+
+				<!-- Các hành động -->
+				<div class="card">
+					<div class="card-header">
+						<h6 class="mb-0">
+							<i class="bi bi-lightning"></i> Cập nhật trạng thái
+						</h6>
+					</div>
+					<div class="card-body">
+						<div class="d-grid gap-2 action-buttons">
+
+							<!-- Nút Đang lấy hàng -->
+							<button type="button" class="btn btn-info"
+								th:if="${order.currentShippingStatus == 'Assigned'}"
+								data-bs-toggle="modal" data-bs-target="#pickingUpModal">
+								<i class="bi bi-box-arrow-up"></i> Đang lấy hàng
+							</button>
+
+							<!-- Nút Đang giao -->
+							<button type="button" class="btn btn-primary"
+								th:if="${order.currentShippingStatus == 'Picking_Up' or order.currentShippingStatus == 'Delivery_Attempt'}"
+								data-bs-toggle="modal" data-bs-target="#deliveringModal">
+								<i class="bi bi-truck"></i> Đang giao hàng
+							</button>
+
+							<!-- Nút Giao thành công -->
+							<button type="button" class="btn btn-success"
+								th:if="${order.currentShippingStatus == 'Delivering'}"
+								data-bs-toggle="modal" data-bs-target="#deliveredModal">
+								<i class="bi bi-check-circle"></i> Đã giao thành công
+							</button>
+
+							<!-- Nút Hủy đơn -->
+							<button type="button" class="btn btn-danger"
+								th:if="${order.currentShippingStatus == 'Assigned' or order.currentShippingStatus == 'Picking_Up'}"
+								data-bs-toggle="modal" data-bs-target="#failedModal">
+								<i class="bi bi-x-circle"></i> Hủy đơn hàng
+							</button>
+
+							<div
+								th:if="${order.currentShippingStatus == 'Delivered' or order.orderStatus == 'Completed'}"
+								class="alert alert-success mb-0">
+								<i class="bi bi-check-circle-fill"></i> Đơn hàng đã hoàn thành
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Modal: Đang lấy hàng -->
+		<div class="modal fade" id="pickingUpModal" tabindex="-1">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<form
+						th:action="@{/shipper/orders/{id}/update-status(id=${order.orderId})}"
+						method="post">
+						<input type="hidden" name="status" value="Picking_Up">
+						<div class="modal-header">
+							<h5 class="modal-title">
+								<i class="bi bi-box-arrow-up"></i> Xác nhận đang lấy hàng
+							</h5>
+							<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+						</div>
+						<div class="modal-body">
+							<p>Bạn có chắc chắn đang trên đường đến lấy hàng?</p>
+							<div class="mb-3">
+								<label for="pickingNotes" class="form-label">Ghi chú
+									(tùy chọn)</label>
+								<textarea class="form-control" id="pickingNotes" name="notes"
+									rows="3" placeholder="Thêm ghi chú nếu cần..."></textarea>
+							</div>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-secondary"
+								data-bs-dismiss="modal">Hủy</button>
+							<button type="submit" class="btn btn-info">
+								<i class="bi bi-check"></i> Xác nhận
+							</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+
+		<!-- Modal: Đang giao hàng -->
+		<div class="modal fade" id="deliveringModal" tabindex="-1">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<form
+						th:action="@{/shipper/orders/{id}/update-status(id=${order.orderId})}"
+						method="post">
+						<input type="hidden" name="status" value="Delivering">
+						<div class="modal-header">
+							<h5 class="modal-title">
+								<i class="bi bi-truck"></i> Xác nhận đang giao hàng
+							</h5>
+							<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+						</div>
+						<div class="modal-body">
+							<p>Bạn đã lấy hàng thành công và đang trên đường giao hàng?</p>
+							<div class="mb-3">
+								<label for="deliveringNotes" class="form-label">Ghi chú
+									(tùy chọn)</label>
+								<textarea class="form-control" id="deliveringNotes" name="notes"
+									rows="3" placeholder="Thêm ghi chú nếu cần..."></textarea>
+							</div>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-secondary"
+								data-bs-dismiss="modal">Hủy</button>
+							<button type="submit" class="btn btn-primary">
+								<i class="bi bi-check"></i> Xác nhận
+							</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+
+		<!-- Modal: Giao thành công -->
+		<div class="modal fade" id="deliveredModal" tabindex="-1">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<form
+						th:action="@{/shipper/orders/{id}/update-status(id=${order.orderId})}"
+						method="post">
+						<input type="hidden" name="status" value="Delivered">
+						<div class="modal-header bg-success text-white">
+							<h5 class="modal-title">
+								<i class="bi bi-check-circle"></i> Xác nhận giao hàng thành công
+							</h5>
+							<button type="button" class="btn-close btn-close-white"
+								data-bs-dismiss="modal"></button>
+						</div>
+						<div class="modal-body">
+							<div class="alert alert-info">
+								<i class="bi bi-info-circle"></i> Sau khi xác nhận, đơn hàng sẽ
+								được đánh dấu là hoàn thành và thanh toán (nếu COD).
+							</div>
+							<div class="mb-3">
+								<label for="deliveredNotes" class="form-label">Ghi chú
+									(tùy chọn)</label>
+								<textarea class="form-control" id="deliveredNotes" name="notes"
+									rows="3" placeholder="Ghi chú về việc giao hàng..."></textarea>
+							</div>
+							<div class="mb-3">
+								<label for="imageURL" class="form-label">Link ảnh chứng
+									minh (tùy chọn)</label> <input type="url" class="form-control"
+									id="imageURL" name="imageURL"
+									placeholder="https://example.com/image.jpg"> <small
+									class="text-muted">Ảnh chụp bằng chứng giao hàng</small>
+							</div>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-secondary"
+								data-bs-dismiss="modal">Hủy</button>
+							<button type="submit" class="btn btn-success">
+								<i class="bi bi-check-circle"></i> Xác nhận giao thành công
+							</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+
+		<!-- Modal: Hủy đơn -->
+		<div class="modal fade" id="failedModal" tabindex="-1">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<form
+						th:action="@{/shipper/orders/{id}/update-status(id=${order.orderId})}"
+						method="post">
+						<input type="hidden" name="status" value="Failed_Delivery">
+						<div class="modal-header bg-danger text-white">
+							<h5 class="modal-title">
+								<i class="bi bi-x-circle"></i> Xác nhận hủy đơn hàng
+							</h5>
+							<button type="button" class="btn-close btn-close-white"
+								data-bs-dismiss="modal"></button>
+						</div>
+						<div class="modal-body">
+							<div class="alert alert-warning">
+								<i class="bi bi-exclamation-triangle"></i> Sau khi hủy, đơn hàng
+								sẽ được tìm kiếm shipper khác để giao.
+							</div>
+							<div class="mb-3">
+								<label for="failedNotes" class="form-label">Lý do hủy <span
+									class="text-danger">*</span>
+								</label>
+								<textarea class="form-control" id="failedNotes" name="notes"
+									rows="3" required placeholder="Vui lòng nhập lý do hủy đơn..."></textarea>
+							</div>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-secondary"
+								data-bs-dismiss="modal">Đóng</button>
+							<button type="submit" class="btn btn-danger">
+								<i class="bi bi-x-circle"></i> Xác nhận hủy
+							</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+
+	</div>
+</body>
+</html>

@@ -18,4 +18,8 @@ public interface OrderHistoryRepository extends JpaRepository<OrderHistory, Inte
            "WHERE oh.order.orderID = :orderId " +
            "ORDER BY oh.timestamp ASC")
     List<OrderHistory> findOrderHistoryTimeline(@Param("orderId") Integer orderId);
+    
+    // Lấy lịch sử thay đổi của đơn hàng bởi user cụ thể
+    List<OrderHistory> findByOrder_OrderIDAndChangedByUser_IdOrderByTimestampDesc(
+            Integer orderId, Integer userId);
 }
