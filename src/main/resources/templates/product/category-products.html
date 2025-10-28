@@ -24,19 +24,19 @@
             <div class="sort-options">
                 <span>Sắp xếp:</span>
                 
-                <a th:href="@{/categories/{id}(id=${categoryId}, sort='newest')}" 
+                <a th:href="@{/categories/{id}(id=${categoryId}, sort='newest', shopId=${shopId})}" 
                    th:classappend="${currentSort == 'newest'} ? 'active'">Mới nhất</a>
                    
-                <a th:href="@{/categories/{id}(id=${categoryId}, sort='nameAsc')}" 
+                <a th:href="@{/categories/{id}(id=${categoryId}, sort='nameAsc', shopId=${shopId})}" 
                    th:classappend="${currentSort == 'nameAsc'} ? 'active'">A → Z</a>
                    
-                <a th:href="@{/categories/{id}(id=${categoryId}, sort='nameDesc')}" 
+                <a th:href="@{/categories/{id}(id=${categoryId}, sort='nameDesc', shopId=${shopId})}" 
                    th:classappend="${currentSort == 'nameDesc'} ? 'active'">Z → A</a>
                    
-                <a th:href="@{/categories/{id}(id=${categoryId}, sort='priceAsc')}" 
+                <a th:href="@{/categories/{id}(id=${categoryId}, sort='priceAsc', shopId=${shopId})}" 
                    th:classappend="${currentSort == 'priceAsc'} ? 'active'">Giá tăng dần</a>
                    
-                <a th:href="@{/categories/{id}(id=${categoryId}, sort='priceDesc')}" 
+                <a th:href="@{/categories/{id}(id=${categoryId}, sort='priceDesc', shopId=${shopId})}" 
                    th:classappend="${currentSort == 'priceDesc'} ? 'active'">Giá giảm dần</a>
             </div>
         </div>
@@ -96,7 +96,13 @@
             </div>
             
             <div class="mt-5" 
-                 th:replace="~{fragments/pagination :: pagination(page=${productPage}, keyword=${null}, sort=${currentSort}, categoryId=${categoryId})}">
+                 th:replace="~{fragments/pagination :: pagination(
+                     page=${productPage}, 
+                     keyword=${null}, 
+                     sort=${currentSort}, 
+                     categoryId=${categoryId},
+                     shopId=${shopId}
+                 )}">
             </div>
         </div>
     </div>

@@ -20,17 +20,19 @@
     <div class="container my-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="mb-0">Sản Phẩm Mới</h2>
+            
             <div class="sort-options">
                 <span>Sắp xếp:</span>
-                <a th:href="@{/products/new(sort='newest')}"
+                
+                <a th:href="@{/products/new(sort='newest', shopId=${shopId})}"
                    th:classappend="${currentSort == 'newest' or currentSort == null} ? 'active'">Mới nhất</a>
-                <a th:href="@{/products/new(sort='nameAsc')}"
+                <a th:href="@{/products/new(sort='nameAsc', shopId=${shopId})}"
                    th:classappend="${currentSort == 'nameAsc'} ? 'active'">A → Z</a>
-                <a th:href="@{/products/new(sort='nameDesc')}"
+                <a th:href="@{/products/new(sort='nameDesc', shopId=${shopId})}"
                    th:classappend="${currentSort == 'nameDesc'} ? 'active'">Z → A</a>
-                <a th:href="@{/products/new(sort='priceAsc')}"
+                <a th:href="@{/products/new(sort='priceAsc', shopId=${shopId})}"
                    th:classappend="${currentSort == 'priceAsc'} ? 'active'">Giá tăng dần</a>
-                <a th:href="@{/products/new(sort='priceDesc')}"
+                <a th:href="@{/products/new(sort='priceDesc', shopId=${shopId})}"
                    th:classappend="${currentSort == 'priceDesc'} ? 'active'">Giá giảm dần</a>
             </div>
         </div>
@@ -44,8 +46,8 @@
                         <div th:if="${sale.discountPercentage != null and sale.discountPercentage > 0}" class="discount-badge" th:text="'-' + ${sale.discountPercentage} + '%'"></div>
 
                         <div class="new-badge">
-                Mới
-            </div>
+                            Mới
+                        </div>
                         
                         <img th:if="${not #lists.isEmpty(sale.product.images)}" th:src="${sale.product.images[0].imageURL}" class="card-img-top" th:alt="${sale.product.productName}">
                         <img th:unless="${not #lists.isEmpty(sale.product.images)}" th:src="@{/images/placeholder.png}" class="card-img-top" th:alt="${sale.product.productName}">
@@ -79,8 +81,14 @@
         </div>
 
         <div class="mt-5" 
-                 th:replace="~{fragments/pagination :: pagination(page=${newestProductPage}, keyword=${null}, sort=${currentSort}, categoryId=${null})}">
-            </div>
+             th:replace="~{fragments/pagination :: pagination(
+                 page=${newestProductPage}, 
+                 keyword=${null}, 
+                 sort=${currentSort}, 
+                 categoryId=${null},
+                 shopId=${shopId}
+             )}">
+        </div>
     </div>
 </section>
 </body>

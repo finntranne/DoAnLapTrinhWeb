@@ -20,17 +20,19 @@
     <div class="container my-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="mb-0">Sản Phẩm Đánh Giá Cao</h2>
+            
             <div class="sort-options">
                 <span>Sắp xếp:</span>
-                <a th:href="@{/products/top-rated(sort='topRated')}"
+                
+                <a th:href="@{/products/top-rated(sort='topRated', shopId=${shopId})}"
                    th:classappend="${currentSort == 'topRated' or currentSort == null} ? 'active'">Đánh giá cao nhất</a>
-                <a th:href="@{/products/top-rated(sort='nameAsc')}"
+                <a th:href="@{/products/top-rated(sort='nameAsc', shopId=${shopId})}"
                    th:classappend="${currentSort == 'nameAsc'} ? 'active'">A → Z</a>
-                <a th:href="@{/products/top-rated(sort='nameDesc')}"
+                <a th:href="@{/products/top-rated(sort='nameDesc', shopId=${shopId})}"
                    th:classappend="${currentSort == 'nameDesc'} ? 'active'">Z → A</a>
-                <a th:href="@{/products/top-rated(sort='priceAsc')}"
+                <a th:href="@{/products/top-rated(sort='priceAsc', shopId=${shopId})}"
                    th:classappend="${currentSort == 'priceAsc'} ? 'active'">Giá tăng dần</a>
-                <a th:href="@{/products/top-rated(sort='priceDesc')}"
+                <a th:href="@{/products/top-rated(sort='priceDesc', shopId=${shopId})}"
                    th:classappend="${currentSort == 'priceDesc'} ? 'active'">Giá giảm dần</a>
             </div>
         </div>
@@ -89,8 +91,14 @@
         </div>
 
         <div class="mt-5" 
-                 th:replace="~{fragments/pagination :: pagination(page=${topRatedProductPage}, keyword=${null}, sort=${currentSort}, categoryId=${null})}">
-            </div>
+                 th:replace="~{fragments/pagination :: pagination(
+                     page=${topRatedProductPage}, 
+                     keyword=${null}, 
+                     sort=${currentSort}, 
+                     categoryId=${null},
+                     shopId=${shopId}
+                 )}">
+        </div>
     </div>
 </section>
 </body>

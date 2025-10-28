@@ -23,6 +23,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
 	@Query("SELECT COUNT(p) FROM Product p WHERE p.shop.shopId = :shopId AND (:status IS NULL OR p.status = :status)")
 	Long countByShopIdAndStatus(@Param("shopId") Integer shopId, @Param("status") Byte status);
 
+	// Giữ nguyên các truy vấn quản lý Shop (searchShopProducts)
 	@Query(value = """
 			WITH LatestApproval AS (
 			    SELECT
@@ -74,38 +75,38 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
 			@Param("categoryId") Integer categoryId, @Param("approvalStatus") String approvalStatus,
 			@Param("search") String search, Pageable pageable);
 
-	// ===== Customer Context Queries (ĐÃ SỬA: Thêm p.status = 1) =====
+	// ===== Customer Context Queries (ĐÃ SỬA để thêm ShopId Filter) =====
 
 	@Query(value = "SELECT new com.alotra.model.ProductSaleDTO(" + "p, " + "CAST(COALESCE(p.soldCount, 0) AS long), "
 			+ "(SELECT MAX(pp.discountPercentage) " + " FROM PromotionProduct pp JOIN pp.promotion pr "
 			+ " WHERE pp.product = p AND pr.status = 1 " + // KM phải active
 			" AND pr.promotionType = 'PRODUCT' " + // CHỈ LẤY KM SẢN PHẨM
 			" AND pr.startDate <= CURRENT_TIMESTAMP AND pr.endDate >= CURRENT_TIMESTAMP)" + ") "
-			+ "FROM Product p WHERE p.status = 1", // *** THÊM ĐIỀU KIỆN ***
-			countQuery = "SELECT COUNT(p) FROM Product p WHERE p.status = 1") // *** THÊM ĐIỀU KIỆN ***
-	Page<ProductSaleDTO> findProductSaleData(Pageable pageable);
+			+ "FROM Product p WHERE p.status = 1 AND (:shopId = 0 OR p.shop.shopId = :shopId)", // *** THÊM LỌC SHOP ***
+			countQuery = "SELECT COUNT(p) FROM Product p WHERE p.status = 1 AND (:shopId = 0 OR p.shop.shopId = :shopId)") // *** THÊM LỌC SHOP ***
+	Page<ProductSaleDTO> findProductSaleData(@Param("shopId") Integer shopId, Pageable pageable); // *** THÊM PARAM ***
 
 	@Query(value = "SELECT new com.alotra.model.ProductSaleDTO(" + "p, " + "CAST(COALESCE(p.soldCount, 0) AS long), "
 			+ "(SELECT MAX(pp.discountPercentage) " + " FROM PromotionProduct pp JOIN pp.promotion pr "
 			+ " WHERE pp.product = p " + " AND pr.status = 1 AND pr.promotionType = 'PRODUCT' " + 
 			" AND pr.startDate <= CURRENT_TIMESTAMP AND pr.endDate >= CURRENT_TIMESTAMP)" + ") " + "FROM Product p "
-			+ "WHERE p.category = :category AND p.status = 1", // *** THÊM ĐIỀU KIỆN ***
-			countQuery = "SELECT COUNT(p) FROM Product p WHERE p.category = :category AND p.status = 1") // *** THÊM ĐIỀU KIỆN ***
-	Page<ProductSaleDTO> findProductSaleDataByCategory(@Param("category") Category category, Pageable pageable);
+			+ "WHERE p.category = :category AND p.status = 1 AND (:shopId = 0 OR p.shop.shopId = :shopId)", // *** THÊM LỌC SHOP ***
+			countQuery = "SELECT COUNT(p) FROM Product p WHERE p.category = :category AND p.status = 1 AND (:shopId = 0 OR p.shop.shopId = :shopId)") // *** THÊM LỌC SHOP ***
+	Page<ProductSaleDTO> findProductSaleDataByCategory(@Param("category") Category category, @Param("shopId") Integer shopId, Pageable pageable); // *** THÊM PARAM ***
 
 	@Query(value = "SELECT new com.alotra.model.ProductSaleDTO(" + "p, " + "CAST(COALESCE(p.soldCount, 0) AS long), "
 			+ "(SELECT MAX(pp.discountPercentage) " + " FROM PromotionProduct pp JOIN pp.promotion pr "
 			+ " WHERE pp.product = p AND pr.startDate <= CURRENT_TIMESTAMP AND pr.endDate >= CURRENT_TIMESTAMP)" + ") "
-			+ "FROM Product p " + "WHERE p.productID = :id AND p.status = 1") // *** THÊM ĐIỀU KIỆN ***
-	Optional<ProductSaleDTO> findProductSaleDataById(@Param("id") Integer id);
+			+ "FROM Product p " + "WHERE p.productID = :id AND p.status = 1 AND (:shopId = 0 OR p.shop.shopId = :shopId)") // *** THÊM LỌC SHOP ***
+	Optional<ProductSaleDTO> findProductSaleDataById(@Param("id") Integer id, @Param("shopId") Integer shopId); // *** THÊM PARAM ***
 
 	@Query(value = "SELECT new com.alotra.model.ProductSaleDTO(" + "p, " + "CAST(COALESCE(p.soldCount, 0) AS long), "
 			+ "(SELECT MAX(pp.discountPercentage) " + " FROM PromotionProduct pp JOIN pp.promotion pr "
 			+ " WHERE pp.product = p AND pr.startDate <= CURRENT_TIMESTAMP AND pr.endDate >= CURRENT_TIMESTAMP)" + ") "
 			+ "FROM Product p "
-			+ "WHERE LOWER(p.productName) LIKE LOWER(CONCAT('%', :keyword, '%')) AND p.status = 1", // *** THÊM ĐIỀU KIỆN ***
-			countQuery = "SELECT COUNT(p) FROM Product p WHERE LOWER(p.productName) LIKE LOWER(CONCAT('%', :keyword, '%')) AND p.status = 1") // *** THÊM ĐIỀU KIỆN ***
-	Page<ProductSaleDTO> findProductSaleDataByKeyword(@Param("keyword") String keyword, Pageable pageable);
+			+ "WHERE LOWER(p.productName) LIKE LOWER(CONCAT('%', :keyword, '%')) AND p.status = 1 AND (:shopId = 0 OR p.shop.shopId = :shopId)", // *** THÊM LỌC SHOP ***
+			countQuery = "SELECT COUNT(p) FROM Product p WHERE LOWER(p.productName) LIKE LOWER(CONCAT('%', :keyword, '%')) AND p.status = 1 AND (:shopId = 0 OR p.shop.shopId = :shopId)") // *** THÊM LỌC SHOP ***
+	Page<ProductSaleDTO> findProductSaleDataByKeyword(@Param("keyword") String keyword, @Param("shopId") Integer shopId, Pageable pageable); // *** THÊM PARAM ***
 	
 	@Query("SELECT new com.alotra.model.ProductSaleDTO(" +
 		       "p, " +
@@ -117,13 +118,13 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
 		       " AND pr.startDate <= CURRENT_TIMESTAMP AND pr.endDate >= CURRENT_TIMESTAMP)" +
 		       ") " +
 		       "FROM Product p " +
-		       "WHERE p.shop.shopId = :shopId AND p.status = 1 " + // *** ĐIỀU KIỆN ĐÃ CÓ (GIỮ NGUYÊN) ***
+		       "WHERE p.shop.shopId = :shopId AND p.status = 1 " + // Chỉ lọc theo shopId cố định (cho trang quản lý shop)
 		       "ORDER BY p.createdAt DESC")
 	Page<ProductSaleDTO> findActiveProductsByShop(
 		        @Param("shopId") Integer shopId,
 		        Pageable pageable);
 	
-	@Query("SELECT p FROM Product p WHERE p.shop.shopId = :shopId AND p.status = 1 ORDER BY p.productName") // *** ĐIỀU KIỆN ĐÃ CÓ (GIỮ NGUYÊN) ***
+	@Query("SELECT p FROM Product p WHERE p.shop.shopId = :shopId AND p.status = 1 ORDER BY p.productName") // Chỉ lọc theo shopId cố định
     List<Product> findActiveProductsByShop(@Param("shopId") Integer shopId);
 
 

@@ -45,8 +45,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.view.RedirectView; 
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.LocalDateTime; 
 import java.util.ArrayList; 
 import java.util.Collections;
 import java.util.HashMap;
@@ -98,6 +97,13 @@ public class OrderController {
             return 0;
         }
     }
+    
+ // --- Helper Lấy Shop ID từ Session ---
+    private Integer getSelectedShopId(HttpSession session) {
+        Integer selectedShopId = (Integer) session.getAttribute("selectedShopId");
+        return (selectedShopId == null) ? 0 : selectedShopId; // Mặc định là 0 (Xem tất cả)
+    }
+    
 
     // --- Hàm CHỌN ITEM CHECKOUT (Giữ nguyên) ---
     @PostMapping("/cart/select-for-checkout")
@@ -294,7 +300,9 @@ public class OrderController {
 
             // === 7. SỬA LỚN: Xử lý OrderDetail và Topping ===
             List<OrderDetail> orderDetailList = new ArrayList<>();
-            List<OrderDetailTopping> orderDetailToppingList = new ArrayList<>(); 
+            List<OrderDetailTopping> orderDetailToppingList = new ArrayList<>();
+            
+            Integer selectedShopId = getSelectedShopId(session);
 
             for (CartItem cartItem : itemsToOrder) {
                 
@@ -302,9 +310,9 @@ public class OrderController {
                 BigDecimal baseVariantPrice = cartItem.getVariant().getPrice();
                 Integer discountPercent = null;
                 if (cartItem.getVariant().getProduct() != null && cartItem.getVariant().getProduct().getProductID() != null) {
-                    Optional<ProductSaleDTO> saleDTOOpt = productService.findProductSaleDataById(
-                        cartItem.getVariant().getProduct().getProductID()
-                    );
+                	Optional<ProductSaleDTO> saleDTOOpt = productService.findProductSaleDataById(
+                            cartItem.getVariant().getProduct().getProductID(),
+                            selectedShopId);
                     if (saleDTOOpt.isPresent()) {
                         discountPercent = saleDTOOpt.get().getDiscountPercentage();
                     }
@@ -392,7 +400,6 @@ public class OrderController {
             }
 
          // Trong phương thức placeOrder(), phần VNPay
-         // Trong phương thức placeOrder(), phần VNPay
             if ("VNPay".equalsIgnoreCase(paymentMethod)) {
                 savedOrder.setOrderStatus("Pending");
                 savedOrder.setPaymentStatus("Processing");
@@ -401,6 +408,7 @@ public class OrderController {
                 String vnp_TxnRef   = String.valueOf(savedOrder.getOrderID());
                 String vnp_OrderInfo = "Thanh toan don hang #" + savedOrder.getOrderID();
 
+                // ---- vnp_Amount: chính xác, không mất số lẻ ----
                 String vnp_Amount = savedOrder.getGrandTotal()
                         .multiply(new BigDecimal("100"))
                         .setScale(0, RoundingMode.HALF_UP)
@@ -418,23 +426,20 @@ public class OrderController {
                 vnp_Params.put("vnp_Locale",     "vn");
                 vnp_Params.put("vnp_ReturnUrl",  VNPayConfig.vnp_ReturnUrl);
                 vnp_Params.put("vnp_IpAddr",     VNPayUtil.getIpAddress(request));
+                
+                // ⭐ THÊM DÒNG NÀY - BẮT BUỘC
                 vnp_Params.put("vnp_CreateDate", VNPayUtil.getCreateDate());
-                String vnp_ExpireDate = LocalDateTime.now()
-                    .plusMinutes(15)
-                    .format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-                vnp_Params.put("vnp_ExpireDate", vnp_ExpireDate);
 
-                // ⭐ SỬA: Tính hash với giá trị GỐC (không encode)
-                String queryForHash = VNPayUtil.getQueryStringForHash(vnp_Params);
+                // ---- Tạo hash ----
+                String queryForHash = VNPayUtil.getQueryString(vnp_Params);
                 String vnp_SecureHash = VNPayUtil.hmacSHA512(VNPayConfig.vnp_HashSecret, queryForHash);
 
-                // ⭐ SỬA: Tạo URL với giá trị ĐÃ ENCODE
-                String queryForUrl = VNPayUtil.getQueryString(vnp_Params);
-                String paymentUrl = VNPayConfig.vnp_Url + "?" + queryForUrl + "&vnp_SecureHash=" + vnp_SecureHash;
+                // ---- URL cuối cùng ----
+                String paymentUrl = VNPayConfig.vnp_Url + "?" + queryForHash + "&vnp_SecureHash=" + vnp_SecureHash;
                 
                 System.out.println("=== VNPAY PAYMENT REQUEST ===");
-                System.out.println("Query for hash (RAW): " + queryForHash);
-                System.out.println("Query for URL (ENCODED): " + queryForUrl);
+                vnp_Params.forEach((k, v) -> System.out.println(k + "=" + v));
+                System.out.println("Query for hash: " + queryForHash);
                 System.out.println("SecureHash: " + vnp_SecureHash);
                 System.out.println("Payment URL: " + paymentUrl);
                 System.out.println("==============================");
@@ -487,22 +492,10 @@ public class OrderController {
             RedirectAttributes redirectAttributes) {
 
         try {
-            System.out.println("=== VNPAY RETURN PARAMS ===");
-            queryParams.forEach((k, v) -> System.out.println(k + "=" + v));
-            
             String vnp_SecureHash = queryParams.get("vnp_SecureHash");
             queryParams.remove("vnp_SecureHash");
-            queryParams.remove("vnp_SecureHashType"); // VNPay có thể trả thêm param này
 
-            // ⭐ SỬA: Dùng getQueryStringForHash (không encode)
-            String queryForHash = VNPayUtil.getQueryStringForHash(queryParams);
-            String signValue = VNPayUtil.hmacSHA512(VNPayConfig.vnp_HashSecret, queryForHash);
-            
-            System.out.println("Query for verify: " + queryForHash);
-            System.out.println("Expected hash: " + signValue);
-            System.out.println("Received hash: " + vnp_SecureHash);
-            System.out.println("==============================");
-            
+            String signValue = VNPayUtil.hmacSHA512(VNPayConfig.vnp_HashSecret, VNPayUtil.getQueryString(queryParams));
             boolean isValidSignature = signValue.equals(vnp_SecureHash);
 
             if (!isValidSignature) {
@@ -514,6 +507,7 @@ public class OrderController {
             String vnp_TxnRef = queryParams.get("vnp_TxnRef");
 
             if ("00".equals(vnp_ResponseCode)) {
+                // Thanh toán thành công
                 Optional<Order> orderOpt = orderRepository.findById(Integer.parseInt(vnp_TxnRef));
                 if (orderOpt.isPresent()) {
                     Order order = orderOpt.get();
@@ -527,12 +521,12 @@ public class OrderController {
                 }
             }
 
+            // Thanh toán thất bại
             System.err.println("VNPay payment failed with code: " + vnp_ResponseCode);
             redirectAttributes.addFlashAttribute("errorMessage", "Thanh toán thất bại. Mã lỗi: " + vnp_ResponseCode);
             return "redirect:/order-failed?reason=" + vnp_ResponseCode;
 
         } catch (Exception e) {
-            e.printStackTrace();
             redirectAttributes.addFlashAttribute("errorMessage", "Lỗi xử lý thanh toán.");
             return "redirect:/order-failed?reason=system_error";
         }

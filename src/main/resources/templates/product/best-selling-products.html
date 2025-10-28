@@ -23,18 +23,19 @@
             
             <!-- Updated Sort Options -->
             <div class="sort-options">
-                <span>Sắp xếp:</span>
-                <a th:href="@{/products/best-selling(sort='bestSelling')}" 
-                   th:classappend="${currentSort == 'bestSelling'} ? 'active'">Bán chạy nhất</a>
-                <a th:href="@{/products/best-selling(sort='nameAsc')}" 
-                   th:classappend="${currentSort == 'nameAsc'} ? 'active'">A → Z</a>
-                <a th:href="@{/products/best-selling(sort='nameDesc')}" 
-                   th:classappend="${currentSort == 'nameDesc'} ? 'active'">Z → A</a>
-                <a th:href="@{/products/best-selling(sort='priceAsc')}" 
-                   th:classappend="${currentSort == 'priceAsc'} ? 'active'">Giá tăng dần</a>
-                <a th:href="@{/products/best-selling(sort='priceDesc')}" 
-                   th:classappend="${currentSort == 'priceDesc'} ? 'active'">Giá giảm dần</a>
-            </div>
+    <span>Sắp xếp:</span>
+    
+    <a th:href="@{/products/best-selling(sort='bestSelling', shopId=${shopId})}" 
+       th:classappend="${currentSort == 'bestSelling'} ? 'active'">Bán chạy nhất</a>
+    <a th:href="@{/products/best-selling(sort='nameAsc', shopId=${shopId})}" 
+       th:classappend="${currentSort == 'nameAsc'} ? 'active'">A → Z</a>
+    <a th:href="@{/products/best-selling(sort='nameDesc', shopId=${shopId})}" 
+       th:classappend="${currentSort == 'nameDesc'} ? 'active'">Z → A</a>
+    <a th:href="@{/products/best-selling(sort='priceAsc', shopId=${shopId})}" 
+       th:classappend="${currentSort == 'priceAsc'} ? 'active'">Giá tăng dần</a>
+    <a th:href="@{/products/best-selling(sort='priceDesc', shopId=${shopId})}" 
+       th:classappend="${currentSort == 'priceDesc'} ? 'active'">Giá giảm dần</a>
+</div>
         </div>
 
         <div class="my-5">
@@ -99,8 +100,13 @@
 
             <!-- Updated Pagination -->
             <div class="mt-5" 
-                 th:replace="~{fragments/pagination :: pagination(page=${bestSellingProductPage}, keyword=${null}, sort=${currentSort}, categoryId=${null})}">
-            </div>
+     th:replace="~{fragments/pagination :: pagination(
+         page=${bestSellingProductPage}, 
+         keyword=${null}, 
+         sort=${currentSort}, 
+         categoryId=${null},
+         shopId=${shopId}  )}">
+</div>
         </div>
     </div>
 </section>

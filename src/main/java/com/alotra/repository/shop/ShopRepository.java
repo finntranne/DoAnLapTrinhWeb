@@ -25,4 +25,17 @@ public interface ShopRepository extends JpaRepository<Shop, Integer> {
     
     @Query("SELECT COUNT(s) FROM Shop s WHERE s.status = :status")
     Long countByStatus(@Param("status") Byte status);
+    
+    /**
+     * Lấy danh sách tất cả các cửa hàng đang hoạt động (status = 1)
+     * Chỉ trả về các đối tượng Shop (JPA sẽ chỉ load ShopId và ShopName nếu cần thiết)
+     */
+    @Query("SELECT s FROM Shop s WHERE s.status = 1 ORDER BY s.shopName")
+    List<Shop> findAllActiveShops();
+
+    /**
+     * Lấy tên cửa hàng dựa trên ID
+     */
+    @Query("SELECT s.shopName FROM Shop s WHERE s.shopId = :shopId")
+    Optional<String> findShopNameByShopId(@Param("shopId") Integer shopId);
 }

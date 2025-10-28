@@ -229,9 +229,11 @@ public class CartServiceImpl implements CartService { // Đảm bảo CartServic
         // Lấy % giảm giá từ ProductService
         Integer discountPercent = null;
         if (variant.getProduct() != null && variant.getProduct().getProductID() != null) {
-            Optional<ProductSaleDTO> saleDTOOpt = productService.findProductSaleDataById(
-                variant.getProduct().getProductID()
-            );
+        	Integer defaultShopId = 0;
+        	Optional<ProductSaleDTO> saleDTOOpt = productService.findProductSaleDataById(
+                    variant.getProduct().getProductID(),
+                    defaultShopId // <-- THAM SỐ THIẾU ĐÃ ĐƯỢC THÊM
+                );
             
             if (saleDTOOpt.isPresent()) {
                 discountPercent = saleDTOOpt.get().getDiscountPercentage(); // Lấy % giảm giá

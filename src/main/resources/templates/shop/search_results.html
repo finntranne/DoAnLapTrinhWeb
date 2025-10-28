@@ -1,63 +1,69 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"
-th:replace="~{layouts/main :: layout(~{::title}, ~{::section})}">
+      th:replace="~{layouts/main :: layout(~{::title}, ~{::section})}">
+
 <head>
-<title th:text="'Kết quả cho: ' + ${keyword}">Tìm kiếm - AloTra</title>
+    <title th:text="'Kết quả cho: ' + ${keyword}">Tìm kiếm - AloTra</title>
 </head>
+
 <body>
 <section>
-<nav class="breadcrumb-nav">
-<div class="container">
-<ol class="breadcrumb">
-<li class="breadcrumb-item"><a th:href="@{/}">Trang chủ</a></li>
-<li class="breadcrumb-item active" aria-current="page">Tìm kiếm</li>
-</ol>
-</div>
-</nav>
-
-<div class="container my-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0">
-            Kết quả cho: "<span class="text-primary" th:text="${keyword}"></span>"
-        </h2>
-
-        <div class="sort-options">
-            <span>Sắp xếp:</span>
-            <a th:href="@{/search(keyword=${keyword}, sort='nameAsc')}"
-               th:classappend="${currentSort == 'nameAsc'} ? 'active'">A → Z</a>
-            <a th:href="@{/search(keyword=${keyword}, sort='nameDesc')}"
-               th:classappend="${currentSort == 'nameDesc'} ? 'active'">Z → A</a>
-            <a th:href="@{/search(keyword=${keyword}, sort='priceAsc')}"
-               th:classappend="${currentSort == 'priceAsc'} ? 'active'">Giá tăng dần</a>
-            <a th:href="@{/search(keyword=${keyword}, sort='priceDesc')}"
-               th:classappend="${currentSort == 'priceDesc'} ? 'active'">Giá giảm dần</a>
+    <nav class="breadcrumb-nav">
+        <div class="container">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/}">Trang chủ</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Tìm kiếm</li>
+            </ol>
         </div>
-    </div>
+    </nav>
 
-    <div th:if="${sales.empty}" class="text-center py-5">
-        <i class="fa-solid fa-search fa-4x text-muted mb-3"></i>
-        <h4 class="text-muted">Không tìm thấy sản phẩm nào khớp với "<span th:text="${keyword}"></span>".</h4>
-        <p class="text-muted">Vui lòng thử với từ khóa khác.</p>
-        <a th:href="@{/}" class="btn btn-primary mt-3">Quay về trang chủ</a>
-    </div>
+    <div class="container my-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">
+                Kết quả cho: "<span class="text-primary" th:text="${keyword}"></span>"
+            </h2>
 
-    <div th:unless="${sales.empty}">
-        <p class="text-muted mb-3">
-            Tìm thấy <strong th:text="${totalItems}"></strong> sản phẩm.
-        </p>
+            <div class="sort-options">
+    <span>Sắp xếp:</span>
+    
+    <a th:href="@{/search(keyword=${keyword}, sort='nameAsc', shopId=${shopId})}"
+       th:classappend="${currentSort == 'nameAsc'} ? 'active'">A → Z</a>
+    <a th:href="@{/search(keyword=${keyword}, sort='nameDesc', shopId=${shopId})}"
+       th:classappend="${currentSort == 'nameDesc'} ? 'active'">Z → A</a>
+    <a th:href="@{/search(keyword=${keyword}, sort='priceAsc', shopId=${shopId})}"
+       th:classappend="${currentSort == 'priceAsc'} ? 'active'">Giá tăng dần</a>
+    <a th:href="@{/search(keyword=${keyword}, sort='priceDesc', shopId=${shopId})}"
+       th:classappend="${currentSort == 'priceDesc'} ? 'active'">Giá giảm dần</a>
+</div>
+        </div>
 
-        <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-4">
-            <div class="col" th:each="sale : ${sales.content}">
-                <div th:replace="~{fragments/product-card :: product-card(sale=${sale})}"></div>
+        <div th:if="${sales.empty}" class="text-center py-5">
+            <i class="fa-solid fa-search fa-4x text-muted mb-3"></i>
+            <h4 class="text-muted">Không tìm thấy sản phẩm nào khớp với "<span th:text="${keyword}"></span>".</h4>
+            <p class="text-muted">Vui lòng thử với từ khóa khác.</p>
+            <a th:href="@{/}" class="btn btn-primary mt-3">Quay về trang chủ</a>
+        </div>
+
+        <div th:unless="${sales.empty}">
+            <p class="text-muted mb-3">
+                Tìm thấy <strong th:text="${totalItems}"></strong> sản phẩm.
+            </p>
+
+            <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-4">
+                <div class="col" th:each="sale : ${sales.content}">
+                    <div th:replace="~{fragments/product-card :: product-card(sale=${sale})}"></div>
+                </div>
             </div>
-        </div>
-        
-        <!-- Pagination với keyword và sort -->
-        <div class="mt-5"
-             th:replace="~{fragments/pagination :: pagination(page=${sales}, keyword=${keyword}, sort=${currentSort}, categoryId=${null})}">
+            
+            <div class="mt-5"
+     th:replace="~{fragments/pagination :: pagination(
+         page=${sales}, 
+         keyword=${keyword},  sort=${currentSort},
+         categoryId=${null},
+         shopId=${shopId}      )}">
+</div>
         </div>
     </div>
-</div>
 </section>
 </body>
 </html>
