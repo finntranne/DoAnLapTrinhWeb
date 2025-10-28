@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{vendor/layouts/vendor-layout}" lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Quản lý nhân viên - Vendor | AloTra</title>
+</head>
+<body>
+
+	<div layout:fragment="content">
+
+		<div
+			class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+			<h1 class="h2">
+				<i class="bi bi-people"></i> Quản lý nhân viên
+			</h1>
+			<div class="btn-toolbar mb-2 mb-md-0">
+				<a th:href="@{/vendor/staff/search}" class="btn btn-sm btn-primary">
+					<i class="bi bi-person-plus"></i> Thêm nhân viên
+				</a>
+			</div>
+		</div>
+
+		<div th:if="${success}"
+			class="alert alert-success alert-dismissible fade show" role="alert">
+			<i class="bi bi-check-circle"></i> <span th:text="${success}"></span>
+			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+		</div>
+
+		<div th:if="${error}"
+			class="alert alert-danger alert-dismissible fade show" role="alert">
+			<i class="bi bi-exclamation-triangle"></i> <span th:text="${error}"></span>
+			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+		</div>
+
+		<div class="card mb-4">
+			<div class="card-body">
+				<form th:action="@{/vendor/staff}" method="get" class="row g-3">
+					<div class="col-md-4">
+						<label class="form-label">Trạng thái</label> <select name="status"
+							class="form-select">
+							<option value="">Tất cả</option>
+							<option value="Active" th:selected="${status == 'Active'}">Đang
+								hoạt động</option>
+							<option value="Inactive" th:selected="${status == 'Inactive'}">Không
+								hoạt động</option>
+						</select>
+					</div>
+
+					<div class="col-md-6">
+						<label class="form-label">Tìm kiếm</label> <input type="text"
+							name="search" class="form-control" th:value="${search}"
+							placeholder="Tên, email, số điện thoại...">
+					</div>
+
+					<div class="col-md-2 d-flex align-items-end">
+						<button type="submit" class="btn btn-primary w-100">
+							<i class="bi bi-search"></i> Tìm kiếm
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<div class="card">
+			<div class="card-header">
+				<i class="bi bi-list-ul"></i> Danh sách nhân viên
+			</div>
+			<div class="card-body">
+				<div th:if="${employees.empty}" class="text-center py-5">
+					<i class="bi bi-inbox display-1 text-muted"></i>
+					<p class="text-muted mt-3">Chưa có nhân viên nào</p>
+					<a th:href="@{/vendor/staff/search}" class="btn btn-primary"> <i
+						class="bi bi-person-plus-fill"></i> Thêm nhân viên đầu tiên
+					</a>
+				</div>
+
+				<div th:if="${!employees.empty}" class="table-responsive">
+					<table class="table table-hover align-middle">
+						<thead class="table-light">
+							<tr>
+								<th>Nhân viên</th>
+								<th>Thông tin liên hệ</th>
+								<th>Vai trò</th>
+								<th>Trạng thái</th>
+								<th>Ngày thêm</th>
+								<th>Thao tác</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr th:each="employee : ${employees}">
+								<td>
+									<div class="d-flex align-items-center">
+										<img
+											th:src="${employee.avatarURL != null ? employee.avatarURL : '/assets/img/default-avatar.jpg'}"
+											alt="Avatar" class="rounded-circle me-2"
+											style="width: 40px; height: 40px; object-fit: cover;">
+										<div>
+											<strong th:text="${employee.fullName}"></strong>
+										</div>
+									</div>
+								</td>
+								<td>
+									<div>
+										<i class="bi bi-envelope text-muted"></i> <span
+											th:text="${employee.email}"></span>
+									</div>
+									<div>
+										<i class="bi bi-telephone text-muted"></i> <span
+											th:text="${employee.phoneNumber}"></span>
+									</div>
+								</td>
+								<td><span class="badge"
+									th:classappend="${employee.roleName == 'STAFF' ? 'bg-info' : 'bg-warning'}"
+									th:text="${employee.roleName == 'STAFF' ? 'Nhân viên' : 'Shipper'}">
+								</span></td>
+								<td><span class="badge"
+									th:classappend="${employee.status == 'Active' ? 'bg-success' : 'bg-secondary'}"
+									th:text="${employee.status == 'Active' ? 'Đang hoạt động' : 'Không hoạt động'}">
+								</span></td>
+								<td><small class="text-muted"
+									th:text="${#temporals.format(employee.assignedAt, 'dd/MM/yyyy HH:mm')}">
+								</small></td>
+								<td>
+									<div class="btn-group" role="group">
+										<a
+											th:href="@{/vendor/staff/edit/{id}(id=${employee.employeeId})}"
+											class="btn btn-sm btn-outline-primary" title="Chỉnh sửa">
+											<i class="bi bi-pencil"></i>
+										</a>
+
+										<form
+											th:action="@{/vendor/staff/deactivate/{id}(id=${employee.employeeId})}"
+											method="post"
+											onsubmit="return confirm('Bạn có chắc chắn muốn xóa nhân viên này khỏi cửa hàng?');"
+											style="display: inline-block;"
+											th:if="${employee.status == 'Active'}">
+											<button type="submit" class="btn btn-sm btn-outline-danger"
+												title="Xóa">
+												<i class="bi bi-trash"></i>
+											</button>
+										</form>
+									</div>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<nav th:if="${employees.totalPages > 1}"
+						aria-label="Page navigation">
+						<ul class="pagination justify-content-center">
+							<li class="page-item"
+								th:classappend="${currentPage == 0} ? 'disabled'"><a
+								class="page-link"
+								th:href="@{/vendor/staff(page=${currentPage - 1}, size=10, status=${status}, search=${search})}">
+									Trước </a></li>
+
+							<li class="page-item"
+								th:each="i : ${#numbers.sequence(0, employees.totalPages - 1)}"
+								th:classappend="${i == currentPage} ? 'active'"><a
+								class="page-link"
+								th:href="@{/vendor/staff(page=${i}, size=10, status=${status}, search=${search})}"
+								th:text="${i + 1}"> </a></li>
+
+							<li class="page-item"
+								th:classappend="${currentPage == employees.totalPages - 1} ? 'disabled'">
+								<a class="page-link"
+								th:href="@{/vendor/staff(page=${currentPage + 1}, size=10, status=${status}, search=${search})}">
+									Sau </a>
+							</li>
+						</ul>
+					</nav>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script layout:fragment="scripts">
+		
+	</script>
+
+</body>
+</html>
