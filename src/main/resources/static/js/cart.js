@@ -21,46 +21,71 @@ function toggleSelectAll(selectAllCheckbox) {
     updateCartSummary();
 }
 
-/**
- * Hàm tính lại tổng tiền dựa trên checkbox đã chọn
- */
+// Trong file cart.js, thay thế toàn bộ hàm updateCartSummary() bằng code này
+
 function updateCartSummary() {
     let newSubtotal = 0;
-    let selectedCount = 0;
+    let selectedCount = 0; // Số dòng sản phẩm (item types)
+    let totalQuantity = 0; // *** THÊM: Tổng số lượng sản phẩm ***
     const itemCheckboxes = document.querySelectorAll('.cart-item-checkbox');
     let allChecked = true;
 
     itemCheckboxes.forEach(checkbox => {
         const cartItemRow = checkbox.closest('.cart-item');
-        if (checkbox.checked) {
-            // Lấy tổng tiền của hàng từ data-attribute
-            const lineTotal = parseFloat(cartItemRow.dataset.lineTotal || 0);
-            newSubtotal += lineTotal;
-            selectedCount++;
-        } else {
+        
+        if (!checkbox.checked) {
             allChecked = false;
+        }
+
+        if (checkbox.checked) {
+            selectedCount++;
+            
+            // Lấy số lượng của dòng hàng này
+            const quantityInput = cartItemRow.querySelector('.quantity-input');
+            const itemQuantity = parseInt(quantityInput.value) || 0;
+            totalQuantity += itemQuantity; // *** CỘNG DỒN TỔNG SỐ LƯỢNG ***
+
+			            let lineTotalString = cartItemRow.dataset.lineTotal ? String(cartItemRow.dataset.lineTotal).replace(/[^0-9.]/g, '') : '0';
+			            
+			            // 2. Chuyển sang số thực (parseFloat) để xử lý các số thập phân như 49500.00
+			            const lineTotal = parseFloat(lineTotalString);
+            
+            if (!isNaN(lineTotal)) {
+                newSubtotal += lineTotal;
+            } else {
+                 console.error("Lỗi: Không thể chuyển đổi LineTotal thành số:", cartItemRow.dataset.lineTotal);
+            }
         }
     });
 
-    // Cập nhật text ở phần Tóm tắt
-    const subtotalSpan = document.getElementById('cart-subtotal');
-    const totalSpan = document.getElementById('cart-total');
-    const selectedCountSpan = document.getElementById('selected-count');
-
-    if (subtotalSpan) {
-        subtotalSpan.textContent = formatCurrency(newSubtotal);
-    }
-    if (totalSpan) {
-        totalSpan.textContent = formatCurrency(newSubtotal);
-    }
-    if (selectedCountSpan) {
-        selectedCountSpan.textContent = selectedCount;
-    }
-    
     // Cập nhật checkbox "Chọn tất cả"
     const selectAllCheckbox = document.getElementById('selectAllCheckbox');
     if (selectAllCheckbox) {
         selectAllCheckbox.checked = allChecked && itemCheckboxes.length > 0;
+    }
+
+    // Cập nhật UI
+    const subtotalElement = document.getElementById('cart-subtotal');
+    const totalElement = document.getElementById('cart-total');
+    const countElement = document.getElementById('selected-count'); // Nơi hiển thị số lượng
+
+    // *** CẬP NHẬT: Dùng totalQuantity thay vì selectedCount ***
+    if (countElement) {
+        countElement.textContent = totalQuantity; 
+    }
+    
+    // Cập nhật giá tiền
+    if (subtotalElement) {
+        subtotalElement.textContent = formatCurrency(newSubtotal);
+    }
+    if (totalElement) {
+        totalElement.textContent = formatCurrency(newSubtotal); 
+    }
+    
+    // Vô hiệu hóa nút thanh toán
+    const submitButton = document.querySelector('#cartForm button[type="submit"]');
+    if (submitButton) {
+        submitButton.disabled = (totalQuantity === 0);
     }
 }
 
@@ -135,9 +160,7 @@ function removeItem(cartItemId) {
     };
 }
 
-/**
- * Hàm cập nhật số lượng sản phẩm
- */
+// Trong file cart.js, thay thế toàn bộ hàm updateQuantity bằng đoạn code này
 async function updateQuantity(cartItemId, change) {
     const quantityInput = document.getElementById('quantity-' + cartItemId);
     if (!quantityInput) return;
@@ -148,14 +171,15 @@ async function updateQuantity(cartItemId, change) {
     let currentQty = parseInt(quantityInput.value);
     let newQty = currentQty + change;
 
-    // Không cho phép số lượng < 1
+    // *** LOGIC ĐÃ SỬA ***
+    // 1. Buộc newQty >= 1
     if (newQty < 1) {
         newQty = 1;
-        return;
     }
     
-    // Không làm gì nếu số lượng không thay đổi
+    // 2. Thoát nếu số lượng không thay đổi (Quan trọng!)
     if (newQty === currentQty) return;
+    // *******************
 
     const formData = new URLSearchParams();
     formData.append('quantity', newQty);

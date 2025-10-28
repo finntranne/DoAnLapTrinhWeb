@@ -305,7 +305,7 @@ public class ProductController {
 			// Có thể bỏ qua lỗi này nếu không quá nghiêm trọng
 		}
 
-		int pageSize = 15; // Ví dụ: 3 rows x 5 columns
+		int pageSize = 2; // Ví dụ: 3 rows x 5 columns
 		Sort sortOrder;
 		try {
 			// Sử dụng hàm getSort từ HomeController (cần đảm bảo nó tồn tại hoặc copy sang
@@ -323,14 +323,14 @@ public class ProductController {
 		// Giả sử ProductService có phương thức này và trả về Page<ProductSaleDTO>
 		Page<ProductSaleDTO> salePage = productService.findProductSaleDataByKeyword(keyword, pageable);
 
-		model.addAttribute("productPage", salePage); // Đổi tên attribute
+		model.addAttribute("sales", salePage);
 		model.addAttribute("keyword", keyword);
 		model.addAttribute("currentSort", sort);
 		model.addAttribute("totalItems", salePage.getTotalElements());
 		model.addAttribute("isHomePage", false);
 		model.addAttribute("pagePath", "/search"); // Path cho pagination/sort
 
-		return "product/product-list"; // Dùng view chung
+		return "shop/search_results"; // Dùng view chung
 	}
 
 	// === Cần copy hoặc tạo lớp SortHelper nếu dùng ===

@@ -27,6 +27,7 @@ public interface CartService {
 
 	void removeItemFromCart(User user, Integer cartItemId);
 
-	void addItemToCart(User user, Integer variantId, int quantity, List<Integer> toppingIds);
-
+	CartItem addItemToCart(User user, Integer variantId, int quantity, List<Integer> toppingIds);
+	
+	public BigDecimal getLineTotal(CartItem item);
 }

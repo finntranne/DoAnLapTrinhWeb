@@ -1,243 +1,259 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layouts/main :: layout(~{::title}, ~{::section})}">
+	th:replace="~{layouts/main :: layout(~{::title}, ~{::section})}">
 <head>
-    <title>Giỏ Hàng - AloTra</title>
-    <link th:href="@{/css/cart.css}" rel="stylesheet">
+<title>Giỏ Hàng - AloTra</title>
+<link th:href="@{/css/cart.css}" rel="stylesheet">
 </head>
+
 <body>
-<section>
-    <nav class="breadcrumb-nav bg-light py-2">
-        <div class="container">
-            <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item">
-                    <a th:href="@{/}" class="text-decoration-none">
-                        <i class="fa-solid fa-home me-1"></i>Trang chủ
-                    </a>
-                </li>
-                <li class="breadcrumb-item active" aria-current="page">
-                    <i class="fa-solid fa-shopping-cart me-1"></i>Giỏ hàng
-                </li>
-            </ol>
-        </div>
-    </nav>
+	<section>
+		<nav class="breadcrumb-nav bg-light py-2">
+			<div class="container">
+				<ol class="breadcrumb mb-0">
+					<li class="breadcrumb-item"><a th:href="@{/}"
+						class="text-decoration-none"> <i class="fa-solid fa-home me-1"></i>Trang
+							chủ
+					</a></li>
+					<li class="breadcrumb-item active" aria-current="page"><i
+						class="fa-solid fa-shopping-cart me-1"></i>Giỏ hàng</li>
+				</ol>
+			</div>
+		</nav>
 
-    <div class="container my-5">
-        <div class="mb-4">
-            <h1 class="fw-bold mb-2">
-                <i class="fa-solid fa-shopping-cart text-primary me-2"></i>Giỏ Hàng Của Bạn
-            </h1>
-        </div>
+		<div class="container my-5">
+			<div class="mb-4">
+				<h1 class="fw-bold mb-2">
+					<i class="fa-solid fa-shopping-cart text-primary me-2"></i>Giỏ Hàng
+					Của Bạn
+				</h1>
+			</div>
 
-        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fa-solid fa-exclamation-triangle me-2"></i>
-            <span th:text="${errorMessage}"></span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
-             <i class="fa-solid fa-check-circle me-2"></i>
-            <span th:text="${successMessage}"></span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
+			<div th:if="${errorMessage}"
+				class="alert alert-danger alert-dismissible fade show" role="alert">
+				<i class="fa-solid fa-exclamation-triangle me-2"></i> <span
+					th:text="${errorMessage}"></span>
+				<button type="button" class="btn-close" data-bs-dismiss="alert"
+					aria-label="Close"></button>
+			</div>
+			<div th:if="${successMessage}"
+				class="alert alert-success alert-dismissible fade show" role="alert">
+				<i class="fa-solid fa-check-circle me-2"></i> <span
+					th:text="${successMessage}"></span>
+				<button type="button" class="btn-close" data-bs-dismiss="alert"
+					aria-label="Close"></button>
+			</div>
 
-        <!-- Empty Cart State -->
-        <div th:if="${cartItems == null or #lists.isEmpty(cartItems)}" class="empty-cart-container text-center py-5">
-            <div class="empty-cart-icon mb-4">
-                <i class="fa-solid fa-cart-shopping fa-5x"></i>
-            </div>
-            <h3 class="mb-3">Giỏ hàng của bạn đang trống</h3>
-            <p class="text-muted mb-4">Hãy khám phá các sản phẩm tuyệt vời của chúng tôi!</p>
-            <a th:href="@{/}" class="btn btn-primary btn-lg px-5 py-3">
-                <i class="fa-solid fa-bag-shopping me-2"></i>Khám phá sản phẩm
-            </a>
-        </div>
+			<div th:if="${cartItemVMs == null or #lists.isEmpty(cartItemVMs)}"
+				class="empty-cart-container text-center py-5">
+				<div class="empty-cart-icon mb-4">
+					<i class="fa-solid fa-cart-shopping fa-5x"></i>
+				</div>
+				<h3 class="mb-3">Giỏ hàng của bạn đang trống</h3>
+				<p class="text-muted mb-4">Hãy khám phá các sản phẩm tuyệt vời
+					của chúng tôi!</p>
+				<a th:href="@{/}" class="btn btn-primary btn-lg px-5 py-3"> <i
+					class="fa-solid fa-bag-shopping me-2"></i>Khám phá sản phẩm
+				</a>
+			</div>
 
-        <!-- Cart Items -->
-        <div th:unless="${cartItems == null or #lists.isEmpty(cartItems)}">
-            <form th:action="@{/cart/select-for-checkout}" method="POST" id="cartForm">
-                <div class="row g-4">
+			<div th:unless="${cartItemVMs == null or #lists.isEmpty(cartItemVMs)}">
+				<form th:action="@{/cart/select-for-checkout}" method="POST"
+					id="cartForm">
+					<div class="row g-4">
+						<div class="col-lg-8">
+							<div class="card shadow-sm border-0 rounded-3">
+								<div
+									class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+									<div class="form-check">
+										<input class="form-check-input" type="checkbox"
+											id="selectAllCheckbox" onchange="toggleSelectAll(this)"
+											checked> <label class="form-check-label fw-bold ms-2"
+											for="selectAllCheckbox"> Sản phẩm trong giỏ (<span
+											th:text="${cartItemCount}">0</span>)
+										</label>
+									</div>
+								</div>
 
-                <!-- Cart Items List -->
-                <div class="col-lg-8">
-                    <div class="card shadow-sm border-0 rounded-3">
-                        <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" checked>
-                                <label class="form-check-label fw-bold ms-2" for="selectAllCheckbox">
-                                    Sản phẩm trong giỏ (<span th:text="${cartItemCount}">0</span>)
-                                </label>
-                            </div>
-                        </div>
+								<div class="card-body p-0">
+									
+									<div th:each="vm, iterStat : ${cartItemVMs}"
+										class="cart-item p-4"
+										th:classappend="${!iterStat.last} ? 'border-bottom' : ''"
+										
+										th:data-line-total="${vm.lineTotal}" 
+										
+										th:id="'cart-item-' + ${vm.item.cartItemID}">
 
-                        <div class="card-body p-0">
-                            <div th:each="item, iterStat : ${cartItems}"
-                                 class="cart-item p-4"
-                                 th:classappend="${!iterStat.last} ? 'border-bottom' : ''"
-                                 th:with="itemPrice=${item.variant.price},
-                                          toppingSum=${#aggregates.sum(item.selectedToppings.![additionalPrice])},
-                                          toppingPrice=${toppingSum ?: T(java.math.BigDecimal).ZERO},
-                                          lineTotal=${(itemPrice.add(toppingPrice)).multiply(new java.math.BigDecimal(item.quantity))}"
-                                 th:data-line-total="${lineTotal}"
-                                 th:id="'cart-item-' + ${item.cartItemID}">
-                                <div class="row align-items-center g-3">
+										<div class="row align-items-center g-3">
+											<div class="col-auto">
+												<div class="form-check">
+													<input class="form-check-input cart-item-checkbox"
+														type="checkbox" th:id="'checkbox-' + ${vm.item.cartItemID}"
+														th:name="selectedItemIds" th:value="${vm.item.cartItemID}"
+														onchange="updateCartSummary()" checked>
+												</div>
+											</div>
 
-                                    <!-- Checkbox Column -->
-                                    <div class="col-auto">
-                                        <div class="form-check">
-                                            <input class="form-check-input cart-item-checkbox" 
-                                                   type="checkbox" 
-                                                   th:id="'checkbox-' + ${item.cartItemID}"
-                                                   th:name="selectedItemIds"
-                                                   th:value="${item.cartItemID}"
-                                                   onchange="updateCartSummary()"
-                                                   checked>
-                                        </div>
-                                    </div>
+											<div class="col-md-2 col-3">
+												<div class="product-image-wrapper">
+													<img
+														th:if="${vm.item.variant.product.images != null and not #lists.isEmpty(vm.item.variant.product.images)}"
+														th:src="${vm.item.variant.product.images[0].imageURL}"
+														th:alt="${vm.item.variant.product.productName}"> <img
+														th:unless="${vm.item.variant.product.images != null and not #lists.isEmpty(vm.item.variant.product.images)}"
+														th:src="@{/images/placeholder.png}" alt="Placeholder">
+												</div>
+											</div>
 
-                                    <!-- Product Image -->
-                                    <div class="col-md-2 col-3">
-                                        <div class="product-image-wrapper">
-                                             <img th:if="${item.variant.product.images != null and not #lists.isEmpty(item.variant.product.images)}"
-                                                 th:src="${item.variant.product.images[0].imageURL}"
-                                                 th:alt="${item.variant.product.productName}">
-                                            <img th:unless="${item.variant.product.images != null and not #lists.isEmpty(item.variant.product.images)}"
-                                                 th:src="@{/images/placeholder.png}"
-                                                 alt="Placeholder">
-                                        </div>
-                                    </div>
+											<div class="col-md-3 col-9">
+												<h6 class="mb-1 fw-bold product-name"
+													th:text="${vm.item.variant.product.productName}"></h6>
+												<a
+													th:href="@{'/products/' + ${vm.item.variant.product.productID}}"
+													class="text-muted small text-decoration-none">Xem chi
+													tiết</a>
+												<div class="product-meta mt-2">
+													<span class="badge bg-light text-dark me-1"> <i
+														class="fa-solid fa-expand me-1"></i> Size: <span
+														th:text="${vm.item.variant.size.sizeName}"></span>
+													</span>
+													<div th:if="${not #lists.isEmpty(vm.item.selectedToppings)}"
+														class="mt-2">
+														<small class="text-muted"> <i
+															class="fa-solid fa-plus-circle me-1"></i> Topping: <span
+															th:text="${#strings.listJoin(vm.item.selectedToppings.![toppingName], ', ')}"></span>
+														</small>
+													</div>
+												</div>
+											</div>
 
-                                    <!-- Product Info -->
-                                    <div class="col-md-3 col-9">
-                                        <h6 class="mb-1 fw-bold product-name" th:text="${item.variant.product.productName}"></h6>
-                                         <a th:href="@{'/products/' + ${item.variant.product.productID}}" class="text-muted small text-decoration-none">Xem chi tiết</a>
-                                        <div class="product-meta mt-2">
-                                            <span class="badge bg-light text-dark me-1">
-                                                <i class="fa-solid fa-expand me-1"></i>
-                                                Size: <span th:text="${item.variant.size.sizeName}"></span>
-                                            </span>
-                                            <div th:if="${not #lists.isEmpty(item.selectedToppings)}" class="mt-2">
-                                                <small class="text-muted">
-                                                    <i class="fa-solid fa-plus-circle me-1"></i>
-                                                    Topping: <span th:text="${#strings.listJoin(item.selectedToppings.![toppingName], ', ')}"></span>
-                                                </small>
-                                            </div>
-                                        </div>
-                                    </div>
+											<div class="col-md-3 col-6 mt-3 mt-md-0">
+												<label
+													class="form-label small text-muted mb-1 d-block d-md-none">Số
+													lượng</label>
+												<div class="input-group quantity-selector-cart">
+													<button class="btn btn-outline-secondary btn-sm"
+														type="button"
+														th:onclick="|updateQuantity(${vm.item.cartItemID}, -1)|">
+														<i class="fa-solid fa-minus"></i>
+													</button>
+													<input type="text"
+														class="form-control form-control-sm text-center quantity-input"
+														th:value="${vm.item.quantity}"
+														th:id="'quantity-' + ${vm.item.cartItemID}" readonly>
+													<button class="btn btn-outline-secondary btn-sm"
+														type="button"
+														th:onclick="|updateQuantity(${vm.item.cartItemID}, 1)|">
+														<i class="fa-solid fa-plus"></i>
+													</button>
+												</div>
+											</div>
 
-                                    <!-- Quantity Selector -->
-                                    <div class="col-md-3 col-6 mt-3 mt-md-0">
-                                        <label class="form-label small text-muted mb-1 d-block d-md-none">Số lượng</label>
-                                        <div class="input-group quantity-selector-cart">
-                                            <button class="btn btn-outline-secondary btn-sm" type="button"
-                                                    th:onclick="|updateQuantity(${item.cartItemID}, -1)|">
-                                                <i class="fa-solid fa-minus"></i>
-                                            </button>
-                                            <input type="text" class="form-control form-control-sm text-center quantity-input"
-                                                   th:value="${item.quantity}"
-                                                   th:id="'quantity-' + ${item.cartItemID}"
-                                                   readonly>
-                                            <button class="btn btn-outline-secondary btn-sm" type="button"
-                                                    th:onclick="|updateQuantity(${item.cartItemID}, 1)|">
-                                                <i class="fa-solid fa-plus"></i>
-                                            </button>
-                                        </div>
-                                    </div>
+											<div class="col-md-2 col-4 text-end mt-3 mt-md-0">
+												<label
+													class="form-label small text-muted mb-1 d-block d-md-none">Thành
+													tiền</label> <span class="fw-bold text-danger fs-6 line-total"
+													th:text="${#numbers.formatDecimal(vm.lineTotal, 0, 'POINT', 0, 'COMMA')} + 'đ'">
+												</span>
+											</div>
 
-                                    <!-- Line Total -->
-                                    <div class="col-md-2 col-4 text-end mt-3 mt-md-0">
-                                        <label class="form-label small text-muted mb-1 d-block d-md-none">Thành tiền</label>
-                                        <span class="fw-bold text-danger fs-6 line-total"
-                                              th:text="${#numbers.formatDecimal(lineTotal, 0, 'POINT', 0, 'COMMA')} + 'đ'">
-                                        </span>
-                                    </div>
+											<div class="col-auto text-end mt-3 mt-md-0">
+												<button type="button"
+													class="btn btn-sm btn-outline-danger rounded-circle"
+													th:onclick="|removeItem(${vm.item.cartItemID})|"
+													title="Xóa sản phẩm">
+													<i class="fa-solid fa-trash"></i>
+												</button>
+												<form
+													th:action="@{/cart/remove/{itemId}(itemId=${vm.item.cartItemID})}"
+													method="post" th:id="'remove-form-' + ${vm.item.cartItemID}"
+													style="display: none;"></form>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
 
-                                    <!-- Remove Button -->
-                                    <div class="col-auto text-end mt-3 mt-md-0">
-                                        <button type="button"
-                                                class="btn btn-sm btn-outline-danger rounded-circle"
-                                                th:onclick="|removeItem(${item.cartItemID})|"
-                                                title="Xóa sản phẩm">
-                                            <i class="fa-solid fa-trash"></i>
-                                        </button>
-                                        <form th:action="@{/cart/remove/{itemId}(itemId=${item.cartItemID})}"
-                                              method="post" th:id="'remove-form-' + ${item.cartItemID}" style="display: none;"></form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+						<div class="col-lg-4">
+							<div
+								class="summary-card card shadow-sm border-0 rounded-3 position-sticky"
+								style="top: 20px;">
+								<div class="card-body p-4">
+									<h5 class="card-title mb-4 fw-bold">
+										<i class="fa-solid fa-receipt me-2"></i>Thông tin đơn hàng
+									</h5>
 
-                <!-- Order Summary -->
-                <div class="col-lg-4">
-                    <div class="summary-card card shadow-sm border-0 rounded-3 position-sticky" style="top: 20px;">
-                        <div class="card-body p-4">
-                            <h5 class="card-title mb-4 fw-bold">
-                                <i class="fa-solid fa-receipt me-2"></i>Thông tin đơn hàng
-                            </h5>
+									<ul class="list-group list-group-flush mb-4">
+										<li
+											class="list-group-item d-flex justify-content-between align-items-center py-3">
+											<span>Tạm tính (<span id="selected-count"
+												class="text-primary">0</span> sản phẩm)
+										</span> <span class="fw-semibold" id="cart-subtotal"
+											th:text="${#numbers.formatDecimal(subtotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+										</li>
+										<li
+											class="list-group-item d-flex justify-content-between align-items-center py-3">
+											<span>Phí vận chuyển</span> <span class="fw-semibold">Miễn
+												phí</span>
+										</li>
+										<li
+											class="list-group-item d-flex justify-content-between align-items-center py-3 border-top">
+											<span class="fs-5 fw-bold">Tổng cộng</span> <span
+											class="price-highlight fs-5 fw-bold" id="cart-total"
+											th:text="${#numbers.formatDecimal(subtotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+										</li>
+									</ul>
 
-                            <ul class="list-group list-group-flush mb-4">
-                                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                                    <span>Tạm tính (<span id="selected-count" class="text-primary">0</span> sản phẩm)</span>
-                                    <span class="fw-semibold" id="cart-subtotal"
-                                          th:text="${#numbers.formatDecimal(subtotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                                    <span>Phí vận chuyển</span>
-                                    <span class="fw-semibold">Miễn phí</span>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center py-3 border-top">
-                                    <span class="fs-5 fw-bold">Tổng cộng</span>
-                                    <span class="price-highlight fs-5 fw-bold" id="cart-total"
-                                          th:text="${#numbers.formatDecimal(subtotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
-                                </li>
-                            </ul>
+									<div class="d-grid gap-3">
+										<button type="submit"
+											class="btn btn-light btn-lg py-3 fw-bold">
+											<i class="fa-solid fa-credit-card me-2"></i>Tiến hành thanh
+											toán
+										</button>
+										<a th:href="@{/}" class="btn btn-outline-light"> <i
+											class="fa-solid fa-arrow-left me-2"></i>Tiếp tục mua sắm
+										</a>
+									</div>
 
-                            <div class="d-grid gap-3">
-                                 <button type="submit" class="btn btn-light btn-lg py-3 fw-bold">
-                                    <i class="fa-solid fa-credit-card me-2"></i>Tiến hành thanh toán
-                                </button>
-                                <a th:href="@{/}" class="btn btn-outline-light">
-                                    <i class="fa-solid fa-arrow-left me-2"></i>Tiếp tục mua sắm
-                                </a>
-                            </div>
+									<div class="mt-4 pt-3 border-top">
+										<small class="d-flex align-items-start"> <i
+											class="fa-solid fa-shield-halved me-2 mt-1"></i> <span>Thanh
+												toán an toàn và bảo mật</span>
+										</small>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
 
-                            <div class="mt-4 pt-3 border-top">
-                                <small class="d-flex align-items-start">
-                                    <i class="fa-solid fa-shield-halved me-2 mt-1"></i>
-                                    <span>Thanh toán an toàn và bảo mật</span>
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Confirm Remove Modal -->
-    <div class="modal fade" id="confirmRemoveModal" tabindex="-1" aria-labelledby="confirmRemoveModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header bg-warning text-dark">
-            <h5 class="modal-title" id="confirmRemoveModalLabel">
-                <i class="fa-solid fa-triangle-exclamation me-2"></i>Xác nhận xóa
-            </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng không?
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-            <button type="button" class="btn btn-danger" id="confirmRemoveBtn">Xóa</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <script th:src="@{/js/cart.js}"></script>
-</section>
+		<div class="modal fade" id="confirmRemoveModal" tabindex="-1"
+			aria-labelledby="confirmRemoveModalLabel" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header bg-warning text-dark">
+						<h5 class="modal-title" id="confirmRemoveModalLabel">
+							<i class="fa-solid fa-triangle-exclamation me-2"></i>Xác nhận xóa
+						</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"
+							aria-label="Close"></button>
+					</div>
+					<div class="modal-body">Bạn có chắc chắn muốn xóa sản phẩm
+						này khỏi giỏ hàng không?</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary"
+							data-bs-dismiss="modal">Hủy</button>
+						<button type="button" class="btn btn-danger" id="confirmRemoveBtn">Xóa</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<script th:src="@{/js/cart.js}"></script>
+	</section>
 </body>
 </html>
