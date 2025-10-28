@@ -1,7 +1,6 @@
 package com.alotra.service.cloudinary;
 
 import com.alotra.entity.common.CloudinaryAsset;
-import com.alotra.entity.user.User;
 import com.alotra.repository.common.CloudinaryAssetRepository;
 import com.alotra.repository.user.UserRepository;
 import com.cloudinary.Cloudinary;

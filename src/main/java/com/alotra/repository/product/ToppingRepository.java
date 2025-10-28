@@ -73,4 +73,11 @@ public interface ToppingRepository extends JpaRepository<Topping, Integer> { // 
     
     @Query("SELECT t FROM Topping t WHERE t.shop.shopId = :shopId AND t.status = 1 ORDER BY t.toppingName")
     List<Topping> findAllActiveToppingsByShop(@Param("shopId") Integer shopId);
+    
+    List<Topping> findByStatusAndShopIsNull(Byte status);
+
+    
+    List<Topping> findAllByToppingIDIn(List<Integer> ids);
+
+	Page<Topping> findByStatus(Byte status, Pageable pageable);
 }

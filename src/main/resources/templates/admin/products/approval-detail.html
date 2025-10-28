@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{admin/layouts/admin-layout.html}">
+<head>
+<title>Chi tiết sản phẩm</title>
+</head>
+
+<body>
+	<main class="app-main">
+		<div layout:fragment="content">
+			<!-- Header -->
+			<div class="d-flex justify-content-between align-items-center mb-4">
+				<h2 class="mb-0">
+					<i class="bi bi-file-earmark-text me-2"></i>
+					Chi tiết Yêu cầu Phê duyệt #<span th:text="${approval.approvalId}"></span>
+				</h2>
+				<a th:href="@{/admin/products/approvals}" class="btn btn-outline-secondary">
+					<i class="bi bi-arrow-left me-1"></i>Quay lại
+				</a>
+			</div>
+
+			<!-- Status Badge -->
+			<div class="mb-4">
+				<span class="badge fs-6 px-3 py-2"
+					  th:classappend="${approval.status == 'Pending'} ? 'bg-warning text-dark' : 
+					                  (${approval.status == 'Approved'} ? 'bg-success' : 'bg-danger')">
+					<i class="bi" 
+					   th:classappend="${approval.status == 'Pending'} ? 'bi-clock-fill' : 
+					                   (${approval.status == 'Approved'} ? 'bi-check-circle-fill' : 'bi-x-circle-fill')"></i>
+					<span th:text="${approval.status}"></span>
+				</span>
+			</div>
+
+			<div class="row g-4">
+				<!-- Thông tin cơ bản -->
+				<div class="col-lg-6">
+					<div class="card shadow-sm h-100">
+						<div class="card-header bg-light">
+							<h5 class="mb-0">
+								<i class="bi bi-box-seam me-2"></i>Thông tin Sản phẩm
+							</h5>
+						</div>
+						<div class="card-body">
+							<div class="mb-3">
+								<label class="text-muted small">Tên sản phẩm</label>
+								<p class="fw-semibold mb-0" th:text="${approval.product?.productName}">-</p>
+							</div>
+							<div class="mb-3">
+								<label class="text-muted small">Giá gốc</label>
+								<p class="fw-semibold text-danger mb-0">
+									<span th:text="${#numbers.formatDecimal(approval.product?.basePrice, 0, 'COMMA', 0, 'POINT')}">0</span>₫
+								</p>
+							</div>
+							<div class="mb-3">
+								<label class="text-muted small">Danh mục</label>
+								<p class="mb-0" th:text="${approval.product?.category?.categoryName}">-</p>
+							</div>
+							<div class="mb-3">
+								<label class="text-muted small">Cửa hàng</label>
+								<p class="mb-0">
+									<i class="bi bi-shop me-1"></i>
+									<span th:text="${approval.product?.shop?.shopName}">-</span>
+								</p>
+							</div>
+							<div>
+								<label class="text-muted small">Mô tả</label>
+								<p class="mb-0 text-muted" th:text="${approval.product?.description}">-</p>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Yêu cầu thay đổi -->
+				<div class="col-lg-6">
+					<div class="card shadow-sm h-100">
+						<div class="card-header bg-light">
+							<h5 class="mb-0">
+								<i class="bi bi-pencil-square me-2"></i>
+								Yêu cầu thay đổi 
+								<span class="badge bg-primary ms-2" th:text="${approval.actionType}"></span>
+							</h5>
+						</div>
+						<div class="card-body">
+							<div class="mb-3">
+								<label class="text-muted small">Người yêu cầu</label>
+								<p class="fw-semibold mb-0">
+									<i class="bi bi-person-circle me-1"></i>
+									<span th:text="${approval.requestedBy.username}">-</span>
+								</p>
+							</div>
+							<div class="mb-3">
+								<label class="text-muted small">Thời gian yêu cầu</label>
+								<p class="mb-0">
+									<i class="bi bi-calendar-event me-1"></i>
+									<span th:text="${#temporals.format(approval.requestedAt, 'HH:mm - dd/MM/yyyy')}">-</span>
+								</p>
+							</div>
+							
+							<!-- Reviewed Info (nếu có) -->
+							<div th:if="${approval.reviewedBy != null}" class="border-top pt-3 mt-3">
+								<div class="mb-2">
+									<label class="text-muted small">Người xét duyệt</label>
+									<p class="fw-semibold mb-0">
+										<i class="bi bi-person-check me-1"></i>
+										<span th:text="${approval.reviewedBy.username}">-</span>
+									</p>
+								</div>
+								<div>
+									<label class="text-muted small">Thời gian xét duyệt</label>
+									<p class="mb-0">
+										<i class="bi bi-calendar-check me-1"></i>
+										<span th:text="${#temporals.format(approval.reviewedAt, 'HH:mm - dd/MM/yyyy')}">-</span>
+									</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Hình ảnh sản phẩm -->
+			<div class="card shadow-sm mt-4" th:if="${approval.product?.images != null && !approval.product.images.isEmpty()}">
+				<div class="card-header bg-light">
+					<h5 class="mb-0">
+						<i class="bi bi-images me-2"></i>Hình ảnh sản phẩm
+					</h5>
+				</div>
+				<div class="card-body">
+					<div class="row g-3">
+						<div class="col-md-3" th:each="image : ${approval.product.images}">
+							<div class="position-relative">
+								<img th:src="${image.imageURL}" 
+									 class="img-fluid rounded border" 
+									 alt="Product Image"
+									 style="width: 100%; height: 200px; object-fit: cover;">
+								<span th:if="${image.isPrimary}" 
+									  class="badge bg-primary position-absolute top-0 end-0 m-2">
+									Ảnh chính
+								</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Biến thể sản phẩm -->
+			<div class="card shadow-sm mt-4" th:if="${approval.product?.variants != null && !approval.product.variants.isEmpty()}">
+				<div class="card-header bg-light">
+					<h5 class="mb-0">
+						<i class="bi bi-list-ul me-2"></i>Biến thể sản phẩm
+					</h5>
+				</div>
+				<div class="card-body">
+					<div class="table-responsive">
+						<table class="table table-hover">
+							<thead class="table-light">
+								<tr>
+									<th>Kích thước</th>
+									<th>SKU</th>
+									<th>Giá</th>
+									<th>Tồn kho</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr th:each="variant : ${approval.product.variants}">
+									<td>
+										<i class="bi bi-cup me-1"></i>
+										<span th:text="${variant.size?.sizeName}">-</span>
+									</td>
+									<td>
+										<code th:text="${variant.sku}">-</code>
+									</td>
+									<td class="text-danger fw-semibold">
+										<span th:text="${#numbers.formatDecimal(variant.price, 0, 'COMMA', 0, 'POINT')}">0</span>₫
+									</td>
+									<td>
+										<span class="badge" 
+											  th:classappend="${variant.stock > 0} ? 'bg-success' : 'bg-danger'">
+											<span th:text="${variant.stock}">0</span> sản phẩm
+										</span>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<!-- Topping khả dụng -->
+			<div class="card shadow-sm mt-4" th:if="${approval.product?.availableToppings != null && !approval.product.availableToppings.isEmpty()}">
+				<div class="card-header bg-light">
+					<h5 class="mb-0">
+						<i class="bi bi-plus-circle me-2"></i>Topping khả dụng
+					</h5>
+				</div>
+				<div class="card-body">
+					<div class="row g-3">
+						<div class="col-md-4 col-lg-3" th:each="topping : ${approval.product.availableToppings}">
+							<div class="card h-100 border-0 shadow-sm">
+								<div class="card-body text-center p-3">
+									<div class="mb-2">
+										<img th:src="${topping.imageURL}" 
+											 th:if="${topping.imageURL != null && !topping.imageURL.isEmpty()}"
+											 class="img-fluid rounded-circle border" 
+											 alt="Topping"
+											 style="width: 80px; height: 80px; object-fit: cover;">
+										<div th:unless="${topping.imageURL != null && !topping.imageURL.isEmpty()}"
+											 class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto"
+											 style="width: 80px; height: 80px;">
+											<i class="bi bi-cup-straw fs-2 text-muted"></i>
+										</div>
+									</div>
+									<h6 class="mb-2 fw-semibold" th:text="${topping.toppingName}">-</h6>
+									<p class="text-danger fw-bold mb-1">
+										+<span th:text="${#numbers.formatDecimal(topping.additionalPrice, 0, 'COMMA', 0, 'POINT')}">0</span>₫
+									</p>
+									<span class="badge" 
+										  th:classappend="${topping.status == 1} ? 'bg-success' : 'bg-secondary'"
+										  th:text="${topping.status == 1} ? 'Còn hàng' : 'Hết hàng'">
+									</span>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Khuyến mãi -->
+			<div class="card shadow-sm mt-4" th:if="${approval.product?.promotionProducts != null && !approval.product.promotionProducts.isEmpty()}">
+				<div class="card-header bg-light">
+					<h5 class="mb-0">
+						<i class="bi bi-gift me-2"></i>Khuyến mãi đang áp dụng
+					</h5>
+				</div>
+				<div class="card-body">
+					<div class="table-responsive">
+						<table class="table table-hover">
+							<thead class="table-light">
+								<tr>
+									<th>Tên chương trình</th>
+									<th>Giảm giá</th>
+									<th>Thời gian</th>
+									
+								</tr>
+							</thead>
+							<tbody>
+								<tr th:each="promo : ${approval.product.promotionProducts}">
+									<td th:text="${promo.promotion?.promotionName}">-</td>
+									<td class="text-danger fw-bold">
+										-<span th:text="${promo.discountPercentage}">0</span>%
+									</td>
+									<td>
+										<small>
+											<span th:text="${#temporals.format(promo.promotion?.startDate, 'dd/MM/yyyy')}">-</span>
+											-
+											<span th:text="${#temporals.format(promo.promotion?.endDate, 'dd/MM/yyyy')}">-</span>
+										</small>
+									</td>
+									
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<!-- Action Buttons -->
+			<div th:if="${approval.status == 'Pending'}" class="card shadow-sm mt-4">
+				<div class="card-body">
+					<div class="d-flex gap-2 justify-content-end">
+						<form th:action="@{/admin/products/reject/{id}(id=${approval.approvalId})}" 
+							  method="post" 
+							  onsubmit="return confirm('Bạn có chắc chắn muốn từ chối yêu cầu này?')">
+							<button type="submit" class="btn btn-danger">
+								<i class="bi bi-x-circle me-1"></i>Từ chối
+							</button>
+						</form>
+						<form th:action="@{/admin/products/approve/{id}(id=${approval.approvalId})}" 
+							  method="post"
+							  onsubmit="return confirm('Bạn có chắc chắn muốn phê duyệt yêu cầu này?')">
+							<button type="submit" class="btn btn-success">
+								<i class="bi bi-check-circle me-1"></i>Phê duyệt
+							</button>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</main>
+</body>
+
+</html>

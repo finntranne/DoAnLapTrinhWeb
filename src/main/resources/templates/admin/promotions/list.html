@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{admin/layouts/admin-layout.html}">
+
+<head>
+<title>Quản lý khuyến mãi</title>
+</head>
+
+<body>
+	<main class="app-main">
+		<div layout:fragment="content">
+			<div class="container mt-4">
+
+				<div class="d-flex justify-content-between align-items-center mb-3">
+					<h3 class="fw-bold mb-0">Danh sách khuyến mãi</h3>
+					<a th:href="@{'/admin/promotions/add'}" class="btn btn-success">
+	                    <i class="bi bi-person-plus-fill me-1"></i> Thêm khuyến mãi
+	                </a>
+				</div>
+
+
+
+
+
+				<div class="table-responsive shadow-sm rounded">
+					<table class="table table-hover align-middle">
+						<thead class="table-success">
+							<tr>
+								
+								<th scope="col">ID</th>
+								<th scope="col">Tên Khuyến Mãi</th>
+								<th scope="col">Mã Khuyến Mãi</th>
+								<th scope="col">Người Tạo</th>
+								<th scope="col">Thời Gian Hiệu Lực</th>
+								<th scope="col">Trạng Thái</th>
+								<th scope="col">Hành Động</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr th:each="promo, iterStat : ${promotions}">
+							
+							
+
+								<td th:text="${promo.promotionId}"></td>
+								<td th:text="${promo.promotionName}"></td>
+						
+								
+								
+								<td>
+									<div>
+										<div class="fw-semibold" th:text="${promo.promoCode}"></div>
+										<span class="product-category"> <i
+											class="bi bi-tag-fill me-1"></i> <span
+											th:text="|${promo.discountType} - ${promo.discountValue}${promo.discountType == 'Percentage' ? '%' : 'VND'}|"></span>
+										</span>
+									</div>
+								</td>
+
+								<td><span class="fw-semibold"
+									th:text="${promo.createdByShopID != null ? promo.createdByShopID.shopName : 'Admin'}">
+								</span></td>
+
+								<td><span
+									th:text="${#temporals.format(promo.startDate, 'dd/MM/yyyy')}"></span>
+									<span> - </span> <span
+									th:text="${#temporals.format(promo.endDate, 'dd/MM/yyyy')}"></span>
+								</td>
+
+								<td><span class="badge rounded-pill fw-semibold px-3 py-2"
+									th:classappend="${promo.status == 1 ? 'bg-success-subtle text-success border border-success-subtle' :
+                                                      'bg-danger-subtle text-danger border border-danger-subtle'}">
+										<i
+										th:class="${promo.status == 1 ? 'bi bi-check-circle-fill' : 'bi bi-x-circle-fill'}"></i>
+										<span
+										th:text="${promo.status == 1 ? 'Hoạt động' : 'Vô hiệu hóa'}"></span>
+								</span></td>
+
+								<td>
+								<a
+									th:href="@{/admin/promotions/detail/{id}(id=${promo.promotionId})}"
+									class="btn btn-outline-info btn-sm "> <i
+									class="bi bi-eye"></i>
+								</a>
+								
+
+									<form
+										th:action="@{/admin/promotions/deactivate/{id}(id=${promo.promotionId})}"
+										method="post" class="d-inline"
+										onsubmit="return confirm('Bạn có chắc muốn vô hiệu hóa mã này?');">
+										<button type="submit"
+											class="btn btn-outline-danger btn-sm"
+											title="Vô hiệu hóa">
+											<i class="bi bi-trash-fill"></i>
+										</button>
+									</form></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+
+
+
+			</div>
+		</div>
+	</main>
+
+
+
+</body>
+</html>

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layouts/admin-layout.html}">
+
+<head>
+    <title>Quản lý người dùng</title>
+</head>
+
+<body>
+<main class="app-main">
+    <div layout:fragment="content">
+        <div class="container mt-4">
+            
+            <!-- Header + Nút thêm -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="fw-bold mb-0">Danh sách người dùng</h3>
+                <a th:href="@{'/admin/users/add'}" class="btn btn-success">
+                    <i class="bi bi-person-plus-fill me-1"></i> Thêm người dùng
+                </a>
+            </div>
+
+            <!-- Form tìm kiếm -->
+            <div class="card shadow-sm border-0 mb-4">
+			    <div class="card-body">
+			        <form th:action="@{/admin/users/search}" method="get">
+			            <div class="row g-3 align-items-end">
+			                
+			                <!-- Tên người dùng -->
+			                <div class="col-md-3">
+			                    <label class="form-label small fw-semibold text-muted">
+			                        <i class="bi bi-person-circle me-1"></i>Tên đăng nhập
+			                    </label>
+			                    <input type="text" name="username" th:value="${username}"
+			                        class="form-control form-control-sm" placeholder="Nhập tên đăng nhập...">
+			                </div>
+			
+			                <!-- Phone -->
+			                <div class="col-md-3">
+			                    <label class="form-label small fw-semibold text-muted">
+			                        <i class="bi bi-envelope-at me-1"></i>Số điện thoại
+			                    </label>
+			                    <input type="text" name="phoneNumber" th:value="${phoneNumber}"
+			                        class="form-control form-control-sm" placeholder="Nhập số điện thoại...">
+			                </div>
+			                
+			                <!-- Email -->
+			                <div class="col-md-3">
+			                    <label class="form-label small fw-semibold text-muted">
+			                        <i class="bi bi-envelope-at me-1"></i>Email
+			                    </label>
+			                    <input type="text" name="email" th:value="${email}"
+			                        class="form-control form-control-sm" placeholder="Nhập email...">
+			                </div>
+			
+			                <!-- Vai trò  -->
+			                <div class="col-md-3">
+			                    <label class="form-label small fw-semibold text-muted">
+			                        <i class="bi bi-person-gear me-1"></i>Vai trò
+			                    </label>
+			                    <select name="roleId" class="form-select form-select-sm">
+			                        <option value="">Tất cả</option>
+			                        <th:block th:each="r : ${roles}">
+			                            <option th:value="${r.id}" th:text="${r.roleName}" th:selected="${r.id == roleId}"></option>
+			                        </th:block>
+			                    </select>
+			                </div>
+			
+			                <!-- Trạng thái -->
+			                <div class="col-md-3">
+			                    <label class="form-label small fw-semibold text-muted">
+			                        <i class="bi bi-flag-fill me-1"></i>Trạng thái
+			                    </label>
+			                    <select name="status" class="form-select form-select-sm">
+			                        <option value="">Tất cả</option>
+			                        <option value="1" th:selected="${status == 1}">Hoạt động</option>
+			                        <option value="0" th:selected="${status == 0}">Không hoạt động</option>
+			                        <option value="2" th:selected="${status == 2}">Bị khóa</option>
+			                    </select>
+			                </div>
+			
+			                <!-- Ngày tạo từ / đến -->
+			                <div class="col-md-3">
+							    <label class="form-label small fw-semibold text-muted">
+							        <i class="bi bi-calendar-event me-1"></i>Từ ngày
+							    </label>
+							    <input type="date" name="startDate" th:value="${startDate}" class="form-control form-control-sm">
+							</div>
+							
+							<div class="col-md-3">
+							    <label class="form-label small fw-semibold text-muted">
+							        <i class="bi bi-calendar-check me-1"></i>Đến ngày
+							    </label>
+							    <input type="date" name="endDate" th:value="${endDate}" class="form-control form-control-sm">
+							</div>
+
+			
+			                <!-- Nút tìm kiếm / xóa -->
+			                <div class="col-md-3 d-flex gap-2 mt-2">
+			                    <button type="submit" class="btn btn-success btn-sm flex-fill">
+			                        <i class="bi bi-search me-1"></i>Tìm kiếm
+			                    </button>
+			                    <button type="button" onclick="clearFilters()"
+			                        class="btn btn-outline-secondary btn-sm rounded-pill">
+			                        <i class="bi bi-x-circle"></i>
+			                    </button>
+			                </div>
+			
+			            </div>
+			        </form>
+			    </div>
+			</div>
+
+            <!-- Bảng danh sách -->
+            <div class="table-responsive shadow-sm rounded">
+                <table class="table table-hover align-middle">
+					<thead class="table-success">
+                        <tr>
+                        
+                            <th scope="col">ID</th>
+                            <th scope="col">Người dùng</th>
+                        	<th scope="col">Số điện thoại</th>
+                            <th scope="col">Email</th>
+                            <th scope="col">Vai trò</th>
+                            <th scope="col">Trạng thái</th>
+                            <th scope="col">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="user, iterStat : ${users}">
+                        	
+                            <td th:text="${user.id}"></td>
+                           <td>
+					            <div class="d-flex align-items-center gap-2">
+					                <div style="width:40px; height:40px; overflow:hidden; border-radius:8px; flex-shrink:0;">
+					                    <img th:src="${user.avatarURL != null && !#strings.isEmpty(user.avatarURL)} ? ${user.avatarURL} : '/assets/img/default_user_avatar.png'"
+					                         alt="Avatar"
+					                         style="width:100%; height:100%; object-fit:cover;">
+					                </div>
+					                <span th:text="${user.username}" class="fw-semibold text-dark"></span>
+					            </div>
+					        </td>
+
+                         	<td th:text="${user.phoneNumber}"></td>
+                            <td th:text="${user.email}"></td>
+
+                            <td>
+							  <span th:if="${#lists.isEmpty(user.roles)}">—</span>
+							  <span th:unless="${#lists.isEmpty(user.roles)}"
+							        th:text="${user.roles.iterator().next().roleName}"
+							        th:classappend="${
+							            user.roles.iterator().next().roleName == 'VENDOR' ? 'badge bg-danger' :
+							            user.roles.iterator().next().roleName == 'CUSTOMER' ? 'badge bg-primary' :
+							            user.roles.iterator().next().roleName == 'SHIPPER' ? 'badge bg-success' :
+							            'badge bg-secondary'
+							        }">
+							  </span>
+							</td>
+
+
+                            <!-- Trạng thái -->
+                            <td>
+							    <span th:classappend="${user.status == 1} ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-secondary-subtle text-secondary border border-secondary-subtle'"
+							          class="badge d-inline-flex align-items-center gap-1 px-3 py-2 fw-semibold">
+							        <i th:class="${user.status == 1} ? 'bi bi-check-circle-fill' : 'bi bi-pause-circle-fill'"></i>
+							        <span th:text="${user.status == 1 ? 'Hoạt động' : 'Tạm khoá'}"></span>
+							    </span>
+							</td>
+
+                           
+
+                            <!-- Hành động -->
+                            <td>
+                                <div class="d-flex gap-2 justify-content-start">
+                                    <a th:href="@{'/admin/users/detail/' + ${user.id}}"
+                                       class="btn btn-outline-info btn-sm">
+                                        <i class="bi bi-eye"></i> 
+                                    </a>
+                                    <a th:href="@{'/admin/users/edit/' + ${user.id}}"
+                                       class="btn btn-outline-warning btn-sm">
+                                        <i class="bi bi-pencil-square"></i> 
+                                    </a>
+                                    <a th:href="@{'/admin/users/delete/' + ${user.id} + '?page=' + ${currentPage} + ''}"
+									   class="btn btn-outline-danger btn-sm">
+									   <i class="bi bi-trash3"></i> 
+									</a>
+                                    
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <nav th:if="${totalPages > 1}" class="mt-4">
+			  <ul class="pagination justify-content-center flex-wrap">
+			
+			    <!-- Nút Previous -->
+			    <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled'">
+			      <a class="page-link rounded-pill shadow-sm border-0"
+			         th:href="@{'/admin/users?page=' + ${currentPage - 1}}">
+			        <i class="bi bi-chevron-double-left"></i>
+			      </a>
+			    </li>
+			
+			    <!-- Trang đầu -->
+			    <li class="page-item" th:if="${currentPage > 3}">
+			      <a class="page-link rounded-pill shadow-sm border-0"
+			         th:href="@{'/admin/users?page=1'}">1</a>
+			    </li>
+			
+			    <!-- Dấu ... trước -->
+			    <li class="page-item disabled" th:if="${currentPage > 4}">
+			      <span class="page-link border-0 bg-transparent">...</span>
+			    </li>
+			
+			    <!-- Các trang giữa -->
+			    <li class="page-item mx-1"
+			        th:each="page : ${#numbers.sequence(currentPage - 1, currentPage + 1)}"
+			        th:if="${page >= 1 and page <= totalPages}"
+			        th:classappend="${page == currentPage} ? 'active'">
+			      <a class="page-link rounded-pill shadow-sm border-0 fw-semibold"
+			         th:href="@{'/admin/users?page=' + ${page}}"
+			         th:text="${page}"></a>
+			    </li>
+			
+			    <!-- Dấu ... sau -->
+			    <li class="page-item disabled" th:if="${currentPage < totalPages - 3}">
+			      <span class="page-link border-0 bg-transparent">...</span>
+			    </li>
+			
+			    <!-- Trang cuối -->
+			    <li class="page-item" th:if="${currentPage < totalPages - 2}">
+			      <a class="page-link rounded-pill shadow-sm border-0"
+			         th:href="@{'/admin/users?page=' + ${totalPages}}"
+			         th:text="${totalPages}"></a>
+			    </li>
+			
+			    <!-- Nút Next -->
+			    <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled'">
+			      <a class="page-link rounded-pill shadow-sm border-0"
+			         th:href="@{'/admin/users?page=' + ${currentPage + 1}}">
+			        <i class="bi bi-chevron-double-right"></i>
+			      </a>
+			    </li>
+			
+			  </ul>
+			</nav>
+
+
+        </div>
+    </div>
+</main>
+<th:block layout:fragment="scripts">
+		<script>
+        
+        function clearFilters() {
+            const fields = ['username', 'email', 'phoneNumber'];
+            fields.forEach(name => {
+                const el = document.querySelector(`input[name="${name}"]`);
+                if (el) el.value = '';
+            });
+
+            const roleSelect = document.querySelector('select[name="roleId"]');
+            if (roleSelect) roleSelect.value = '';
+
+            const statusSelect = document.querySelector('select[name="status"]');
+            if (statusSelect) statusSelect.value = '';
+
+            const startDate = document.querySelector('input[name="startDate"]');
+            const endDate = document.querySelector('input[name="endDate"]');
+            if (startDate) startDate.value = '';
+            if (endDate) endDate.value = '';
+
+            window.location.href = '/admin/users';
+        }
+    </script>
+	</th:block>
+
+</body>
+</html>
