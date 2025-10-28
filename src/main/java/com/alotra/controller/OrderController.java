@@ -1,5 +1,6 @@
 package com.alotra.controller; // Giữ package này
 
+import com.alotra.config.VNPayConfig;
 // Import các entity
 import com.alotra.entity.cart.Cart;
 import com.alotra.entity.cart.CartItem;
@@ -16,10 +17,9 @@ import com.alotra.repository.order.OrderDetailToppingRepository;
 import com.alotra.repository.order.OrderRepository;
 import com.alotra.repository.location.AddressRepository;
 import com.alotra.service.cart.CartService;
-import com.alotra.service.checkout.VNPayService;
 import com.alotra.service.product.CategoryService;
 import com.alotra.service.user.UserService;
-
+import com.alotra.util.VNPayUtil;
 // *** THÊM IMPORT CHO LOGIC GIẢM GIÁ ***
 import com.alotra.service.product.ProductService;
 import com.alotra.model.ProductSaleDTO;
@@ -45,7 +45,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.view.RedirectView; 
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime; 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList; 
 import java.util.Collections;
 import java.util.HashMap;
@@ -60,7 +61,7 @@ import java.util.stream.Collectors;
 public class OrderController {
 
     @Autowired private OrderRepository orderRepository;
-    @Autowired private VNPayService vnPayService;
+//    @Autowired private VNPayService vnPayService;
     @Autowired private CartService cartService;
     @Autowired private CartRepository cartRepository;
     @Autowired private CartItemRepository cartItemRepository; 
@@ -69,6 +70,9 @@ public class OrderController {
     @Autowired private OrderDetailRepository orderDetailRepository;
     @Autowired private OrderDetailToppingRepository orderDetailToppingRepository;
     @Autowired private UserService userService;
+    @Autowired
+    private com.alotra.config.VNPayConfig vnPayConfig;
+
     
     // *** THÊM: Inject ProductService để lấy giảm giá ***
     @Autowired 
@@ -387,22 +391,57 @@ public class OrderController {
                 return "redirect:/order-success";
             }
 
+         // Trong phương thức placeOrder(), phần VNPay
+         // Trong phương thức placeOrder(), phần VNPay
             if ("VNPay".equalsIgnoreCase(paymentMethod)) {
-                try {
-                    String paymentUrl = vnPayService.createPaymentUrl(savedOrder, request);
-                    
-                    // *** THAY ĐỔI QUAN TRỌNG: CẬP NHẬT TRẠNG THÁI TRƯỚC KHI REDIRECT ***
-                    savedOrder.setOrderStatus("Pending Payment"); 
-                    savedOrder.setPaymentStatus("Unpaid"); // Vẫn chưa thanh toán
-                    orderRepository.save(savedOrder); 
-                    
-                    return new RedirectView(paymentUrl);
-                } catch (Exception e) {
-                    // Nếu lỗi khi tạo URL, chuyển hướng về checkout với thông báo lỗi
-                    redirectAttributes.addFlashAttribute("errorMessage", "Lỗi khi tạo liên kết thanh toán VNPay: " + e.getMessage());
-                    return "redirect:/checkout";
-                }
+                savedOrder.setOrderStatus("Pending");
+                savedOrder.setPaymentStatus("Processing");
+                orderRepository.save(savedOrder);
+
+                String vnp_TxnRef   = String.valueOf(savedOrder.getOrderID());
+                String vnp_OrderInfo = "Thanh toan don hang #" + savedOrder.getOrderID();
+
+                String vnp_Amount = savedOrder.getGrandTotal()
+                        .multiply(new BigDecimal("100"))
+                        .setScale(0, RoundingMode.HALF_UP)
+                        .toPlainString();
+
+                Map<String, String> vnp_Params = new HashMap<>();
+                vnp_Params.put("vnp_Version",    VNPayConfig.vnp_Version);
+                vnp_Params.put("vnp_Command",    VNPayConfig.vnp_Command);
+                vnp_Params.put("vnp_TmnCode",    VNPayConfig.vnp_TmnCode);
+                vnp_Params.put("vnp_Amount",     vnp_Amount);
+                vnp_Params.put("vnp_CurrCode",   "VND");
+                vnp_Params.put("vnp_TxnRef",     vnp_TxnRef);
+                vnp_Params.put("vnp_OrderInfo",  vnp_OrderInfo);
+                vnp_Params.put("vnp_OrderType",  "other");
+                vnp_Params.put("vnp_Locale",     "vn");
+                vnp_Params.put("vnp_ReturnUrl",  VNPayConfig.vnp_ReturnUrl);
+                vnp_Params.put("vnp_IpAddr",     VNPayUtil.getIpAddress(request));
+                vnp_Params.put("vnp_CreateDate", VNPayUtil.getCreateDate());
+                String vnp_ExpireDate = LocalDateTime.now()
+                    .plusMinutes(15)
+                    .format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+                vnp_Params.put("vnp_ExpireDate", vnp_ExpireDate);
+
+                // ⭐ SỬA: Tính hash với giá trị GỐC (không encode)
+                String queryForHash = VNPayUtil.getQueryStringForHash(vnp_Params);
+                String vnp_SecureHash = VNPayUtil.hmacSHA512(VNPayConfig.vnp_HashSecret, queryForHash);
+
+                // ⭐ SỬA: Tạo URL với giá trị ĐÃ ENCODE
+                String queryForUrl = VNPayUtil.getQueryString(vnp_Params);
+                String paymentUrl = VNPayConfig.vnp_Url + "?" + queryForUrl + "&vnp_SecureHash=" + vnp_SecureHash;
+                
+                System.out.println("=== VNPAY PAYMENT REQUEST ===");
+                System.out.println("Query for hash (RAW): " + queryForHash);
+                System.out.println("Query for URL (ENCODED): " + queryForUrl);
+                System.out.println("SecureHash: " + vnp_SecureHash);
+                System.out.println("Payment URL: " + paymentUrl);
+                System.out.println("==============================");
+
+                return new RedirectView(paymentUrl);
             }
+
 
             redirectAttributes.addFlashAttribute("errorMessage", "Phương thức thanh toán không hợp lệ.");
             return "redirect:/checkout";
@@ -438,72 +477,65 @@ public class OrderController {
         return "shop/order-failed"; 
     }
     
- // =======================================================
-    // *** HÀM MỚI: XỬ LÝ KẾT QUẢ TRẢ VỀ TỪ VNPAY ***
-    // =======================================================
-    @GetMapping("/vnpay_return")
-    @Transactional
-    public String vnpayReturn(HttpServletRequest request, Model model, RedirectAttributes redirectAttributes) {
-        
-        // 1. Kiểm tra chữ ký (Checksum) và kết quả giao dịch
-        String status = vnPayService.paymentReturn(request); // Giả sử service này trả về "00" nếu Checksum hợp lệ
+    /**
+     * Xử lý kết quả trả về từ VNPay
+     */
+    @GetMapping("/vnpay-return")
+    public String vnpayReturn(
+            @RequestParam Map<String, String> queryParams,
+            HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
 
-        String vnp_ResponseCode = request.getParameter("vnp_ResponseCode");
-        String vnp_TxnRef = request.getParameter("vnp_TxnRef"); // OrderID (Mã đơn hàng)
-        
-        Integer orderId = null;
         try {
-            if (vnp_TxnRef != null && !vnp_TxnRef.isEmpty()) {
-                orderId = Integer.parseInt(vnp_TxnRef);
+            System.out.println("=== VNPAY RETURN PARAMS ===");
+            queryParams.forEach((k, v) -> System.out.println(k + "=" + v));
+            
+            String vnp_SecureHash = queryParams.get("vnp_SecureHash");
+            queryParams.remove("vnp_SecureHash");
+            queryParams.remove("vnp_SecureHashType"); // VNPay có thể trả thêm param này
+
+            // ⭐ SỬA: Dùng getQueryStringForHash (không encode)
+            String queryForHash = VNPayUtil.getQueryStringForHash(queryParams);
+            String signValue = VNPayUtil.hmacSHA512(VNPayConfig.vnp_HashSecret, queryForHash);
+            
+            System.out.println("Query for verify: " + queryForHash);
+            System.out.println("Expected hash: " + signValue);
+            System.out.println("Received hash: " + vnp_SecureHash);
+            System.out.println("==============================");
+            
+            boolean isValidSignature = signValue.equals(vnp_SecureHash);
+
+            if (!isValidSignature) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Chữ ký không hợp lệ.");
+                return "redirect:/order-failed?reason=invalid_signature";
             }
-        } catch (NumberFormatException e) {
-            // Không tìm thấy OrderID hoặc lỗi parse
-            redirectAttributes.addFlashAttribute("errorMessage", "Lỗi: Không tìm thấy mã đơn hàng trong phản hồi VNPay.");
-            return "redirect:/order-failed";
-        }
 
-        Order order = orderRepository.findById(orderId)
-                .orElse(null);
+            String vnp_ResponseCode = queryParams.get("vnp_ResponseCode");
+            String vnp_TxnRef = queryParams.get("vnp_TxnRef");
 
-        if (order == null) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Lỗi: Đơn hàng không tồn tại.");
-            return "redirect:/order-failed";
-        }
+            if ("00".equals(vnp_ResponseCode)) {
+                Optional<Order> orderOpt = orderRepository.findById(Integer.parseInt(vnp_TxnRef));
+                if (orderOpt.isPresent()) {
+                    Order order = orderOpt.get();
+                    order.setPaymentStatus("Paid");
+                    order.setOrderStatus("Confirmed");
+                    order.setPaidAt(LocalDateTime.now());
+                    orderRepository.save(order);
 
-        // 2. Xử lý kết quả dựa trên Response Code và Checksum
-        if ("00".equals(status) && "00".equals(vnp_ResponseCode)) {
-            // Thanh toán thành công và Checksum hợp lệ
-            
-            // Cập nhật trạng thái đơn hàng và thanh toán
-            if (!"Paid".equals(order.getPaymentStatus())) { // Chỉ cập nhật nếu chưa Paid (để tránh xử lý lại)
-                 order.setPaymentStatus("Paid");
-                 order.setOrderStatus("Processing"); // Đã thanh toán, chuyển sang xử lý
-                 orderRepository.save(order);
+                    redirectAttributes.addFlashAttribute("orderId", order.getOrderID());
+                    return "redirect:/order-success";
+                }
             }
-            
-            redirectAttributes.addFlashAttribute("orderId", orderId);
-            return "redirect:/order-success";
 
-        } else if ("00".equals(status) && !"00".equals(vnp_ResponseCode)) {
-            // Checksum hợp lệ nhưng giao dịch thất bại (ví dụ: ngân hàng từ chối)
-            
-            // Cập nhật trạng thái đơn hàng 
-            order.setPaymentStatus("Payment Failed");
-            order.setOrderStatus("Cancelled");
-            orderRepository.save(order);
-            
-            String reason = "Giao dịch thất bại. Mã lỗi VNPay: " + vnp_ResponseCode;
-            redirectAttributes.addFlashAttribute("reason", reason);
-            return "redirect:/order-failed";
-        } else {
-            // Checksum không hợp lệ (Lỗi bảo mật/server)
-            
-            order.setPaymentStatus("Unverified");
-            order.setOrderStatus("Pending Check"); // Yêu cầu admin kiểm tra
-            orderRepository.save(order);
-            
-            redirectAttributes.addFlashAttribute("reason", "Lỗi bảo mật/kết nối (Checksum không hợp lệ). Vui lòng kiểm tra lại đơn hàng.");
-            return "redirect:/order-failed";
+            System.err.println("VNPay payment failed with code: " + vnp_ResponseCode);
+            redirectAttributes.addFlashAttribute("errorMessage", "Thanh toán thất bại. Mã lỗi: " + vnp_ResponseCode);
+            return "redirect:/order-failed?reason=" + vnp_ResponseCode;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("errorMessage", "Lỗi xử lý thanh toán.");
+            return "redirect:/order-failed?reason=system_error";
         }
     }
+
 }

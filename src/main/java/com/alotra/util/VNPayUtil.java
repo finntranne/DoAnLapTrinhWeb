@@ -1,34 +1,81 @@
-// File: VNPayUtil.java
 package com.alotra.util;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import jakarta.servlet.http.HttpServletRequest;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class VNPayUtil {
-    public static String hmacSHA512(String key, String data) {
-        try {
-            if (key == null || data == null) throw new NullPointerException();
-            Mac hmacSha512 = Mac.getInstance("HmacSHA512");
-            SecretKeySpec secretKey = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA512");
-            hmacSha512.init(secretKey);
-            byte[] bytes = hmacSha512.doFinal(data.getBytes(StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder(bytes.length * 2);
-            for (byte b : bytes) sb.append(String.format("%02x", b));
-            return sb.toString();
-        } catch (Exception ex) {
-            throw new RuntimeException("Error hashing data with HmacSHA512", ex);
+
+    /** Lấy IP hợp lệ cho VNPay */
+    public static String getIpAddress(HttpServletRequest request) {
+        String ip = request.getHeader("X-FORWARDED-FOR");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Real-IP");
         }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        // Chuyển IPv6 localhost → IPv4
+        if ("0:0:0:0:0:0:0:1".equals(ip)) {
+            ip = "127.0.0.1";
+        }
+        return ip;
     }
 
-    public static String getIpAddress(HttpServletRequest request) {
+    /** Tạo vnp_CreateDate theo định dạng VNPay yêu cầu: yyyyMMddHHmmss */
+    public static String getCreateDate() {
+        return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+    }
+
+    /** 
+     * Tạo query string để TÍNH HASH (KHÔNG ENCODE)
+     * VNPay yêu cầu: key1=value1&key2=value2 (giá trị gốc, đã sort)
+     */
+    public static String getQueryStringForHash(Map<String, String> params) {
+        return params.entrySet().stream()
+                .filter(e -> e.getValue() != null && !e.getValue().isEmpty())
+                .sorted(Map.Entry.comparingByKey())
+                .map(e -> e.getKey() + "=" + e.getValue())
+                .collect(Collectors.joining("&"));
+    }
+
+    /** 
+     * Tạo query string để GỬI LÊN URL (CÓ ENCODE)
+     * Chỉ dùng khi cần tạo URL cuối cùng
+     */
+    public static String getQueryString(Map<String, String> params) {
+        return params.entrySet().stream()
+                .filter(e -> e.getValue() != null && !e.getValue().isEmpty())
+                .sorted(Map.Entry.comparingByKey())
+                .map(e -> {
+                    try {
+                        return e.getKey() + "=" + URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8.toString());
+                    } catch (Exception ex) {
+                        throw new RuntimeException("URL encode error", ex);
+                    }
+                })
+                .collect(Collectors.joining("&"));
+    }
+
+    /** HMAC SHA512 */
+    public static String hmacSHA512(String key, String data) {
         try {
-            String ipAdress = request.getHeader("X-FORWARDED-FOR");
-            if (ipAdress == null) ipAdress = request.getRemoteAddr();
-            return ipAdress;
-        } catch (Exception e) {
-            return "Invalid IP:" + e.getMessage();
+            javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA512");
+            javax.crypto.spec.SecretKeySpec spec = new javax.crypto.spec.SecretKeySpec(
+                    key.getBytes(StandardCharsets.UTF_8), "HmacSHA512");
+            mac.init(spec);
+            byte[] raw = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : raw) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception ex) {
+            throw new RuntimeException("HMAC error", ex);
         }
     }
 }
