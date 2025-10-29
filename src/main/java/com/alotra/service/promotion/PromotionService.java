@@ -34,6 +34,10 @@ public class PromotionService {
 	
 	@Autowired
 	PromotionProductRepository promotionProductRepository;
+	
+	public List<Promotion> getAllPromotionsApproval() {
+		return promotionRepository.findByStatus(1);
+	}
 
 	public List<Promotion> getAllPromotions() {
 		return promotionRepository.findAll();

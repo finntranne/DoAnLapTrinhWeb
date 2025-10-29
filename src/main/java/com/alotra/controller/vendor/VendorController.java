@@ -14,16 +14,19 @@ import com.alotra.dto.shop.ShopProfileDTO;
 import com.alotra.dto.shop.ShopRevenueDTO;
 import com.alotra.dto.topping.ToppingRequestDTO;
 import com.alotra.dto.topping.ToppingStatisticsDTO;
+import com.alotra.entity.common.MessageEntity;
 import com.alotra.entity.order.Order;
 import com.alotra.entity.product.Product;
 import com.alotra.entity.product.Topping;
 import com.alotra.entity.promotion.Promotion;
 import com.alotra.entity.user.User;
+import com.alotra.repository.common.ChatMessageRepository;
 import com.alotra.repository.product.ProductRepository;
 import com.alotra.repository.product.ToppingRepository;
 import com.alotra.repository.promotion.PromotionRepository;
 import com.alotra.repository.shop.ShopEmployeeRepository;
 import com.alotra.security.MyUserDetails;
+import com.alotra.service.chat.ChatService;
 import com.alotra.service.vendor.VendorService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -32,6 +35,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -101,6 +105,9 @@ public class VendorController {
 
 	// ==================== DASHBOARD ====================
 
+	@Autowired
+	ChatService chatService;
+	
 	@GetMapping("/dashboard")
 	public String dashboard(@AuthenticationPrincipal MyUserDetails userDetails, Model model,
 			RedirectAttributes redirectAttributes) {
@@ -114,7 +121,13 @@ public class VendorController {
 			List<ApprovalResponseDTO> pendingApprovals = vendorService.getPendingApprovals(shopId, null, null);
 
 			model.addAttribute("pendingApprovals", pendingApprovals);
+			
+			List<MessageEntity> recentMessages = chatService.findRecentMessagesForShop(shopId, 5);
+		    int unreadCount = chatService.countUnreadMessages(shopId);
 
+		    model.addAttribute("recentMessages", recentMessages);
+		    model.addAttribute("unreadCount", unreadCount);
+		    model.addAttribute("shopId", shopId);
 			return "vendor/dashboard";
 
 		} catch (IllegalStateException e) {

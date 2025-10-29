@@ -135,7 +135,7 @@ public class WebSecurityConfig {
                             "/products/**",             
                             "/api/auth/**", // API đăng nhập/đăng ký
                             "/api/debug/**",
-                            "/css/**", "/js/**", "/images/**", "/assets/**",
+                            "/css/**", "/js/**", "/images/**", "/assets/**","/ws/**",
                             "/favicon.ico", "/error"
                         ).permitAll()
                         

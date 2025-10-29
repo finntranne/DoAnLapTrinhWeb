@@ -51,74 +51,48 @@
 				<ul class="navbar-nav ms-auto">
 					<li class="nav-item dropdown"><a class="nav-link"
 						data-bs-toggle="dropdown" href="#" aria-expanded="false"> <i
-							class="bi bi-chat-text"></i> <span
-							class="navbar-badge badge text-bg-danger">3</span>
+							class="bi bi-chat-text fs-5"></i> <span
+							th:if="${unreadCount > 0}"
+							class="navbar-badge badge text-bg-danger"
+							th:text="${unreadCount}">0</span>
 					</a>
-						<div class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
-							<a href="#" class="dropdown-item">
-								<div class="d-flex">
+
+						<div class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-2"
+							style="width: 320px; max-height: 400px; overflow-y: auto;">
+							<div
+								th:if="${recentMessages == null or #lists.isEmpty(recentMessages)}"
+								class="text-center text-muted py-3">Không có tin nhắn mới
+							</div>
+
+							<a th:each="msg : ${recentMessages}"
+								th:href="@{/vendor/chat(customerId=${msg.customer.id}, shopId=${shopId})}"
+								class="dropdown-item">
+								<div class="d-flex align-items-start">
 									<div class="flex-shrink-0">
-										<img src="/assets/img/user1-128x128.jpg" alt="User Avatar"
+										<img th:src="@{/assets/img/default_user_avatar.png}" alt="User"
 											class="img-size-50 rounded-circle me-3">
 									</div>
 									<div class="flex-grow-1">
-										<h3 class="dropdown-item-title">
-											Brad Diesel <span class="float-end fs-7 text-danger"><i
-												class="bi bi-star-fill"></i></span>
+										<h3
+											class="dropdown-item-title mb-1 d-flex justify-content-between align-items-center">
+											<span th:text="${msg.customer.username}">Tên khách</span> <span
+												class="fs-7 text-secondary"
+												th:text="${#temporals.format(msg.timestamp, 'HH:mm')}">12:45</span>
 										</h3>
-										<p class="fs-7">Call me whenever you can...</p>
-										<p class="fs-7 text-secondary">
-											<i class="bi bi-clock-fill me-1"></i> 4 Hours Ago
-										</p>
+										<p class="fs-7 mb-1 text-truncate" th:text="${msg.content}">Nội
+											dung tin nhắn...</p>
 									</div>
 								</div>
 							</a>
+
 							<div class="dropdown-divider"></div>
-							<a href="#" class="dropdown-item">
-								<div class="d-flex">
-									<div class="flex-shrink-0">
-										<img src="/assets/img/user8-128x128.jpg" alt="User Avatar"
-											class="img-size-50 rounded-circle me-3">
-									</div>
-									<div class="flex-grow-1">
-										<h3 class="dropdown-item-title">
-											John Pierce <span class="float-end fs-7 text-secondary">
-												<i class="bi bi-star-fill"></i>
-											</span>
-										</h3>
-										<p class="fs-7">I got your message bro</p>
-										<p class="fs-7 text-secondary">
-											<i class="bi bi-clock-fill me-1"></i> 4 Hours Ago
-										</p>
-									</div>
-								</div>
-							</a>
-							<div class="dropdown-divider"></div>
-							<a href="#" class="dropdown-item">
-								<div class="d-flex">
-									<div class="flex-shrink-0">
-										<img src="/assets/img/user3-128x128.jpg" alt="User Avatar"
-											class="img-size-50 rounded-circle me-3">
-									</div>
-									<div class="flex-grow-1">
-										<h3 class="dropdown-item-title">
-											Nora Silvester <span class="float-end fs-7 text-warning">
-												<i class="bi bi-star-fill"></i>
-											</span>
-										</h3>
-										<p class="fs-7">The subject goes here</p>
-										<p class="fs-7 text-secondary">
-											<i class="bi bi-clock-fill me-1"></i> 4 Hours Ago
-										</p>
-									</div>
-								</div>
-							</a>
-							<div class="dropdown-divider"></div>
-							<a href="#" class="dropdown-item dropdown-footer">See All
-								Messages</a>
+							<a th:href="@{/vendor/chat/list}"
+								class="dropdown-item dropdown-footer text-center"> Xem tất
+								cả tin nhắn </a>
 						</div></li>
+
 					<li class="nav-item dropdown"><a class="nav-link show"
-						data-bs-toggle="dropdown" href="#" aria-expanded="true"> <i
+						data-bs-toggle="dropdown" href="#" aria-expanded="false"> <i
 							class="bi bi-bell-fill"></i> <span
 							class="navbar-badge badge text-bg-warning">15</span>
 					</a>

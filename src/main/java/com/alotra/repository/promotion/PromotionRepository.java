@@ -85,5 +85,7 @@ public interface PromotionRepository extends JpaRepository<Promotion, Integer> {
 	Optional<Promotion> findByPromoCodeAndStatusAndCreatedByShopID_ShopId(String promoCode, Byte status, Integer shopId);
 	
 
+	List<Promotion> findByStatus(Integer status);
+
 
 }

@@ -96,6 +96,7 @@
 
 package com.alotra.entity.shop; // Giữ package này
 
+import com.alotra.entity.common.MessageEntity;
 import com.alotra.entity.product.Product;
 import com.alotra.entity.promotion.Promotion;
 import com.alotra.entity.user.User;
@@ -173,6 +174,9 @@ public class Shop {
     // Quan hệ này có thể không cần thiết ở đây nếu không dùng tới, nhưng giữ lại từ nhánh lam
     @OneToMany(mappedBy = "createdByShopID", cascade = CascadeType.ALL, fetch = FetchType.LAZY) // Thêm LAZY
     private List<Promotion> promotions = new ArrayList<>();
+    
+    @OneToMany(mappedBy = "shop")
+    private List<MessageEntity> messages;
 
     // Tự động quản lý timestamps
     @PrePersist

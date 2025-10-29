@@ -10,7 +10,9 @@ import com.alotra.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -405,5 +407,38 @@ public class NotificationService {
             default:
                 return "Trạng thái đơn hàng: " + status;
         }
+    }
+
+
+    public List<Notification> getUnreadNotificationsForUser(Integer userId) {
+        Pageable topFiveNewest = PageRequest.of(0, 5, Sort.by("createdAt").descending());
+
+        return notificationRepository.findUnreadNotificationsByUserId(userId, topFiveNewest);
+    }
+
+
+    public long countUnreadNotificationsForUser(Integer userId) {
+    	return notificationRepository.countByUser_IdAndIsReadFalse(userId);
+    }
+    
+    private String generateLinkForNotification(String type) {
+        
+        String typeLower = type.toLowerCase();
+
+        if (typeLower.contains("PRODUCT")) {
+            return "/admin/products/pending";
+        }
+        if (typeLower.contains("TOPPING")) {
+            return "/admin/toppings/pending";
+        }
+        if (typeLower.contains("PROMOTION")) {
+            return "/admin/promotions/pending";
+        }
+        if (typeLower.contains("SHOP")) {
+            return "/admin/shops/pending";
+        }
+        
+        // Link dự phòng
+        return "/admin/notifications/all";
     }
 }
