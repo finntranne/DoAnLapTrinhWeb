@@ -13,12 +13,15 @@ import com.alotra.dto.promotion.PromotionRequestDTO;
 import com.alotra.dto.response.ApprovalResponseDTO;
 import com.alotra.dto.shop.CategoryRevenueDTO;
 import com.alotra.dto.shop.ShopDashboardDTO;
+import com.alotra.dto.shop.ShopEmployeeDTO;
 import com.alotra.dto.shop.ShopOrderDTO;
+import com.alotra.dto.shop.ShopProfileDTO;
 import com.alotra.dto.shop.ShopRevenueDTO;
 import com.alotra.dto.topping.ToppingRequestDTO;
 import com.alotra.dto.topping.ToppingStatisticsDTO;
 import com.alotra.entity.*;
 import com.alotra.entity.order.Order;
+import com.alotra.entity.order.OrderHistory;
 import com.alotra.entity.product.Category;
 import com.alotra.entity.product.Product;
 import com.alotra.entity.product.ProductApproval;
@@ -32,9 +35,12 @@ import com.alotra.entity.promotion.PromotionApproval;
 import com.alotra.entity.promotion.PromotionProduct;
 import com.alotra.entity.promotion.PromotionProductId;
 import com.alotra.entity.shop.Shop;
+import com.alotra.entity.shop.ShopEmployee;
 import com.alotra.entity.shop.ShopRevenue;
+import com.alotra.entity.user.Role;
 import com.alotra.entity.user.User;
 import com.alotra.repository.*;
+import com.alotra.repository.order.OrderHistoryRepository;
 import com.alotra.repository.order.OrderRepository;
 import com.alotra.repository.product.CategoryRepository;
 import com.alotra.repository.product.ProductApprovalRepository;
@@ -47,11 +53,14 @@ import com.alotra.repository.product.ToppingRepository;
 import com.alotra.repository.promotion.PromotionApprovalRepository;
 import com.alotra.repository.promotion.PromotionProductRepository;
 import com.alotra.repository.promotion.PromotionRepository;
+import com.alotra.repository.shop.ShopEmployeeRepository;
 import com.alotra.repository.shop.ShopRepository;
 import com.alotra.repository.shop.ShopRevenueRepository;
+import com.alotra.repository.user.RoleRepository;
 import com.alotra.repository.user.UserRepository;
 import com.alotra.service.cloudinary.CloudinaryService;
 import com.alotra.service.notification.NotificationService;
+import com.alotra.service.order.ShipperOrderService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -95,6 +104,8 @@ public class VendorService {
 	private final UserRepository userRepository;
 	private final ToppingRepository toppingRepository;
 	private final ToppingApprovalRepository toppingApprovalRepository;
+	private final ShipperOrderService shipperOrderService;
+	private final OrderHistoryRepository orderHistoryRepository;
 
 	private final ObjectMapper objectMapper;
 	@PersistenceContext // Inject EntityManager for JPQL
@@ -398,7 +409,7 @@ public class VendorService {
 					.filter(Objects::nonNull).min(BigDecimal::compareTo).orElse(null);
 
 			// Thêm thông tin basePrice mới vào DTO (optional)
-			// request.setNewBasePrice(newMinPrice);
+//			 request.setNewBasePrice(newMinPrice);
 
 			log.info("New basePrice will be: {}", newMinPrice);
 		}
@@ -703,11 +714,13 @@ public class VendorService {
 
 	// ==================== PROMOTION MANAGEMENT ====================
 
-	public Page<PromotionStatisticsDTO> getShopPromotions(Integer shopId, Byte status, Pageable pageable) {
+	public Page<PromotionStatisticsDTO> getShopPromotions(Integer shopId, Byte status, String promotionType,
+			Pageable pageable) {
 
 		// *** ĐÃ SỬA: Gọi phương thức repository mới và truyền LocalDateTime.now() ***
 		LocalDateTime now = LocalDateTime.now();
-		Page<Promotion> promotions = promotionRepository.findShopPromotionsFiltered(shopId, status, now, pageable);
+		Page<Promotion> promotions = promotionRepository.findShopPromotionsFiltered(shopId, status, promotionType, now,
+				pageable);
 		// *** KẾT THÚC SỬA ***
 
 		// Phần map sang PromotionListDTO giữ nguyên như trước
@@ -812,141 +825,6 @@ public class VendorService {
 		return dto;
 	}
 
-//	public void requestPromotionCreation(Integer shopId, PromotionRequestDTO request, Integer userId)
-//			throws JsonProcessingException {
-//
-//		Shop shop = shopRepository.findById(shopId).orElseThrow(() -> new RuntimeException("Shop not found"));
-//
-//		User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
-//
-//		// Tạo promotion mới với status = 0 (Inactive)
-//		Promotion promotion = new Promotion();
-//		promotion.setCreatedByUserID(user);
-//		promotion.setCreatedByShopID(shop);
-//		promotion.setPromotionName(request.getPromotionName());
-//		promotion.setDescription(request.getDescription());
-//		promotion.setPromoCode(request.getPromoCode());
-//		promotion.setDiscountType(request.getDiscountType());
-//		promotion.setDiscountValue(request.getDiscountValue());
-//		promotion.setMaxDiscountAmount(request.getMaxDiscountAmount());
-//		promotion.setStartDate(request.getStartDate());
-//		promotion.setEndDate(request.getEndDate());
-//		promotion.setMinOrderValue(request.getMinOrderValue());
-//		promotion.setUsageLimit(request.getUsageLimit());
-//		promotion.setUsedCount(0);
-//		promotion.setStatus((byte) 0); // Inactive until approved
-//		promotion.setCreatedAt(LocalDateTime.now());
-//
-//		promotion = promotionRepository.save(promotion);
-//
-//		// Tạo yêu cầu phê duyệt
-//		PromotionApproval approval = new PromotionApproval();
-//		approval.setPromotion(promotion);
-//		approval.setActionType("CREATE");
-//		approval.setStatus("Pending");
-//		approval.setChangeDetails(objectMapper.writeValueAsString(request));
-//		approval.setRequestedBy(user);
-//		approval.setRequestedAt(LocalDateTime.now());
-//
-//		promotionApprovalRepository.save(approval);
-//
-//		notificationService.notifyAdminsAboutNewApproval("PROMOTION", promotion.getPromotionId());
-//
-//		log.info("Promotion creation requested - Promotion ID: {}, Shop ID: {}", promotion.getPromotionId(), shopId);
-//	}
-//	
-
-//	public void requestPromotionCreation(Integer shopId, PromotionRequestDTO request, Integer userId)
-//			throws JsonProcessingException {
-//
-//		Shop shop = shopRepository.findById(shopId).orElseThrow(() -> new RuntimeException("Shop not found"));
-//		User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
-//
-//		// Kiểm tra logic ngày tháng (có thể làm ở DTO)
-//		if (request.getStartDate().isAfter(request.getEndDate())) {
-//			throw new IllegalArgumentException("Ngày kết thúc phải sau ngày bắt đầu");
-//		}
-//
-//		Promotion promotion = new Promotion();
-//		promotion.setCreatedByUserID(user);
-//		promotion.setCreatedByShopID(shop);
-//		promotion.setPromotionName(request.getPromotionName());
-//		promotion.setDescription(request.getDescription());
-//		promotion.setPromoCode(request.getPromoCode());
-//		promotion.setStartDate(request.getStartDate());
-//		promotion.setEndDate(request.getEndDate());
-//		promotion.setUsageLimit(request.getUsageLimit());
-//		promotion.setPromotionType(request.getPromotionType());
-//		promotion.setStatus((byte) 0); // Luôn là 0 (Pending) khi tạo
-//		// (createdAt được @PrePersist xử lý)
-//
-//		// Tách logic dựa trên loại khuyến mãi
-//		if ("ORDER".equals(request.getPromotionType())) {
-//			// --- LOGIC CHO KHUYẾN MÃI TOÀN ĐƠN ---
-//			if (request.getDiscountType() == null || request.getDiscountValue() == null) {
-//				throw new IllegalArgumentException(
-//						"Loại giảm giá và Giá trị giảm giá là bắt buộc cho khuyến mãi toàn đơn.");
-//			}
-//			promotion.setDiscountType(request.getDiscountType());
-//			promotion.setDiscountValue(request.getDiscountValue());
-//			promotion.setMaxDiscountAmount(request.getMaxDiscountAmount());
-//			promotion.setMinOrderValue(request.getMinOrderValue());
-//		} else if ("PRODUCT".equals(request.getPromotionType())) {
-//			// --- LOGIC CHO KHUYẾN MÃI SẢN PHẨM ---
-//			if (request.getProductDiscounts() == null || request.getProductDiscounts().isEmpty()) {
-//				throw new IllegalArgumentException("Cần chọn ít nhất một sản phẩm để áp dụng khuyến mãi.");
-//			}
-//			// Các trường discount... của Promotion sẽ là NULL (hoặc 0 nếu DB không cho
-//			// phép)
-//			promotion.setMinOrderValue(BigDecimal.ZERO);
-//		} else {
-//			throw new IllegalArgumentException("Loại khuyến mãi không hợp lệ.");
-//		}
-//
-//		Promotion savedPromotion = promotionRepository.save(promotion); // Lưu Promotion
-//
-//		// Nếu là loại SẢN PHẨM, lưu các sản phẩm liên kết
-//		if ("PRODUCT".equals(savedPromotion.getPromotionType()) && request.getProductDiscounts() != null) {
-//			List<PromotionProduct> promoProducts = new ArrayList<>();
-//
-//			List<Integer> productIds = request.getProductDiscounts().stream().map(ProductDiscountDTO::getProductId)
-//					.collect(Collectors.toList());
-//
-//			// Lấy các sản phẩm từ DB
-//			List<Product> products = productRepository.findAllById(productIds);
-//
-//			// Đảm bảo tất cả sản phẩm đều thuộc shop này (bảo mật)
-//			boolean allOwned = products.stream().allMatch(p -> p.getShop().getShopId().equals(shopId));
-//			if (!allOwned || products.size() != request.getProductDiscounts().size()) {
-//				throw new RuntimeException("Phát hiện sản phẩm không hợp lệ hoặc không thuộc sở hữu của shop.");
-//			}
-//
-//			Map<Integer, Product> productMap = products.stream()
-//					.collect(Collectors.toMap(Product::getProductID, p -> p));
-//
-//			for (ProductDiscountDTO dto : request.getProductDiscounts()) {
-//				PromotionProduct pp = new PromotionProduct();
-//				pp.setId(new PromotionProductId(savedPromotion.getPromotionId(), dto.getProductId()));
-//				pp.setPromotion(savedPromotion);
-//				pp.setProduct(productMap.get(dto.getProductId()));
-//				pp.setDiscountPercentage(dto.getDiscountPercentage());
-//				promoProducts.add(pp);
-//			}
-//			promotionProductRepository.saveAll(promoProducts); // Lưu bảng nối
-//		}
-//
-//		// Tạo yêu cầu phê duyệt
-//		PromotionApproval approval = new PromotionApproval();
-//		approval.setPromotion(savedPromotion);
-//		approval.setActionType("CREATE");
-//		approval.setStatus("Pending");
-//		approval.setChangeDetails(objectMapper.writeValueAsString(request)); // DTO giờ đã chứa cả productDiscounts
-//		approval.setRequestedBy(user);
-//
-//		promotionApprovalRepository.save(approval);
-//		notificationService.notifyAdminsAboutNewApproval("PROMOTION", savedPromotion.getPromotionId());
-//	}
-
 	@Transactional
 	public void requestPromotionCreation(Integer shopId, PromotionRequestDTO request, Integer userId)
 			throws JsonProcessingException {
@@ -1002,112 +880,17 @@ public class VendorService {
 				.collect(Collectors.toList());
 	}
 
-//	public void requestPromotionUpdate(Integer shopId, PromotionRequestDTO request, Integer userId)
-//			throws JsonProcessingException {
-//
-//		Promotion promotion = promotionRepository.findById(request.getPromotionId())
-//				.orElseThrow(() -> new RuntimeException("Promotion not found"));
-//
-//		if (!promotion.getCreatedByShopID().getShopId().equals(shopId)) {
-//			throw new RuntimeException("Unauthorized: Promotion does not belong to this shop");
-//		}
-//
-//		// *** ĐÃ SỬA: Kiểm tra bất kỳ yêu cầu pending nào (giống Product) ***
-//		List<PromotionApproval> existingApprovals = promotionApprovalRepository
-//				.findByPromotion_PromotionIdAndStatus(promotion.getPromotionId(), "Pending");
-//
-//		if (!existingApprovals.isEmpty()) {
-//			throw new RuntimeException("Đã có yêu cầu đang chờ phê duyệt cho khuyến mãi này");
-//		}
-//
-//		// Tạo yêu cầu phê duyệt
-//		PromotionApproval approval = new PromotionApproval();
-//		approval.setPromotion(promotion);
-//		approval.setActionType("UPDATE");
-//		approval.setStatus("Pending");
-//		approval.setChangeDetails(objectMapper.writeValueAsString(request));
-//		approval.setRequestedBy(
-//				userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found")));
-//		approval.setRequestedAt(LocalDateTime.now());
-//
-//		promotionApprovalRepository.save(approval);
-//
-//		notificationService.notifyAdminsAboutNewApproval("PROMOTION", promotion.getPromotionId());
-//
-//		log.info("Promotion update requested - Promotion ID: {}, Shop ID: {}", promotion.getPromotionId(), shopId);
-//	}
-
-//	@Transactional
-//	public void requestPromotionUpdate(Integer shopId, PromotionRequestDTO request, Integer userId) throws Exception { // Thêm
-//																														// throws
-//																														// Exception
-//
-//		log.info("Requesting promotion update cho ID: {}", request.getPromotionId());
-//
-//		// 1. Lấy khuyến mãi gốc và kiểm tra quyền sở hữu
-//		Promotion promotion = getPromotionDetail(shopId, request.getPromotionId());
-//		User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
-//
-//		// 2. Kiểm tra xem có yêu cầu nào đang chờ không
-//		List<PromotionApproval> existingApprovals = promotionApprovalRepository
-//				.findByPromotion_PromotionIdAndStatus(promotion.getPromotionId(), "Pending");
-//		if (!existingApprovals.isEmpty()) {
-//			throw new RuntimeException("Đã có yêu cầu đang chờ phê duyệt cho khuyến mãi này");
-//		}
-//
-//		// 3. Kiểm tra logic ngày tháng
-//		if (request.getStartDate().isAfter(request.getEndDate())) {
-//			throw new IllegalArgumentException("Ngày kết thúc phải sau ngày bắt đầu");
-//		}
-//
-//		// 4. Xử lý logic nghiệp vụ cho 2 loại
-//		// (Lưu ý: Logic nghiệp vụ (xóa/thêm) sẽ KHÔNG chạy ngay,
-//		// mà sẽ được lưu vào JSON để Admin duyệt và Stored Procedure xử lý)
-//
-//		if ("ORDER".equals(request.getPromotionType())) {
-//			if (request.getDiscountType() == null || request.getDiscountValue() == null) {
-//				throw new IllegalArgumentException(
-//						"Loại giảm giá và Giá trị giảm giá là bắt buộc cho khuyến mãi toàn đơn.");
-//			}
-//		} else if ("PRODUCT".equals(request.getPromotionType())) {
-//			if (request.getProductDiscounts() == null || request.getProductDiscounts().isEmpty()) {
-//				throw new IllegalArgumentException("Cần chọn ít nhất một sản phẩm để áp dụng khuyến mãi.");
-//			}
-//			// Kiểm tra bảo mật (đảm bảo sản phẩm thuộc shop)
-//			List<Integer> productIds = request.getProductDiscounts().stream().map(ProductDiscountDTO::getProductId)
-//					.collect(Collectors.toList());
-//			List<Product> products = productRepository.findAllById(productIds);
-//			boolean allOwned = products.stream().allMatch(p -> p.getShop().getShopId().equals(shopId));
-//			if (!allOwned || products.size() != request.getProductDiscounts().size()) {
-//				throw new RuntimeException("Phát hiện sản phẩm không hợp lệ hoặc không thuộc sở hữu của shop.");
-//			}
-//		} else {
-//			throw new IllegalArgumentException("Loại khuyến mãi không hợp lệ.");
-//		}
-//
-//		// 5. Tạo yêu cầu phê duyệt
-//		PromotionApproval approval = new PromotionApproval();
-//		approval.setPromotion(promotion);
-//		approval.setActionType("UPDATE");
-//		approval.setStatus("Pending");
-//		// DTO (request) chứa tất cả thông tin mới (loại, giá trị, danh sách sản
-//		// phẩm...)
-//		approval.setChangeDetails(objectMapper.writeValueAsString(request));
-//		approval.setRequestedBy(user);
-//		approval.setRequestedAt(LocalDateTime.now()); // Gán thời gian yêu cầu
-//
-//		promotionApprovalRepository.save(approval);
-//
-//		notificationService.notifyAdminsAboutNewApproval("PROMOTION", promotion.getPromotionId());
-//
-//		log.info("Promotion update requested - Promotion ID: {}, Shop ID: {}", promotion.getPromotionId(), shopId);
-//	}
-
 	@Transactional
 	public void requestPromotionUpdate(Integer shopId, PromotionRequestDTO request, Integer userId) throws Exception {
 
 		Promotion promotion = getPromotionDetail(shopId, request.getPromotionId());
 		User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+
+		// *** KIỂM TRA: KHÔNG CHO UPDATE PROMOTION PRODUCT TYPE ***
+		if ("PRODUCT".equals(promotion.getPromotionType())) {
+			throw new RuntimeException(
+					"Không thể chỉnh sửa khuyến mãi sản phẩm. Vui lòng sửa ở trang Quản lý sản phẩm.");
+		}
 
 		List<PromotionApproval> existingApprovals = promotionApprovalRepository
 				.findByPromotion_PromotionIdAndStatus(promotion.getPromotionId(), "Pending");
@@ -1255,6 +1038,155 @@ public class VendorService {
 		}
 	}
 
+	@Transactional
+	public void assignShipperToOrder(Integer shopId, Integer orderId, Integer shipperId, Integer userId) {
+	    // 1. Kiểm tra đơn hàng thuộc về shop
+	    Order order = orderRepository.findById(orderId)
+	            .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+	    
+	    if (!order.getShop().getShopId().equals(shopId)) {
+	        throw new RuntimeException("Đơn hàng không thuộc về shop của bạn");
+	    }
+	    
+//	    // 2. Kiểm tra trạng thái đơn hàng
+//	    if (!"Confirmed".equals(order.getOrderStatus())) {
+//	        throw new RuntimeException("Chỉ có thể gán shipper cho đơn hàng đã xác nhận");
+//	    }
+	    
+	    // 3. Kiểm tra đơn hàng chưa có shipper
+	    if (order.getShipper() != null) {
+	        throw new RuntimeException("Đơn hàng đã được gán cho shipper: " + order.getShipper().getFullName());
+	    }
+	    
+	    // 4. Kiểm tra shipper là employee của shop
+	    ShopEmployee shipperEmployee = shopEmployeeRepository
+	            .findByShop_ShopIdAndUser_Id(shopId, shipperId)
+	            .orElseThrow(() -> new RuntimeException("Shipper không phải là nhân viên của shop"));
+	    
+	    if (!"Active".equals(shipperEmployee.getStatus())) {
+	        throw new RuntimeException("Shipper không còn hoạt động");
+	    }
+	    
+	    // 5. Kiểm tra user có role SHIPPER không
+	    boolean isShipper = shipperEmployee.getUser().getRoles().stream()
+	            .anyMatch(role -> "SHIPPER".equals(role.getRoleName()));
+	    
+	    if (!isShipper) {
+	        throw new RuntimeException("Nhân viên này không phải là shipper");
+	    }
+	    
+	    // 6. Gán shipper cho đơn hàng
+	    order.setShipper(shipperEmployee.getUser());
+	    order.setOrderStatus("Delivering"); // Chuyển sang trạng thái đang giao
+	    orderRepository.save(order);
+	    
+	    // 7. Tạo lịch sử giao hàng ban đầu
+	    shipperOrderService.createInitialShippingHistory(
+	            orderId, 
+	            shipperId, 
+	            "Đơn hàng đã được gán cho shipper: " + shipperEmployee.getUser().getFullName()
+	    );
+	    
+	    // 8. Lưu lịch sử thay đổi đơn hàng
+	    OrderHistory history = new OrderHistory();
+	    history.setOrder(order);
+//	    history.setOldStatus("Confirmed");
+//	    history.setNewStatus("Delivering");
+	    history.setChangedByUser(userRepository.findById(userId).orElse(null));
+	    history.setNotes("Gán shipper: " + shipperEmployee.getUser().getFullName());
+	    history.setTimestamp(LocalDateTime.now());
+	    orderHistoryRepository.save(history);
+	    
+	    log.info("Assigned shipper {} to order {}", shipperId, orderId);
+	}
+
+	/**
+	 * Lấy danh sách shipper có thể gán
+	 */
+	@Transactional(readOnly = true)
+	public List<ShopEmployeeDTO> getAvailableShippers(Integer shopId) {
+	    List<ShopEmployee> activeEmployees = shopEmployeeRepository
+	            .findByShop_ShopIdAndStatus(shopId, "Active");
+	    
+	    return activeEmployees.stream()
+	            .filter(emp -> emp.getUser().getRoles().stream()
+	                    .anyMatch(role -> "SHIPPER".equals(role.getRoleName())))
+	            .map(emp -> {
+	                ShopEmployeeDTO dto = new ShopEmployeeDTO();
+	                dto.setEmployeeId(emp.getEmployeeId());
+	                dto.setUserId(emp.getUser().getId());
+	                dto.setFullName(emp.getUser().getFullName());
+	                dto.setEmail(emp.getUser().getEmail());
+	                dto.setPhoneNumber(emp.getUser().getPhoneNumber());
+	                dto.setAvatarURL(emp.getUser().getAvatarURL());
+	                dto.setStatus(emp.getStatus());
+	                dto.setRoleName("SHIPPER");
+	                return dto;
+	            })
+	            .collect(Collectors.toList());
+	}
+
+	/**
+	 * Thay đổi shipper cho đơn hàng
+	 */
+	@Transactional
+	public void reassignShipper(Integer shopId, Integer orderId, Integer newShipperId, Integer userId, String reason) {
+	    Order order = orderRepository.findById(orderId)
+	            .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+	    
+	    if (!order.getShop().getShopId().equals(shopId)) {
+	        throw new RuntimeException("Đơn hàng không thuộc về shop của bạn");
+	    }
+	    
+	    if (!"Delivering".equals(order.getOrderStatus())) {
+	        throw new RuntimeException("Chỉ có thể thay đổi shipper khi đơn hàng đang giao");
+	    }
+	    
+	    User oldShipper = order.getShipper();
+	    if (oldShipper == null) {
+	        throw new RuntimeException("Đơn hàng chưa được gán shipper");
+	    }
+	    
+	    ShopEmployee newShipperEmployee = shopEmployeeRepository
+	            .findByShop_ShopIdAndUser_Id(shopId, newShipperId)
+	            .orElseThrow(() -> new RuntimeException("Shipper mới không phải là nhân viên của shop"));
+	    
+	    if (!"Active".equals(newShipperEmployee.getStatus())) {
+	        throw new RuntimeException("Shipper mới không còn hoạt động");
+	    }
+	    
+	    boolean isShipper = newShipperEmployee.getUser().getRoles().stream()
+	            .anyMatch(role -> "SHIPPER".equals(role.getRoleName()));
+	    
+	    if (!isShipper) {
+	        throw new RuntimeException("Nhân viên này không phải là shipper");
+	    }
+	    
+	    order.setShipper(newShipperEmployee.getUser());
+	    orderRepository.save(order);
+	    
+	    shipperOrderService.createInitialShippingHistory(
+	            orderId,
+	            newShipperId,
+	            "Được gán lại từ shipper " + oldShipper.getFullName() + ". Lý do: " + reason
+	    );
+	    
+	    OrderHistory history = new OrderHistory();
+	    history.setOrder(order);
+	    history.setOldStatus("Delivering");
+	    history.setNewStatus("Delivering");
+	    history.setChangedByUser(userRepository.findById(userId).orElse(null));
+	    history.setNotes("Thay đổi shipper từ " + oldShipper.getFullName() + 
+	                    " sang " + newShipperEmployee.getUser().getFullName() + 
+	                    ". Lý do: " + reason);
+	    history.setTimestamp(LocalDateTime.now());
+	    orderHistoryRepository.save(history);
+	    
+	    log.info("Reassigned order {} from shipper {} to shipper {}", 
+	            orderId, oldShipper.getId(), newShipperId);
+	}
+
+	
 	// ==================== REVENUE MANAGEMENT ====================
 
 	public List<ShopRevenueDTO> getShopRevenue(Integer shopId, LocalDateTime startDate, LocalDateTime endDate) {
@@ -1472,5 +1404,321 @@ public class VendorService {
 			log.error("Error creating internal product promotion: {}", e.getMessage(), e);
 			// Không throw exception để không làm fail toàn bộ flow
 		}
+	}
+
+	// ==================== SHOP PROFILE MANAGEMENT ====================
+	// Thêm vào VendorService.java
+
+	@Transactional(readOnly = true)
+	public ShopProfileDTO getShopProfile(Integer shopId) {
+		Shop shop = shopRepository.findById(shopId).orElseThrow(() -> new RuntimeException("Shop not found"));
+
+		ShopProfileDTO dto = new ShopProfileDTO();
+		dto.setShopId(shop.getShopId());
+		dto.setShopName(shop.getShopName());
+		dto.setDescription(shop.getDescription());
+		dto.setLogoURL(shop.getLogoURL());
+		dto.setCoverImageURL(shop.getCoverImageURL());
+		dto.setAddress(shop.getAddress());
+		dto.setPhoneNumber(shop.getPhoneNumber());
+		dto.setStatus(shop.getStatus());
+
+		// Convert status to text
+		switch (shop.getStatus()) {
+		case 0:
+			dto.setStatusText("Đang chờ duyệt");
+			break;
+		case 1:
+			dto.setStatusText("Đang hoạt động");
+			break;
+		case 2:
+			dto.setStatusText("Đã bị đình chỉ");
+			break;
+		default:
+			dto.setStatusText("Không xác định");
+		}
+
+		dto.setCommissionRate(shop.getCommissionRate());
+		dto.setCreatedAt(shop.getCreatedAt());
+		dto.setUpdatedAt(shop.getUpdatedAt());
+
+		// Owner info
+		if (shop.getUser() != null) {
+			dto.setOwnerName(shop.getUser().getFullName());
+			dto.setOwnerEmail(shop.getUser().getEmail());
+		}
+
+		return dto;
+	}
+
+	@Transactional
+	public void updateShopProfile(Integer shopId, ShopProfileDTO request, Integer userId) throws Exception {
+
+		Shop shop = shopRepository.findById(shopId).orElseThrow(() -> new RuntimeException("Shop not found"));
+
+		// Kiểm tra quyền sở hữu
+		if (!shop.getUser().getId().equals(userId)) {
+			throw new RuntimeException("Unauthorized: You are not the owner of this shop");
+		}
+
+		// Kiểm tra trùng tên shop (nếu đổi tên)
+		if (!shop.getShopName().equals(request.getShopName())) {
+			Optional<Shop> existingShop = shopRepository.findByShopName(request.getShopName());
+			if (existingShop.isPresent() && !existingShop.get().getShopId().equals(shopId)) {
+				throw new RuntimeException("Tên cửa hàng đã tồn tại");
+			}
+		}
+
+		// Upload logo mới (nếu có)
+		if (request.getLogoFile() != null && !request.getLogoFile().isEmpty()) {
+			try {
+				Map<String, String> uploadResult = cloudinaryService.uploadImageAndReturnDetails(request.getLogoFile(),
+						"shops/logos", userId);
+				String newLogoUrl = uploadResult.get("secure_url");
+				if (newLogoUrl != null) {
+					shop.setLogoURL(newLogoUrl);
+					log.info("Uploaded new logo for shop {}: {}", shopId, newLogoUrl);
+				}
+			} catch (Exception e) {
+				log.error("Error uploading logo: {}", e.getMessage(), e);
+				throw new RuntimeException("Lỗi khi upload logo: " + e.getMessage());
+			}
+		}
+
+		// Upload cover image mới (nếu có)
+		if (request.getCoverImageFile() != null && !request.getCoverImageFile().isEmpty()) {
+			try {
+				Map<String, String> uploadResult = cloudinaryService
+						.uploadImageAndReturnDetails(request.getCoverImageFile(), "shops/covers", userId);
+				String newCoverUrl = uploadResult.get("secure_url");
+				if (newCoverUrl != null) {
+					shop.setCoverImageURL(newCoverUrl);
+					log.info("Uploaded new cover image for shop {}: {}", shopId, newCoverUrl);
+				}
+			} catch (Exception e) {
+				log.error("Error uploading cover image: {}", e.getMessage(), e);
+				throw new RuntimeException("Lỗi khi upload ảnh bìa: " + e.getMessage());
+			}
+		}
+
+		// Cập nhật thông tin cơ bản
+		shop.setShopName(request.getShopName());
+		shop.setDescription(request.getDescription());
+		shop.setAddress(request.getAddress());
+		shop.setPhoneNumber(request.getPhoneNumber());
+
+		// updatedAt sẽ tự động cập nhật qua @PreUpdate
+
+		shopRepository.save(shop);
+
+		log.info("Shop profile updated successfully - Shop ID: {}, User ID: {}", shopId, userId);
+	}
+	
+	// ==================== STAFF MANAGEMENT ====================
+	// Thêm dependencies vào constructor
+	private final ShopEmployeeRepository shopEmployeeRepository;
+	private final RoleRepository roleRepository;
+
+	@Transactional(readOnly = true)
+	public Page<ShopEmployeeDTO> getShopEmployees(Integer shopId, String status, String search, Pageable pageable) {
+	    
+	    Page<ShopEmployee> employees = shopEmployeeRepository.findShopEmployeesFiltered(
+	            shopId, status, search, pageable);
+	    
+	    return employees.map(employee -> {
+	        ShopEmployeeDTO dto = new ShopEmployeeDTO();
+	        dto.setEmployeeId(employee.getEmployeeId());
+	        dto.setUserId(employee.getUser().getId());
+	        dto.setFullName(employee.getUser().getFullName());
+	        dto.setEmail(employee.getUser().getEmail());
+	        dto.setPhoneNumber(employee.getUser().getPhoneNumber());
+	        dto.setAvatarURL(employee.getUser().getAvatarURL());
+	        dto.setStatus(employee.getStatus());
+	        dto.setAssignedAt(employee.getAssignedAt());
+	        dto.setUpdatedAt(employee.getUpdatedAt());
+	        
+	        // Lấy role name (STAFF hoặc SHIPPER)
+	        employee.getUser().getRoles().stream()
+	            .filter(role -> "STAFF".equals(role.getRoleName()) || "SHIPPER".equals(role.getRoleName()))
+	            .findFirst()
+	            .ifPresent(role -> {
+	                dto.setRoleId(role.getId());
+	                dto.setRoleName(role.getRoleName());
+	            });
+	        
+	        return dto;
+	    });
+	}
+
+	@Transactional(readOnly = true)
+	public User searchUserForEmployee(String searchTerm) {
+	    // Tìm user theo email hoặc phone
+	    Optional<User> userOpt;
+	    
+	    if (searchTerm.contains("@")) {
+	        userOpt = userRepository.findByEmail(searchTerm);
+	    } else {
+	        userOpt = userRepository.findByPhoneNumber(searchTerm);
+	    }
+	    
+	    if (!userOpt.isPresent()) {
+	        throw new RuntimeException("Không tìm thấy người dùng với thông tin: " + searchTerm);
+	    }
+	    
+	    User user = userOpt.get();
+	    
+	    // Kiểm tra user phải có status = 1 (Active)
+	    if (user.getStatus() != 1) {
+	        throw new RuntimeException("Tài khoản này chưa được kích hoạt hoặc đã bị khóa");
+	    }
+	    
+	    // Kiểm tra user phải có role CUSTOMER
+	    boolean isCustomer = user.getRoles().stream()
+	            .anyMatch(role -> "CUSTOMER".equals(role.getRoleName()));
+	    
+	    if (!isCustomer) {
+	        throw new RuntimeException("Người dùng này không phải là khách hàng hoặc đã có vai trò khác");
+	    }
+	    
+	    return user;
+	}
+
+	@Transactional
+	public void addEmployee(Integer shopId, Integer userId, Integer roleId) {
+	    
+	    Shop shop = shopRepository.findById(shopId)
+	            .orElseThrow(() -> new RuntimeException("Shop not found"));
+	    
+	    User user = userRepository.findById(userId)
+	            .orElseThrow(() -> new RuntimeException("User not found"));
+	    
+	    // Kiểm tra user đã là employee của shop này chưa
+	    if (shopEmployeeRepository.existsByShop_ShopIdAndUser_Id(shopId, userId)) {
+	        throw new RuntimeException("Người dùng này đã là nhân viên của cửa hàng");
+	    }
+	    
+	    // Kiểm tra roleId hợp lệ (4: SHIPPER, 5: STAFF)
+	    if (roleId != 4 && roleId != 5) {
+	        throw new RuntimeException("Vai trò không hợp lệ");
+	    }
+	    
+	    Role newRole = roleRepository.findById(roleId)
+	            .orElseThrow(() -> new RuntimeException("Role not found"));
+	    
+	    // Xóa role CUSTOMER và thêm role mới
+	    user.getRoles().removeIf(role -> "CUSTOMER".equals(role.getRoleName()));
+	    user.getRoles().add(newRole);
+	    userRepository.save(user);
+	    
+	    // Tạo ShopEmployee record
+	    ShopEmployee employee = new ShopEmployee();
+	    employee.setShop(shop);
+	    employee.setUser(user);
+	    employee.setStatus("Active");
+	    
+	    shopEmployeeRepository.save(employee);
+	    
+	    log.info("Added employee: User {} to Shop {} with role {}", userId, shopId, newRole.getRoleName());
+	}
+
+	@Transactional(readOnly = true)
+	public ShopEmployeeDTO getEmployeeDetail(Integer shopId, Integer employeeId) {
+	    
+	    ShopEmployee employee = shopEmployeeRepository.findById(employeeId)
+	            .orElseThrow(() -> new RuntimeException("Employee not found"));
+	    
+	    if (!employee.getShop().getShopId().equals(shopId)) {
+	        throw new RuntimeException("Unauthorized: Employee does not belong to this shop");
+	    }
+	    
+	    ShopEmployeeDTO dto = new ShopEmployeeDTO();
+	    dto.setEmployeeId(employee.getEmployeeId());
+	    dto.setUserId(employee.getUser().getId());
+	    dto.setFullName(employee.getUser().getFullName());
+	    dto.setEmail(employee.getUser().getEmail());
+	    dto.setPhoneNumber(employee.getUser().getPhoneNumber());
+	    dto.setAvatarURL(employee.getUser().getAvatarURL());
+	    dto.setStatus(employee.getStatus());
+	    dto.setAssignedAt(employee.getAssignedAt());
+	    dto.setUpdatedAt(employee.getUpdatedAt());
+	    
+	    // Lấy role hiện tại
+	    employee.getUser().getRoles().stream()
+	        .filter(role -> "STAFF".equals(role.getRoleName()) || "SHIPPER".equals(role.getRoleName()))
+	        .findFirst()
+	        .ifPresent(role -> {
+	            dto.setRoleId(role.getId());
+	            dto.setRoleName(role.getRoleName());
+	        });
+	    
+	    return dto;
+	}
+
+	@Transactional
+	public void updateEmployee(Integer shopId, Integer employeeId, Integer newRoleId, String newStatus) {
+	    
+	    ShopEmployee employee = shopEmployeeRepository.findById(employeeId)
+	            .orElseThrow(() -> new RuntimeException("Employee not found"));
+	    
+	    if (!employee.getShop().getShopId().equals(shopId)) {
+	        throw new RuntimeException("Unauthorized: Employee does not belong to this shop");
+	    }
+	    
+	    User user = employee.getUser();
+	    
+	    // Cập nhật role nếu thay đổi
+	    if (newRoleId != null && (newRoleId == 4 || newRoleId == 5)) {
+	        Role currentRole = user.getRoles().stream()
+	            .filter(role -> "STAFF".equals(role.getRoleName()) || "SHIPPER".equals(role.getRoleName()))
+	            .findFirst()
+	            .orElse(null);
+	        
+	        if (currentRole == null || !currentRole.getId().equals(newRoleId)) {
+	            // Xóa role cũ
+	            user.getRoles().removeIf(role -> "STAFF".equals(role.getRoleName()) || "SHIPPER".equals(role.getRoleName()));
+	            
+	            // Thêm role mới
+	            Role newRole = roleRepository.findById(newRoleId)
+	                    .orElseThrow(() -> new RuntimeException("Role not found"));
+	            user.getRoles().add(newRole);
+	            userRepository.save(user);
+	            
+	            log.info("Updated employee role: User {} to {}", user.getId(), newRole.getRoleName());
+	        }
+	    }
+	    
+	    // Cập nhật status
+	    if (newStatus != null && ("Active".equals(newStatus) || "Inactive".equals(newStatus))) {
+	        employee.setStatus(newStatus);
+	        shopEmployeeRepository.save(employee);
+	        
+	        log.info("Updated employee status: Employee {} to {}", employeeId, newStatus);
+	    }
+	}
+
+	@Transactional
+	public void deactivateEmployee(Integer shopId, Integer employeeId) {
+	    
+	    ShopEmployee employee = shopEmployeeRepository.findById(employeeId)
+	            .orElseThrow(() -> new RuntimeException("Employee not found"));
+	    
+	    if (!employee.getShop().getShopId().equals(shopId)) {
+	        throw new RuntimeException("Unauthorized: Employee does not belong to this shop");
+	    }
+	    
+	    // Chuyển status thành Inactive
+	    employee.setStatus("Inactive");
+	    shopEmployeeRepository.save(employee);
+	    
+	    // Optional: Có thể chuyển user về role CUSTOMER
+	    User user = employee.getUser();
+	    user.getRoles().removeIf(role -> "STAFF".equals(role.getRoleName()) || "SHIPPER".equals(role.getRoleName()));
+	    
+	    Role customerRole = roleRepository.findById(2) // CUSTOMER role ID = 2
+	            .orElseThrow(() -> new RuntimeException("Customer role not found"));
+	    user.getRoles().add(customerRole);
+	    userRepository.save(user);
+	    
+	    log.info("Deactivated employee: Employee {}, User {} reverted to CUSTOMER", employeeId, user.getId());
 	}
 }

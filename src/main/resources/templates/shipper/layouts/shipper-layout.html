@@ -183,59 +183,17 @@
 					<ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview"
 						role="navigation" aria-label="Main navigation">
 						<li class="nav-item"><a class="nav-link"
-							th:href="@{/vendor/dashboard}"
-							th:classappend="${currentUri == '/vendor/dashboard' ? 'active' : ''}">
+							th:href="@{/shipper/dashboard}"
+							th:classappend="${currentUri == '/shipper/dashboard' ? 'active' : ''}">
 								<i class="nav-icon bi bi-house-door-fill"></i>
-								<p>Trang chủ Shop</p>
+								<p>Trang chủ Shipper</p>
 						</a></li>
 
 						<li class="nav-item"><a class="nav-link"
-							th:href="@{/vendor/products}"
-							th:classappend="${#strings.startsWith(currentUri, '/vendor/products') ? 'active' : ''}">
-								<i class="nav-icon bi bi-box-seam"></i>
-								<p>Quản lý sản phẩm</p>
-						</a></li>
-
-						<li class="nav-item"><a class="nav-link"
-							th:href="@{/vendor/toppings}"
-							th:classappend="${#strings.startsWith(currentUri, '/vendor/toppings') ? 'active' : ''}">
-								<i class="nav-icon bi bi-plus-circle-dotted"></i>
-								<p>Quản lý Topping</p>
-						</a></li>
-
-						<li class="nav-item"><a class="nav-link"
-							th:href="@{/vendor/promotions}"
-							th:classappend="${#strings.startsWith(currentUri, '/vendor/promotions') ? 'active' : ''}">
-								<i class="nav-icon bi bi-gift-fill"></i>
-								<p>Quản lý khuyến mãi</p>
-						</a></li>
-
-						<li class="nav-item"><a class="nav-link"
-							th:href="@{/vendor/orders}"
-							th:classappend="${#strings.startsWith(currentUri, '/vendor/orders') ? 'active' : ''}">
+							th:href="@{/shipper/orders}"
+							th:classappend="${currentUri == '/shipper/orders' ? 'active' : ''}">
 								<i class="nav-icon bi bi-receipt-cutoff"></i>
 								<p>Quản lý đơn hàng</p>
-						</a></li>
-
-						<li class="nav-item"><a class="nav-link"
-							th:href="@{/vendor/staff}"
-							th:classappend="${currentUri == '/vendor/staff' ? 'active' : ''}">
-								<i class="nav-icon bi bi-person"></i>
-								<p>Quản lý nhân viên</p>
-						</a></li>
-
-						<li class="nav-item"><a class="nav-link"
-							th:href="@{/vendor/revenue}"
-							th:classappend="${currentUri == '/vendor/revenue' ? 'active' : ''}">
-								<i class="nav-icon bi bi-graph-up-arrow"></i>
-								<p>Quản lý doanh thu</p>
-						</a></li>
-
-						<li class="nav-item"><a class="nav-link"
-							th:href="@{/vendor/shop-profile}"
-							th:classappend="${currentUri == '/vendor/shop-profile' ? 'active' : ''}">
-								<i class="nav-icon bi bi-shop"></i>
-								<p>Thông tin cửa hàng</p>
 						</a></li>
 
 

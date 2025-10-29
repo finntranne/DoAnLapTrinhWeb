@@ -6,8 +6,11 @@ import com.alotra.dto.promotion.PromotionStatisticsDTO;
 import com.alotra.dto.promotion.PromotionRequestDTO;
 import com.alotra.dto.response.ApprovalResponseDTO;
 import com.alotra.dto.shop.CategoryRevenueDTO;
+import com.alotra.dto.shop.EmployeeSearchRequest;
 import com.alotra.dto.shop.ShopDashboardDTO;
+import com.alotra.dto.shop.ShopEmployeeDTO;
 import com.alotra.dto.shop.ShopOrderDTO;
+import com.alotra.dto.shop.ShopProfileDTO;
 import com.alotra.dto.shop.ShopRevenueDTO;
 import com.alotra.dto.topping.ToppingRequestDTO;
 import com.alotra.dto.topping.ToppingStatisticsDTO;
@@ -15,9 +18,11 @@ import com.alotra.entity.order.Order;
 import com.alotra.entity.product.Product;
 import com.alotra.entity.product.Topping;
 import com.alotra.entity.promotion.Promotion;
+import com.alotra.entity.user.User;
 import com.alotra.repository.product.ProductRepository;
 import com.alotra.repository.product.ToppingRepository;
 import com.alotra.repository.promotion.PromotionRepository;
+import com.alotra.repository.shop.ShopEmployeeRepository;
 import com.alotra.security.MyUserDetails;
 import com.alotra.service.vendor.VendorService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -31,6 +36,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -45,8 +51,10 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Controller
@@ -60,6 +68,7 @@ public class VendorController {
 	private final ToppingRepository toppingRepository;
 	private final PromotionRepository promotionRepository;
 	private final ProductRepository productRepository;
+	private final ShopEmployeeRepository shopEmployeeRepository;
 
 	// ==================== HELPER METHOD ====================
 
@@ -218,89 +227,6 @@ public class VendorController {
 			return "redirect:/shop/register";
 		}
 	}
-
-//	@PostMapping("/products/create")
-//	public String createProduct(@AuthenticationPrincipal MyUserDetails userDetails,
-//			@ModelAttribute("product") ProductRequestDTO request, BindingResult result, Model model,
-//			RedirectAttributes redirectAttributes) {
-//
-//		// Debug log - xem dữ liệu nhận được
-//		log.info("=== CREATE PRODUCT REQUEST ===");
-//		log.info("Product name: {}", request.getProductName());
-//		log.info("Category ID: {}", request.getCategoryId());
-//		log.info("Description: {}", request.getDescription());
-//		log.info("Variants count: {}", request.getVariants() != null ? request.getVariants().size() : "NULL");
-//		if (request.getVariants() != null) {
-//			for (int i = 0; i < request.getVariants().size(); i++) {
-//				var v = request.getVariants().get(i);
-//				log.info("Variant[{}]: sizeId={}, price={}, stock={}, sku={}", i, v.getSizeId(), v.getPrice(),
-//						v.getStock(), v.getSku());
-//			}
-//		}
-//		log.info("Images count: {}", request.getImages() != null ? request.getImages().size() : "NULL");
-//		log.info("Primary image index: {}", request.getPrimaryImageIndex());
-//
-//		if (result.hasErrors()) {
-//			log.error("Validation errors: {}", result.getAllErrors());
-//			model.addAttribute("categories", vendorService.getAllCategories());
-//			model.addAttribute("sizes", vendorService.getAllSizesSimple());
-//			model.addAttribute("action", "create");
-//			return "vendor/products/form";
-//		}
-//
-//		try {
-//			Integer shopId = getShopIdOrThrow(userDetails);
-//			Integer userId = getUserIdOrThrow(userDetails);
-//
-//			Set<Topping> selectedToppings = new HashSet<>();
-//			if (request.getAvailableToppingIds() != null && !request.getAvailableToppingIds().isEmpty()) {
-//				// Lấy các Topping entity từ ID
-//				List<Topping> toppingsFromDb = toppingRepository.findAllById(request.getAvailableToppingIds());
-//				// Kiểm tra xem tất cả topping có thuộc shop này không (bảo mật)
-//				for (Topping t : toppingsFromDb) {
-//					if (t.getShop() == null || !t.getShop().getShopId().equals(shopId)) {
-//						throw new IllegalAccessException("Đã phát hiện topping không hợp lệ.");
-//					}
-//				}
-//				selectedToppings.addAll(toppingsFromDb);
-//			}
-//
-//			log.info("Creating product request - Shop ID: {}, User ID: {}", shopId, userId);
-//			log.info("Product name: {}", request.getProductName());
-//			log.info("Category ID: {}", request.getCategoryId());
-//			log.info("Variants count: {}", request.getVariants() != null ? request.getVariants().size() : 0);
-//			log.info("Images count: {}", request.getImages() != null ? request.getImages().size() : 0);
-//
-//			// Validate variants
-//			if (request.getVariants() == null || request.getVariants().isEmpty()) {
-//				redirectAttributes.addFlashAttribute("error", "Sản phẩm phải có ít nhất một biến thể");
-//				return "redirect:/vendor/products/create";
-//			}
-//
-//			// Validate images
-//			if (request.getImages() == null || request.getImages().isEmpty()
-//					|| request.getImages().stream().allMatch(file -> file == null || file.isEmpty())) {
-//				redirectAttributes.addFlashAttribute("error", "Vui lòng upload ít nhất một hình ảnh");
-//				return "redirect:/vendor/products/create";
-//			}
-//
-//			vendorService.requestProductCreation(shopId, request, userId, selectedToppings);
-//
-//			redirectAttributes.addFlashAttribute("success",
-//					"Yêu cầu tạo sản phẩm đã được gửi. Vui lòng chờ admin phê duyệt.");
-//
-//			return "redirect:/vendor/products";
-//
-//		} catch (IllegalStateException e) {
-//			log.error("Auth error: {}", e.getMessage());
-//			redirectAttributes.addFlashAttribute("error", e.getMessage());
-//			return "redirect:/shop/register";
-//		} catch (Exception e) {
-//			log.error("Error creating product", e);
-//			redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
-//			return "redirect:/vendor/products/create";
-//		}
-//	}
 
 	@PostMapping("/products/create")
 	public String createProduct(@AuthenticationPrincipal MyUserDetails userDetails,
@@ -646,14 +572,16 @@ public class VendorController {
 
 	@GetMapping("/promotions")
 	public String listPromotions(@AuthenticationPrincipal MyUserDetails userDetails,
-			@RequestParam(required = false) Byte status, @RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "5") int size, Model model, RedirectAttributes redirectAttributes) {
+			@RequestParam(required = false) Byte status, @RequestParam(required = false) String promotionType,
+			@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "5") int size, Model model,
+			RedirectAttributes redirectAttributes) {
 
 		try {
 			Integer shopId = getShopIdOrThrow(userDetails);
 			Pageable pageable = PageRequest.of(page, size);
 
-			Page<PromotionStatisticsDTO> promotions = vendorService.getShopPromotions(shopId, status, pageable);
+			Page<PromotionStatisticsDTO> promotions = vendorService.getShopPromotions(shopId, status, promotionType,
+					pageable);
 
 			model.addAttribute("promotions", promotions);
 			model.addAttribute("currentPage", page);
@@ -667,42 +595,6 @@ public class VendorController {
 			return "redirect:/shop/register";
 		}
 	}
-
-//	@GetMapping("/promotions/create")
-//	public String showCreatePromotionForm(@AuthenticationPrincipal MyUserDetails userDetails, Model model,
-//			RedirectAttributes redirectAttributes) {
-//
-//		try {
-//			getShopIdOrThrow(userDetails);
-//
-//			model.addAttribute("promotion", new PromotionRequestDTO());
-//			model.addAttribute("action", "create");
-//
-//			return "vendor/promotions/form";
-//
-//		} catch (IllegalStateException e) {
-//			redirectAttributes.addFlashAttribute("error", e.getMessage());
-//			return "redirect:/shop/register";
-//		}
-//	}
-
-//	@GetMapping("/promotions/create")
-//	public String showCreatePromotionForm(@AuthenticationPrincipal MyUserDetails userDetails, Model model,
-//			RedirectAttributes redirectAttributes) {
-//		try {
-//			Integer shopId = getShopIdOrThrow(userDetails);
-//			model.addAttribute("promotion", new PromotionRequestDTO());
-//			model.addAttribute("action", "create");
-//
-//			// *** SỬA: Dùng DTO thay vì Entity ***
-//			model.addAttribute("shopProducts", vendorService.getShopProductsForSelection(shopId));
-//
-//			return "vendor/promotions/form";
-//		} catch (IllegalStateException e) {
-//			redirectAttributes.addFlashAttribute("error", e.getMessage());
-//			return "redirect:/shop/register";
-//		}
-//	}
 
 	@GetMapping("/promotions/create")
 	public String showCreatePromotionForm(@AuthenticationPrincipal MyUserDetails userDetails, Model model,
@@ -749,80 +641,21 @@ public class VendorController {
 		}
 	}
 
-//	@GetMapping("/promotions/edit/{id}")
-//	public String showEditPromotionForm(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
-//			Model model, RedirectAttributes redirectAttributes) {
-//
-//		try {
-//			Integer shopId = getShopIdOrThrow(userDetails);
-//
-//			Promotion promotion = vendorService.getPromotionDetail(shopId, id);
-//			PromotionRequestDTO dto = vendorService.convertPromotionToDTO(promotion);
-//			
-//
-//			model.addAttribute("promotion", dto);
-//			model.addAttribute("action", "edit");
-//			model.addAttribute("promotionId", id);
-//
-//			// Format dates for datetime-local input
-//			if (dto.getStartDate() != null) {
-//				model.addAttribute("formattedStartDate", dto.getStartDate().toString().substring(0, 16)); // yyyy-MM-ddTHH:mm
-//			}
-//			if (dto.getEndDate() != null) {
-//				model.addAttribute("formattedEndDate", dto.getEndDate().toString().substring(0, 16));
-//			}
-//
-//			return "vendor/promotions/form";
-//
-//		} catch (IllegalStateException e) {
-//			redirectAttributes.addFlashAttribute("error", e.getMessage());
-//			return "redirect:/shop/register";
-//		} catch (Exception e) {
-//			log.error("Error loading promotion for edit", e);
-//			redirectAttributes.addFlashAttribute("error", e.getMessage());
-//			return "redirect:/vendor/promotions";
-//		}
-//	}
-
-//	@GetMapping("/promotions/edit/{id}")
-//	public String showEditPromotionForm(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
-//			Model model, RedirectAttributes redirectAttributes) {
-//		try {
-//			Integer shopId = getShopIdOrThrow(userDetails);
-//			Promotion promotion = vendorService.getPromotionDetail(shopId, id);
-//			PromotionRequestDTO dto = vendorService.convertPromotionToDTOWithProducts(promotion);
-//
-//			model.addAttribute("promotion", dto);
-//			model.addAttribute("action", "edit");
-//			model.addAttribute("promotionId", id);
-//
-//			if (dto.getStartDate() != null) {
-//				model.addAttribute("formattedStartDate", dto.getStartDate().toString().substring(0, 16));
-//			}
-//			if (dto.getEndDate() != null) {
-//				model.addAttribute("formattedEndDate", dto.getEndDate().toString().substring(0, 16));
-//			}
-//
-//			// *** SỬA: Dùng DTO thay vì Entity ***
-//			model.addAttribute("shopProducts", vendorService.getShopProductsForSelection(shopId));
-//
-//			return "vendor/promotions/form";
-//		} catch (IllegalStateException e) {
-//			redirectAttributes.addFlashAttribute("error", e.getMessage());
-//			return "redirect:/shop/register";
-//		} catch (Exception e) {
-//			log.error("Error loading promotion for edit", e);
-//			redirectAttributes.addFlashAttribute("error", e.getMessage());
-//			return "redirect:/vendor/promotions";
-//		}
-//	}
-
 	@GetMapping("/promotions/edit/{id}")
 	public String showEditPromotionForm(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
 			Model model, RedirectAttributes redirectAttributes) {
 		try {
 			Integer shopId = getShopIdOrThrow(userDetails);
 			Promotion promotion = vendorService.getPromotionDetail(shopId, id);
+
+			// *** KIỂM TRA PROMOTION TYPE ***
+			if ("PRODUCT".equals(promotion.getPromotionType())) {
+				// Nếu là PRODUCT type → Chỉ hiển thị thông tin (read-only)
+				model.addAttribute("promotion", promotion);
+				model.addAttribute("action", "edit");
+				model.addAttribute("promotionId", id);
+				return "vendor/promotions/form"; // Trả về cùng view nhưng sẽ hiển thị form khác
+			}
 
 			// *** BỎ convertPromotionToDTOWithProducts, CHỈ dùng convertPromotionToDTO ***
 			PromotionRequestDTO dto = vendorService.convertPromotionToDTO(promotion);
@@ -855,15 +688,25 @@ public class VendorController {
 			@Valid @ModelAttribute("promotion") PromotionRequestDTO request, BindingResult result, Model model,
 			RedirectAttributes redirectAttributes) {
 
-		if (result.hasErrors()) {
-			log.error("Validation errors: {}", result.getAllErrors());
-			model.addAttribute("action", "edit");
-			model.addAttribute("promotionId", id);
-			return "vendor/promotions/form";
-		}
-
 		try {
 			Integer shopId = getShopIdOrThrow(userDetails);
+			Promotion promotion = vendorService.getPromotionDetail(shopId, id);
+
+			// *** KIỂM TRA: KHÔNG CHO SỬA PROMOTION PRODUCT TYPE ***
+			if ("PRODUCT".equals(promotion.getPromotionType())) {
+				redirectAttributes.addFlashAttribute("error",
+						"Không thể chỉnh sửa khuyến mãi sản phẩm. Vui lòng sửa ở trang Quản lý sản phẩm.");
+				return "redirect:/vendor/promotions";
+			}
+
+			// *** CHỈ XỬ LÝ ORDER TYPE ***
+			if (result.hasErrors()) {
+				log.error("Validation errors: {}", result.getAllErrors());
+				model.addAttribute("action", "edit");
+				model.addAttribute("promotionId", id);
+				return "vendor/promotions/form";
+			}
+
 			Integer userId = getUserIdOrThrow(userDetails);
 
 			log.info("Updating promotion request - Promotion ID: {}, Shop ID: {}, User ID: {}", id, shopId, userId);
@@ -960,6 +803,12 @@ public class VendorController {
 
 			model.addAttribute("order", order);
 
+			// Cần tải danh sách shipper nếu đơn hàng 'Đã xác nhận' (để gán)
+			// HOẶC 'Đang giao' (để có thể thay đổi)
+			if ("Confirmed".equals(order.getOrderStatus()) || "Delivering".equals(order.getOrderStatus())) {
+				List<ShopEmployeeDTO> availableShippers = vendorService.getAvailableShippers(shopId);
+				model.addAttribute("availableShippers", availableShippers);
+			}
 			return "vendor/orders/detail";
 
 		} catch (IllegalStateException e) {
@@ -989,6 +838,60 @@ public class VendorController {
 		} catch (Exception e) {
 			log.error("Error updating order status", e);
 			redirectAttributes.addFlashAttribute("error", e.getMessage());
+		}
+
+		return "redirect:/vendor/orders/" + id;
+	}
+
+	@PostMapping("/orders/{id}/assign-shipper")
+	public String assignShipper(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
+			@RequestParam Integer shipperId, RedirectAttributes redirectAttributes) {
+
+		try {
+			Integer shopId = getShopIdOrThrow(userDetails);
+			Integer userId = getUserIdOrThrow(userDetails);
+
+			vendorService.assignShipperToOrder(shopId, id, shipperId, userId);
+
+			redirectAttributes.addFlashAttribute("success", "Đã gán shipper cho đơn hàng thành công");
+
+		} catch (IllegalStateException e) {
+			log.error("Auth error: {}", e.getMessage());
+			redirectAttributes.addFlashAttribute("error", e.getMessage());
+			return "redirect:/shop/register";
+		} catch (Exception e) {
+			log.error("Error assigning shipper", e);
+			redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
+		}
+
+		return "redirect:/vendor/orders/" + id;
+	}
+
+	/**
+	 * Thay đổi shipper
+	 */
+	@PostMapping("/orders/{id}/reassign-shipper")
+	public String reassignShipper(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
+			@RequestParam Integer newShipperId, @RequestParam(required = false) String reason,
+			RedirectAttributes redirectAttributes) {
+
+		try {
+			Integer shopId = getShopIdOrThrow(userDetails);
+			Integer userId = getUserIdOrThrow(userDetails);
+
+			String finalReason = (reason != null && !reason.isEmpty()) ? reason : "Thay đổi shipper";
+
+			vendorService.reassignShipper(shopId, id, newShipperId, userId, finalReason);
+
+			redirectAttributes.addFlashAttribute("success", "Đã thay đổi shipper thành công");
+
+		} catch (IllegalStateException e) {
+			log.error("Auth error: {}", e.getMessage());
+			redirectAttributes.addFlashAttribute("error", e.getMessage());
+			return "redirect:/shop/register";
+		} catch (Exception e) {
+			log.error("Error reassigning shipper", e);
+			redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
 		}
 
 		return "redirect:/vendor/orders/" + id;
@@ -1179,6 +1082,215 @@ public class VendorController {
 			log.error("Error loading approvals page", e);
 			redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra khi tải trang phê duyệt.");
 			return "redirect:/vendor/dashboard"; // Redirect to dashboard on general error
+		}
+	}
+
+	// ==================== SHOP PROFILE MANAGEMENT ====================
+	// Thêm vào VendorController.java
+
+	@GetMapping("/shop-profile")
+	public String viewShopProfile(@AuthenticationPrincipal MyUserDetails userDetails, Model model,
+			RedirectAttributes redirectAttributes) {
+		try {
+			Integer shopId = getShopIdOrThrow(userDetails);
+
+			ShopProfileDTO shopProfile = vendorService.getShopProfile(shopId);
+
+			model.addAttribute("shop", shopProfile);
+
+			return "vendor/shop-profile";
+
+		} catch (IllegalStateException e) {
+			redirectAttributes.addFlashAttribute("error", e.getMessage());
+			return "redirect:/shop/register";
+		} catch (Exception e) {
+			log.error("Error loading shop profile", e);
+			redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra khi tải thông tin cửa hàng.");
+			return "redirect:/vendor/dashboard";
+		}
+	}
+
+	@PostMapping("/shop-profile/update")
+	public String updateShopProfile(@AuthenticationPrincipal MyUserDetails userDetails,
+			@Valid @ModelAttribute("shop") ShopProfileDTO request, BindingResult result,
+			RedirectAttributes redirectAttributes) {
+
+		if (result.hasErrors()) {
+			log.error("Validation errors: {}", result.getAllErrors());
+			redirectAttributes.addFlashAttribute("error", "Vui lòng kiểm tra lại thông tin.");
+			return "redirect:/vendor/shop-profile";
+		}
+
+		try {
+			Integer shopId = getShopIdOrThrow(userDetails);
+			Integer userId = getUserIdOrThrow(userDetails);
+
+			vendorService.updateShopProfile(shopId, request, userId);
+
+			redirectAttributes.addFlashAttribute("success", "Cập nhật thông tin cửa hàng thành công!");
+
+			return "redirect:/vendor/shop-profile";
+
+		} catch (IllegalStateException e) {
+			log.error("Auth error: {}", e.getMessage());
+			redirectAttributes.addFlashAttribute("error", e.getMessage());
+			return "redirect:/shop/register";
+		} catch (Exception e) {
+			log.error("Error updating shop profile", e);
+			redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+			return "redirect:/vendor/shop-profile";
+		}
+	}
+
+	// ==================== STAFF MANAGEMENT ====================
+	@GetMapping("/staff")
+	public String listStaff(@AuthenticationPrincipal MyUserDetails userDetails,
+			@RequestParam(required = false) String status, @RequestParam(required = false) String search,
+			@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size, Model model,
+			RedirectAttributes redirectAttributes) {
+		try {
+			Integer shopId = getShopIdOrThrow(userDetails);
+			Pageable pageable = PageRequest.of(page, size);
+
+			Page<ShopEmployeeDTO> employees = vendorService.getShopEmployees(shopId, status, search, pageable);
+
+			model.addAttribute("employees", employees);
+			model.addAttribute("currentPage", page);
+			model.addAttribute("totalPages", employees.getTotalPages());
+			model.addAttribute("status", status);
+			model.addAttribute("search", search);
+
+			return "vendor/staff/list";
+
+		} catch (IllegalStateException e) {
+			redirectAttributes.addFlashAttribute("error", e.getMessage());
+			return "redirect:/shop/register";
+		} catch (Exception e) {
+			log.error("Error loading staff list", e);
+			redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra khi tải danh sách nhân viên.");
+			return "redirect:/vendor/dashboard";
+		}
+	}
+
+	@GetMapping("/staff/search")
+	public String showSearchEmployeeForm(Model model) {
+		model.addAttribute("searchRequest", new EmployeeSearchRequest());
+		return "vendor/staff/search";
+	}
+
+	@PostMapping("/staff/search")
+	@ResponseBody
+	public ResponseEntity<?> searchUser(@AuthenticationPrincipal MyUserDetails userDetails,
+			@Valid @RequestBody EmployeeSearchRequest request) {
+		try {
+			Integer shopId = getShopIdOrThrow(userDetails);
+			User user = vendorService.searchUserForEmployee(request.getSearchTerm());
+
+			// Kiểm tra user đã là employee của shop chưa
+			if (shopEmployeeRepository.existsByShop_ShopIdAndUser_Id(shopId, user.getId())) {
+				return ResponseEntity.badRequest().body(Map.of("error", "Người dùng này đã là nhân viên của cửa hàng"));
+			}
+
+			// Trả về thông tin user
+			Map<String, Object> response = new HashMap<>();
+			response.put("userId", user.getId());
+			response.put("fullName", user.getFullName());
+			response.put("email", user.getEmail());
+			response.put("phoneNumber", user.getPhoneNumber());
+			response.put("avatarURL", user.getAvatarURL());
+
+			return ResponseEntity.ok(response);
+
+		} catch (RuntimeException e) {
+			return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+		}
+	}
+
+	@PostMapping("/staff/add")
+	public String addEmployee(@AuthenticationPrincipal MyUserDetails userDetails, @RequestParam Integer userId,
+			@RequestParam Integer roleId, RedirectAttributes redirectAttributes) {
+		try {
+			Integer shopId = getShopIdOrThrow(userDetails);
+
+			vendorService.addEmployee(shopId, userId, roleId);
+
+			redirectAttributes.addFlashAttribute("success", "Thêm nhân viên thành công!");
+
+			return "redirect:/vendor/staff";
+
+		} catch (IllegalStateException e) {
+			redirectAttributes.addFlashAttribute("error", e.getMessage());
+			return "redirect:/shop/register";
+		} catch (Exception e) {
+			log.error("Error adding employee", e);
+			redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+			return "redirect:/vendor/staff/search";
+		}
+	}
+
+	@GetMapping("/staff/edit/{id}")
+	public String showEditEmployeeForm(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
+			Model model, RedirectAttributes redirectAttributes) {
+		try {
+			Integer shopId = getShopIdOrThrow(userDetails);
+
+			ShopEmployeeDTO employee = vendorService.getEmployeeDetail(shopId, id);
+
+			model.addAttribute("employee", employee);
+
+			return "vendor/staff/edit";
+
+		} catch (IllegalStateException e) {
+			redirectAttributes.addFlashAttribute("error", e.getMessage());
+			return "redirect:/shop/register";
+		} catch (Exception e) {
+			log.error("Error loading employee for edit", e);
+			redirectAttributes.addFlashAttribute("error", e.getMessage());
+			return "redirect:/vendor/staff";
+		}
+	}
+
+	@PostMapping("/staff/edit/{id}")
+	public String updateEmployee(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
+			@RequestParam Integer roleId, @RequestParam String status, RedirectAttributes redirectAttributes) {
+		try {
+			Integer shopId = getShopIdOrThrow(userDetails);
+
+			vendorService.updateEmployee(shopId, id, roleId, status);
+
+			redirectAttributes.addFlashAttribute("success", "Cập nhật thông tin nhân viên thành công!");
+
+			return "redirect:/vendor/staff";
+
+		} catch (IllegalStateException e) {
+			redirectAttributes.addFlashAttribute("error", e.getMessage());
+			return "redirect:/shop/register";
+		} catch (Exception e) {
+			log.error("Error updating employee", e);
+			redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+			return "redirect:/vendor/staff/edit/" + id;
+		}
+	}
+
+	@PostMapping("/staff/deactivate/{id}")
+	public String deactivateEmployee(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
+			RedirectAttributes redirectAttributes) {
+		try {
+			Integer shopId = getShopIdOrThrow(userDetails);
+
+			vendorService.deactivateEmployee(shopId, id);
+
+			redirectAttributes.addFlashAttribute("success", "Đã xóa nhân viên khỏi cửa hàng!");
+
+			return "redirect:/vendor/staff";
+
+		} catch (IllegalStateException e) {
+			redirectAttributes.addFlashAttribute("error", e.getMessage());
+			return "redirect:/shop/register";
+		} catch (Exception e) {
+			log.error("Error deactivating employee", e);
+			redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+			return "redirect:/vendor/staff";
 		}
 	}
 }

@@ -35,7 +35,8 @@
 				aria-label="Close"></button>
 		</div>
 
-		<div class="alert alert-info">
+		<!-- *** ALERT KHÁC NHAU TÙY THEO ACTION VÀ PROMOTION TYPE *** -->
+		<div th:if="${action == 'create'}" class="alert alert-info">
 			<i class="bi bi-info-circle me-2"></i> <strong>Lưu ý:</strong> Trang
 			này chỉ dùng để tạo <strong>Mã giảm giá cho toàn đơn hàng</strong>.
 			Nếu muốn giảm giá cho từng sản phẩm cụ thể, vui lòng vào <a
@@ -43,7 +44,91 @@
 			chỉnh sửa từng sản phẩm.
 		</div>
 
+		<div
+			th:if="${action == 'edit' && promotion.promotionType == 'PRODUCT'}"
+			class="alert alert-warning">
+			<i class="bi bi-exclamation-triangle me-2"></i> <strong>Khuyến
+				mãi sản phẩm:</strong> Đây là khuyến mãi được tạo tự động khi bạn thiết lập
+			giảm giá cho sản phẩm. <strong>Bạn không thể chỉnh sửa trực
+				tiếp.</strong> Để thay đổi % giảm giá, vui lòng vào <a
+				href="/vendor/products" class="alert-link">Quản lý sản phẩm</a> và
+			chỉnh sửa sản phẩm tương ứng.
+		</div>
+
+		<!-- *** FORM CHO PRODUCT TYPE (READ-ONLY) *** -->
+		<div
+			th:if="${action == 'edit' && promotion.promotionType == 'PRODUCT'}"
+			class="row">
+			<div class="col-lg-8 mx-auto">
+				<div class="card mb-4">
+					<div class="card-header bg-secondary bg-opacity-10">
+						<h5 class="mb-0">
+							<i class="bi bi-info-circle me-2"></i>Thông tin khuyến mãi (Chỉ
+							xem)
+						</h5>
+					</div>
+					<div class="card-body">
+						<div class="row g-3">
+							<div class="col-md-8">
+								<label class="form-label fw-bold">Tên khuyến mãi</label>
+								<p class="form-control-plaintext"
+									th:text="${promotion.promotionName}"></p>
+							</div>
+							<div class="col-md-4">
+								<label class="form-label fw-bold">Mã giảm giá</label>
+								<p class="form-control-plaintext">
+									<code class="fs-6" th:text="${promotion.promoCode}"></code>
+								</p>
+							</div>
+							<div class="col-12">
+								<label class="form-label fw-bold">Mô tả</label>
+								<p class="form-control-plaintext"
+									th:text="${promotion.description}"></p>
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-bold">Loại khuyến mãi</label>
+								<p class="form-control-plaintext">
+									<span class="badge bg-info">Theo sản phẩm</span>
+								</p>
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-bold">Trạng thái</label>
+								<p class="form-control-plaintext">
+									<span class="badge"
+										th:classappend="${promotion.status == 1 ? 'bg-success' : 'bg-secondary'}"
+										th:text="${promotion.status == 1 ? 'Đang hoạt động' : 'Không hoạt động'}">
+									</span>
+								</p>
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-bold">Thời gian bắt đầu</label>
+								<p class="form-control-plaintext"
+									th:text="${#temporals.format(promotion.startDate, 'dd/MM/yyyy HH:mm')}">
+								</p>
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-bold">Thời gian kết thúc</label>
+								<p class="form-control-plaintext"
+									th:text="${#temporals.format(promotion.endDate, 'dd/MM/yyyy HH:mm')}">
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="card">
+					<div class="card-body">
+						<a href="/vendor/promotions" class="btn btn-secondary w-100">
+							<i class="bi bi-arrow-left me-1"></i>Quay lại danh sách
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- *** FORM CHO ORDER TYPE (EDITABLE) *** -->
 		<form
+			th:if="${action == 'create' || (action == 'edit' && promotion.promotionType == 'ORDER')}"
 			th:action="${action == 'create' ? '/vendor/promotions/create' : '/vendor/promotions/edit/' + promotionId}"
 			method="post" th:object="${promotion}" id="promotionForm">
 
