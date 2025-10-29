@@ -3,7 +3,7 @@ package com.alotra.repository.product;
 import com.alotra.model.ProductSaleDTO;
 import com.alotra.entity.product.Category;
 import com.alotra.entity.product.Product;
-import com.alotra.entity.product.ProductApproval;
+// import com.alotra.entity.product.ProductApproval; // Không cần import vì không dùng trực tiếp ProductApproval
 
 import java.util.List;
 import java.util.Optional;
@@ -23,7 +23,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
 	@Query("SELECT COUNT(p) FROM Product p WHERE p.shop.shopId = :shopId AND (:status IS NULL OR p.status = :status)")
 	Long countByShopIdAndStatus(@Param("shopId") Integer shopId, @Param("status") Byte status);
 
-	// Giữ nguyên các truy vấn quản lý Shop (searchShopProducts)
+	// Giữ nguyên các truy vấn quản lý Shop (searchShopProducts) - NATIVE QUERY
 	@Query(value = """
 			WITH LatestApproval AS (
 			    SELECT
@@ -79,35 +79,39 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
 
 	@Query(value = "SELECT new com.alotra.model.ProductSaleDTO(" + "p, " + "CAST(COALESCE(p.soldCount, 0) AS long), "
 			+ "(SELECT MAX(pp.discountPercentage) " + " FROM PromotionProduct pp JOIN pp.promotion pr "
-			+ " WHERE pp.product = p AND pr.status = 1 " + // KM phải active
-			" AND pr.promotionType = 'PRODUCT' " + // CHỈ LẤY KM SẢN PHẨM
+			+ " WHERE pp.product = p AND pr.status = 1 " + 
+			" AND pr.promotionType = 'PRODUCT' " + 
 			" AND pr.startDate <= CURRENT_TIMESTAMP AND pr.endDate >= CURRENT_TIMESTAMP)" + ") "
-			+ "FROM Product p WHERE p.status = 1 AND (:shopId = 0 OR p.shop.shopId = :shopId)", // *** THÊM LỌC SHOP ***
-			countQuery = "SELECT COUNT(p) FROM Product p WHERE p.status = 1 AND (:shopId = 0 OR p.shop.shopId = :shopId)") // *** THÊM LỌC SHOP ***
-	Page<ProductSaleDTO> findProductSaleData(@Param("shopId") Integer shopId, Pageable pageable); // *** THÊM PARAM ***
+			+ "FROM Product p WHERE p.status = 1 AND (:shopId = 0 OR p.shop.shopId = :shopId)", 
+			countQuery = "SELECT COUNT(p) FROM Product p WHERE p.status = 1 AND (:shopId = 0 OR p.shop.shopId = :shopId)") 
+	Page<ProductSaleDTO> findProductSaleData(@Param("shopId") Integer shopId, Pageable pageable); 
 
 	@Query(value = "SELECT new com.alotra.model.ProductSaleDTO(" + "p, " + "CAST(COALESCE(p.soldCount, 0) AS long), "
 			+ "(SELECT MAX(pp.discountPercentage) " + " FROM PromotionProduct pp JOIN pp.promotion pr "
 			+ " WHERE pp.product = p " + " AND pr.status = 1 AND pr.promotionType = 'PRODUCT' " + 
 			" AND pr.startDate <= CURRENT_TIMESTAMP AND pr.endDate >= CURRENT_TIMESTAMP)" + ") " + "FROM Product p "
-			+ "WHERE p.category = :category AND p.status = 1 AND (:shopId = 0 OR p.shop.shopId = :shopId)", // *** THÊM LỌC SHOP ***
-			countQuery = "SELECT COUNT(p) FROM Product p WHERE p.category = :category AND p.status = 1 AND (:shopId = 0 OR p.shop.shopId = :shopId)") // *** THÊM LỌC SHOP ***
-	Page<ProductSaleDTO> findProductSaleDataByCategory(@Param("category") Category category, @Param("shopId") Integer shopId, Pageable pageable); // *** THÊM PARAM ***
+			+ "WHERE p.category = :category AND p.status = 1 AND (:shopId = 0 OR p.shop.shopId = :shopId)", 
+			countQuery = "SELECT COUNT(p) FROM Product p WHERE p.category = :category AND p.status = 1 AND (:shopId = 0 OR p.shop.shopId = :shopId)") 
+	Page<ProductSaleDTO> findProductSaleDataByCategory(@Param("category") Category category, @Param("shopId") Integer shopId, Pageable pageable); 
+
+	// ✅ SỬA: Thêm điều kiện KM hợp lệ vào subquery
+	@Query(value = "SELECT new com.alotra.model.ProductSaleDTO(" + "p, " + "CAST(COALESCE(p.soldCount, 0) AS long), "
+			+ "(SELECT MAX(pp.discountPercentage) " + " FROM PromotionProduct pp JOIN pp.promotion pr "
+			+ " WHERE pp.product = p AND pr.status = 1 AND pr.promotionType = 'PRODUCT' " + // ✅ Thêm điều kiện KM
+			" AND pr.startDate <= CURRENT_TIMESTAMP AND pr.endDate >= CURRENT_TIMESTAMP)" + ") "
+			+ "FROM Product p " + "WHERE p.productID = :id AND p.status = 1 AND (:shopId = 0 OR p.shop.shopId = :shopId)") 
+	Optional<ProductSaleDTO> findProductSaleDataById(@Param("id") Integer id, @Param("shopId") Integer shopId); 
 
 	@Query(value = "SELECT new com.alotra.model.ProductSaleDTO(" + "p, " + "CAST(COALESCE(p.soldCount, 0) AS long), "
 			+ "(SELECT MAX(pp.discountPercentage) " + " FROM PromotionProduct pp JOIN pp.promotion pr "
-			+ " WHERE pp.product = p AND pr.startDate <= CURRENT_TIMESTAMP AND pr.endDate >= CURRENT_TIMESTAMP)" + ") "
-			+ "FROM Product p " + "WHERE p.productID = :id AND p.status = 1 AND (:shopId = 0 OR p.shop.shopId = :shopId)") // *** THÊM LỌC SHOP ***
-	Optional<ProductSaleDTO> findProductSaleDataById(@Param("id") Integer id, @Param("shopId") Integer shopId); // *** THÊM PARAM ***
-
-	@Query(value = "SELECT new com.alotra.model.ProductSaleDTO(" + "p, " + "CAST(COALESCE(p.soldCount, 0) AS long), "
-			+ "(SELECT MAX(pp.discountPercentage) " + " FROM PromotionProduct pp JOIN pp.promotion pr "
-			+ " WHERE pp.product = p AND pr.startDate <= CURRENT_TIMESTAMP AND pr.endDate >= CURRENT_TIMESTAMP)" + ") "
+			+ " WHERE pp.product = p AND pr.status = 1 AND pr.promotionType = 'PRODUCT' " + 
+			" AND pr.startDate <= CURRENT_TIMESTAMP AND pr.endDate >= CURRENT_TIMESTAMP)" + ") "
 			+ "FROM Product p "
-			+ "WHERE LOWER(p.productName) LIKE LOWER(CONCAT('%', :keyword, '%')) AND p.status = 1 AND (:shopId = 0 OR p.shop.shopId = :shopId)", // *** THÊM LỌC SHOP ***
-			countQuery = "SELECT COUNT(p) FROM Product p WHERE LOWER(p.productName) LIKE LOWER(CONCAT('%', :keyword, '%')) AND p.status = 1 AND (:shopId = 0 OR p.shop.shopId = :shopId)") // *** THÊM LỌC SHOP ***
-	Page<ProductSaleDTO> findProductSaleDataByKeyword(@Param("keyword") String keyword, @Param("shopId") Integer shopId, Pageable pageable); // *** THÊM PARAM ***
+			+ "WHERE LOWER(p.productName) LIKE LOWER(CONCAT('%', :keyword, '%')) AND p.status = 1 AND (:shopId = 0 OR p.shop.shopId = :shopId)", 
+			countQuery = "SELECT COUNT(p) FROM Product p WHERE LOWER(p.productName) LIKE LOWER(CONCAT('%', :keyword, '%')) AND p.status = 1 AND (:shopId = 0 OR p.shop.shopId = :shopId)") 
+	Page<ProductSaleDTO> findProductSaleDataByKeyword(@Param("keyword") String keyword, @Param("shopId") Integer shopId, Pageable pageable); 
 	
+	// ✅ SỬA: Trả về ProductSaleDTO (để có data khuyến mãi/bán hàng)
 	@Query("SELECT new com.alotra.model.ProductSaleDTO(" +
 		       "p, " +
 		       "CAST(COALESCE(p.soldCount, 0) AS long), " +
@@ -118,16 +122,18 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
 		       " AND pr.startDate <= CURRENT_TIMESTAMP AND pr.endDate >= CURRENT_TIMESTAMP)" +
 		       ") " +
 		       "FROM Product p " +
-		       "WHERE p.shop.shopId = :shopId AND p.status = 1 " + // Chỉ lọc theo shopId cố định (cho trang quản lý shop)
+		       "WHERE p.shop.shopId = :shopId AND p.status = 1 " + 
 		       "ORDER BY p.createdAt DESC")
 	Page<ProductSaleDTO> findActiveProductsByShop(
 		        @Param("shopId") Integer shopId,
 		        Pageable pageable);
 	
-	@Query("SELECT p FROM Product p WHERE p.shop.shopId = :shopId AND p.status = 1 ORDER BY p.productName") // Chỉ lọc theo shopId cố định
+	// ✅ SỬA: Giữ nguyên Product cho list (thường dùng cho các chức năng liên kết)
+	@Query("SELECT p FROM Product p WHERE p.shop.shopId = :shopId AND p.status = 1 ORDER BY p.productName") 
     List<Product> findActiveProductsByShop(@Param("shopId") Integer shopId);
 
-	Page<Product> findByStatus(Integer status, Pageable pageable);
+	// Sửa kiểu dữ liệu tham số từ Integer sang Byte (Status là Byte trong entity)
+	Page<Product> findByStatus(Byte status, Pageable pageable); 
 	
 	@Query("SELECT p.productID FROM Product p WHERE p.shop.shopId IN :shopIds")
     List<Integer> findProductIdsByShopIds(List<Integer> shopIds);

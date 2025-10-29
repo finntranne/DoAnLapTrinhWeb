@@ -1,6 +1,7 @@
 package com.alotra.service.cart; // Hoặc package service của bạn
 
 import com.alotra.entity.cart.CartItem;
+import com.alotra.entity.promotion.Promotion;
 import com.alotra.entity.user.User;
 import com.alotra.repository.cart.CartItemRepository;
 import com.alotra.repository.cart.CartRepository;
@@ -30,4 +31,6 @@ public interface CartService {
 	CartItem addItemToCart(User user, Integer variantId, int quantity, List<Integer> toppingIds);
 	
 	public BigDecimal getLineTotal(CartItem item);
+	
+	BigDecimal calculateDiscountAmount(BigDecimal subtotal, Promotion promotion);
 }

@@ -4,6 +4,7 @@ import com.alotra.entity.cart.Cart;
 import com.alotra.entity.cart.CartItem;
 import com.alotra.entity.product.ProductVariant;
 import com.alotra.entity.product.Topping;
+import com.alotra.entity.promotion.Promotion;
 import com.alotra.entity.user.User;
 import com.alotra.repository.cart.CartItemRepository;
 import com.alotra.repository.cart.CartRepository;
@@ -262,5 +263,36 @@ public class CartServiceImpl implements CartService { // Đảm bảo CartServic
 
         // Nhân với số lượng để ra tổng tiền của dòng
         return discountedPrice.multiply(new BigDecimal(item.getQuantity()));
+    }
+    
+    @Override
+    public BigDecimal calculateDiscountAmount(BigDecimal subtotal, Promotion promotion) {
+        if (promotion == null || promotion.getDiscountValue() == null) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal discountAmount = BigDecimal.ZERO;
+
+        // 1. Xử lý trường hợp PERCENTAGE (theo dữ liệu của bạn)
+        if ("PERCENTAGE".equalsIgnoreCase(promotion.getDiscountType())) {
+            
+            // Tính giá trị giảm theo %: subtotal * (DiscountValue / 100)
+            BigDecimal discountRate = promotion.getDiscountValue().divide(new BigDecimal(100), 4, RoundingMode.HALF_UP);
+            discountAmount = subtotal.multiply(discountRate);
+            
+            // 2. Kiểm tra MaxDiscountAmount
+            if (promotion.getMaxDiscountAmount() != null && discountAmount.compareTo(promotion.getMaxDiscountAmount()) > 0) {
+                discountAmount = promotion.getMaxDiscountAmount();
+            }
+            
+        } 
+        // 3. Xử lý trường hợp FixedAmount (Nếu bạn có type này)
+        else if ("FIXED".equalsIgnoreCase(promotion.getDiscountType())) {
+            discountAmount = promotion.getDiscountValue();
+        }
+        
+        // 4. Trả về giá trị đã làm tròn
+        // Sử dụng RoundingMode.DOWN hoặc HALF_UP tùy chính sách, nhưng phải về số nguyên (Scale 0)
+        return discountAmount.setScale(0, RoundingMode.HALF_UP);
     }
 }

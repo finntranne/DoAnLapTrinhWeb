@@ -17,6 +17,16 @@
     </nav>
 
     <div class="container my-5" th:if="${order != null}">
+        
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fa-solid fa-exclamation-triangle me-2"></i> <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fa-solid fa-check-circle me-2"></i> <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="fw-bold" th:text="'Chi Tiết Đơn Hàng #' + ${order.orderID}"></h1>
             <span class="badge fs-6"
@@ -34,12 +44,19 @@
                     <div class="card-body p-0">
                         <div th:each="item : ${order.orderDetails}" class="p-4 border-bottom">
                             <div class="row align-items-center g-3">
+                                
                                 <div class="col-md-2 col-3">
-                                    <img th:src="${item.variant.product.images[0].imageURL}"
+                                    <img th:if="${item.variant.product.images != null and not #lists.isEmpty(item.variant.product.images)}"
+                                         th:src="${item.variant.product.images[0].imageURL}"
+                                         th:alt="${item.variant.product.productName}"
+                                         class="img-fluid rounded">
+                                    <img th:unless="${item.variant.product.images != null and not #lists.isEmpty(item.variant.product.images)}"
+                                         th:src="@{/images/placeholder.png}"
                                          th:alt="${item.variant.product.productName}"
                                          class="img-fluid rounded">
                                 </div>
-                                <div class="col-md-5 col-9">
+                                
+                                <div class="col-md-3 col-9">
                                     <h6 class="mb-1 fw-bold" th:text="${item.variant.product.productName}"></h6>
                                     <div class="product-meta">
                                         <span class="badge bg-light text-dark me-1">
@@ -57,21 +74,53 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-2 col-4">
-                                    <small class="text-muted d-block">Đơn giá</small>
-                                    <span th:text="${#numbers.formatDecimal(item.unitPrice, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                                
+                                <div class="col-md-4 col-5 text-start">
+                                    <div class="d-flex flex-column">
+                                         <small class="text-muted">Đơn giá: <span th:text="${#numbers.formatDecimal(item.unitPrice, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span></small>
+                                         <small class="text-muted">Số lượng: <span th:text="'x' + ${item.quantity}"></span></small>
+                                         <span class="fw-bold fs-6 mt-1 text-danger" th:text="${#numbers.formatDecimal(item.subtotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                                    </div>
                                 </div>
-                                <div class="col-md-1 col-3">
-                                    <small class="text-muted d-block">SL</small>
-                                    <span th:text="'x' + ${item.quantity}"></span>
-                                </div>
-                                <div class="col-md-2 col-5 text-end">
-                                    <small class="text-muted d-block">Tổng</small>
-                                    <span class="fw-bold fs-6" th:text="${#numbers.formatDecimal(item.subtotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+
+                                <div class="col-md-3 col-4 text-end">
+                                    <div th:if="${order.orderStatus == 'Completed'}" class="d-flex flex-column align-items-end gap-2">
+                                        
+                                        <th:block th:with="isReviewed=${reviewStatusMap != null and reviewStatusMap.get(item.orderDetailID)}">
+                                            <a th:if="${!isReviewed}"
+                                               th:href="@{/review/create(orderDetailId=${item.orderDetailID})}"
+                                               class="btn btn-sm btn-outline-warning w-100 text-nowrap">
+                                               <i class="fa-regular fa-star me-1"></i> Viết đánh giá
+                                            </a>
+                                            <button th:if="${isReviewed}"
+                                                    type="button"
+                                                    class="btn btn-sm btn-success w-100 text-nowrap"
+                                                    disabled>
+                                                <i class="fa-solid fa-check me-1"></i> Đã đánh giá
+                                            </button>
+                                        </th:block>
+
+                                        <th:block th:with="isFavorited=${favoriteStatusMap != null and favoriteStatusMap.get(item.variant.product.productID)}">
+    <a th:if="${!isFavorited}"
+       th:href="@{/user/favorites/add(productId=${item.variant.product.productID}, orderId=${order.orderID})}" 
+       class="btn btn-sm btn-outline-danger w-100 text-nowrap">
+       <i class="fa-regular fa-heart me-1"></i> Yêu thích
+    </a>
+    <a th:if="${isFavorited}"
+       th:href="@{/user/favorites/remove(productId=${item.variant.product.productID}, orderId=${order.orderID})}" 
+       class="btn btn-sm btn-danger w-100 text-nowrap">
+       <i class="fa-solid fa-heart me-1"></i> Đã yêu thích
+    </a>
+</th:block>
+                                        
+                                    </div>
+                                    <div th:unless="${order.orderStatus == 'Completed'}">
+                                        <small class="text-muted">Không có hành động</small>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                        </div>
                 </div>
             </div>
 

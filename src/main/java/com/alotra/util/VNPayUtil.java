@@ -28,7 +28,8 @@ public class VNPayUtil {
 
     /** Tạo vnp_CreateDate theo định dạng VNPay yêu cầu: yyyyMMddHHmmss */
     public static String getCreateDate() {
-        return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        // Phải trả về chuỗi 14 ký tự (YYYYMMddHHmmss)
+        return DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(LocalDateTime.now());
     }
 
     /** 

@@ -45,8 +45,9 @@ public class ProductService {
     	return productRepository.findById(id);
     }
 
+    // ✅ SỬA: Chuyển '1' thành '(byte) 1' để khớp với kiểu Byte trong Product Entity
 	public Page<Product> findAllApproved(Pageable pageable) {
-		return productRepository.findByStatus(1, pageable);
+		return productRepository.findByStatus((byte) 1, pageable);
 	}
 	
 	public List<Product> findAllActive(){

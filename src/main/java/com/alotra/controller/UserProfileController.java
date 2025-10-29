@@ -158,8 +158,11 @@ import com.alotra.entity.user.User; // Sử dụng User
 import com.alotra.repository.location.AddressRepository; // Sử dụng AddressRepository
 import com.alotra.service.cart.CartService;
 import com.alotra.service.product.CategoryService;
+import com.alotra.service.shop.StoreService;
 // import com.alotra.service.user.CustomerService; // *** BỎ CustomerService ***
 import com.alotra.service.user.UserService; // Sử dụng UserService
+
+import jakarta.servlet.http.HttpSession;
 
 import java.util.List; // Import List
 import java.util.Optional;
@@ -188,6 +191,7 @@ public class UserProfileController { // Giữ tên class
     @Autowired private AddressRepository addressRepository; // *** THÊM AddressRepository ***
     @Autowired private CartService cartService;
     @Autowired private CategoryService categoryService;
+    @Autowired private StoreService storeService;
 
     // === Hàm trợ giúp lấy User (Giống CartController) ===
     private User getCurrentAuthenticatedUser() {
@@ -209,14 +213,20 @@ public class UserProfileController { // Giữ tên class
             return 0;
         }
     }
+    
+    private Integer getSelectedShopId(HttpSession session) {
+        Integer selectedShopId = (Integer) session.getAttribute("selectedShopId");
+        return (selectedShopId == null) ? 0 : selectedShopId; // Mặc định là 0 (Xem tất cả)
+    }
 
     /**
      * Hiển thị trang hồ sơ cá nhân (ĐÃ SỬA)
      * GET /user/profile
      */
     @GetMapping
-    public String showProfilePage(Model model) {
+    public String showProfilePage(Model model, HttpSession session) {
         try {
+        	Integer selectedShopId = getSelectedShopId(session);
             User user = getCurrentAuthenticatedUser(); 
 
             List<Address> addresses = addressRepository.findByUserId(user.getId());
@@ -232,6 +242,8 @@ public class UserProfileController { // Giữ tên class
             model.addAttribute("totalAddresses", addresses.size()); 
             model.addAttribute("cartItemCount", getCurrentCartItemCount());
             model.addAttribute("categories", categoryService.findAll());
+            model.addAttribute("shops", storeService.findAllActiveShops());
+            model.addAttribute("selectedShopName", storeService.getShopNameById(selectedShopId));
 
             return "user/profile"; 
 

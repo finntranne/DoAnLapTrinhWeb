@@ -1,7 +1,6 @@
-package com.alotra.controller; // Giữ package này
+package com.alotra.controller;
 
 import com.alotra.config.VNPayConfig;
-// Import các entity
 import com.alotra.entity.cart.Cart;
 import com.alotra.entity.cart.CartItem;
 import com.alotra.entity.location.Address;
@@ -9,30 +8,33 @@ import com.alotra.entity.order.Order;
 import com.alotra.entity.order.OrderDetail;
 import com.alotra.entity.order.OrderDetailTopping;
 import com.alotra.entity.order.OrderDetailToppingId;
+import com.alotra.entity.promotion.Promotion; // ✅ THÊM IMPORT
 import com.alotra.entity.user.User;
+import com.alotra.model.ProductSaleDTO;
 import com.alotra.repository.cart.CartItemRepository;
 import com.alotra.repository.cart.CartRepository;
 import com.alotra.repository.order.OrderDetailRepository;
 import com.alotra.repository.order.OrderDetailToppingRepository;
 import com.alotra.repository.order.OrderRepository;
 import com.alotra.repository.location.AddressRepository;
+import com.alotra.repository.promotion.PromotionRepository; // ✅ THÊM REPOSITORY
 import com.alotra.service.cart.CartService;
+import com.alotra.service.checkout.VNPayService;
 import com.alotra.service.product.CategoryService;
+import com.alotra.service.product.ProductService;
+import com.alotra.service.shop.StoreService;
 import com.alotra.service.user.UserService;
 import com.alotra.util.VNPayUtil;
-// *** THÊM IMPORT CHO LOGIC GIẢM GIÁ ***
-import com.alotra.service.product.ProductService;
-import com.alotra.model.ProductSaleDTO;
-import java.math.RoundingMode;
-// **************************************
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import jakarta.transaction.Transactional; 
+import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j; // ✅ THÊM SLF4J
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -45,6 +47,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.view.RedirectView; 
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime; 
 import java.util.ArrayList; 
 import java.util.Collections;
@@ -57,10 +62,18 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Controller
+@Slf4j // ✅ SỬ DỤNG LOGGER
 public class OrderController {
+	
+	// Hằng số cho VietQR (Ví dụ về một ngân hàng và tài khoản)
+	private static final String VIETQR_BANK_ID = "970405";
+	private static final String VIETQR_ACCOUNT_NO = "4303205336551"; 
+	private static final String VIETQR_API_URL = "https://img.vietqr.io/image/";
+	private static final String VIETQR_TEMPLATE = "compact";
+	private static final String VIETQR_ADD_INFO = "Thanh toan don hang #";
+	private static final String VIETQR_ACCOUNT_NAME = "TRAN HUU THOAI";
 
     @Autowired private OrderRepository orderRepository;
-//    @Autowired private VNPayService vnPayService;
     @Autowired private CartService cartService;
     @Autowired private CartRepository cartRepository;
     @Autowired private CartItemRepository cartItemRepository; 
@@ -69,13 +82,10 @@ public class OrderController {
     @Autowired private OrderDetailRepository orderDetailRepository;
     @Autowired private OrderDetailToppingRepository orderDetailToppingRepository;
     @Autowired private UserService userService;
-    @Autowired
-    private com.alotra.config.VNPayConfig vnPayConfig;
-
-    
-    // *** THÊM: Inject ProductService để lấy giảm giá ***
-    @Autowired 
-    private ProductService productService;
+    @Autowired private VNPayService vnPayService;
+    @Autowired private StoreService storeService;
+    @Autowired private ProductService productService;
+    @Autowired private PromotionRepository promotionRepository; // ✅ INJECT PROMOTION REPOSITORY
 
     // === HÀM TRỢ GIÚP: Lấy User (Giữ nguyên) ===
     private User getCurrentAuthenticatedUser() {
@@ -101,10 +111,10 @@ public class OrderController {
  // --- Helper Lấy Shop ID từ Session ---
     private Integer getSelectedShopId(HttpSession session) {
         Integer selectedShopId = (Integer) session.getAttribute("selectedShopId");
-        return (selectedShopId == null) ? 0 : selectedShopId; // Mặc định là 0 (Xem tất cả)
+        return (selectedShopId == null) ? 0 : selectedShopId;
     }
     
-
+    
     // --- Hàm CHỌN ITEM CHECKOUT (Giữ nguyên) ---
     @PostMapping("/cart/select-for-checkout")
     public String selectItemsForCheckout(@RequestParam(name = "selectedItemIds", required = false) List<Integer> selectedItemIds,
@@ -140,7 +150,7 @@ public class OrderController {
         } catch (ResponseStatusException | UsernameNotFoundException e) {
             return "redirect:/login";
         } catch (Exception e) {
-             System.err.println("Lỗi chọn item checkout: " + e.getMessage());
+             log.error("Lỗi chọn item checkout: {}", e.getMessage());
              redirectAttributes.addFlashAttribute("errorMessage", "Đã xảy ra lỗi khi chọn sản phẩm.");
              return "redirect:/cart";
         }
@@ -148,12 +158,14 @@ public class OrderController {
 
 
     /**
-     * *** HIỂN THỊ TRANG CHECKOUT (Giữ nguyên logic sau sửa chữa) ***
+     * *** HIỂN THỊ TRANG CHECKOUT ***
      */
     @GetMapping("/checkout")
     public String showCheckoutPage(Model model, HttpSession session, RedirectAttributes redirectAttributes) { 
 
         try {
+        	Integer selectedShopId = getSelectedShopId(session);
+        	
             @SuppressWarnings("unchecked")
             List<Integer> selectedItemIds = (List<Integer>) session.getAttribute("selectedCheckoutItemIds");
 
@@ -186,12 +198,24 @@ public class OrderController {
                 checkoutItemVMs.add(vm);
             }
 
-            // Tính toán tổng tiền
+            // Tính toán tổng tiền TẠM TÍNH
             BigDecimal subtotal = cartService.calculateSubtotal(new HashSet<>(itemsToCheckout));
             
+            
             BigDecimal shippingFee = new BigDecimal("20000"); 
-            BigDecimal discount = BigDecimal.ZERO; 
-            BigDecimal grandTotal = subtotal.add(shippingFee).subtract(discount);
+            BigDecimal discount = BigDecimal.ZERO; // Khởi tạo ban đầu
+            BigDecimal grandTotal = subtotal.add(shippingFee).subtract(discount); // Tính GrandTotal ban đầu
+            
+            // ✅ XỬ LÝ MÃ GIẢM GIÁ TỪ SESSION
+            BigDecimal sessionDiscount = (BigDecimal) session.getAttribute("currentDiscountAmount");
+            String couponCode = (String) session.getAttribute("currentCouponCode");
+
+            if (sessionDiscount != null) {
+                discount = sessionDiscount;
+                // ✅ SỬA LỖI: CẬP NHẬT LẠI grandTotal sau khi có discount
+                grandTotal = subtotal.add(shippingFee).subtract(discount); 
+                model.addAttribute("currentCouponCode", couponCode);
+            }
 
             List<Address> addresses = addressRepository.findByUserId(user.getId());
 
@@ -206,19 +230,138 @@ public class OrderController {
 
             model.addAttribute("cartItemCount", getCurrentCartItemCount());
             model.addAttribute("categories", categoryService.findAll());
+            model.addAttribute("shops", storeService.findAllActiveShops());
+            model.addAttribute("selectedShopName", storeService.getShopNameById(selectedShopId));
 
             return "shop/checkout";
 
         } catch (ResponseStatusException | UsernameNotFoundException e) {
             return "redirect:/login";
         } catch (Exception e) {
-            System.err.println("Lỗi khi tải trang checkout: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Lỗi khi tải trang checkout: {}", e.getMessage(), e);
             session.removeAttribute("selectedCheckoutItemIds"); 
             redirectAttributes.addFlashAttribute("errorMessage", "Lỗi tải trang thanh toán.");
             return "redirect:/cart";
         }
     }
+
+    /**
+     * *** XỬ LÝ ÁP DỤNG MÃ GIẢM GIÁ (API MỚI) ***
+     */
+    @PostMapping("/apply-coupon")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> applyCoupon(
+            @RequestParam("couponCode") String couponCode,
+            @RequestParam(name = "selectedItemIds", required = false) List<Integer> requestItemIds,
+            HttpSession session) {
+        
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            User user = getCurrentAuthenticatedUser(); 
+            
+            Integer selectedShopId = getSelectedShopId(session);
+
+         // 1. TÌM DANH SÁCH ID CUỐI CÙNG (Khắc phục lỗi effectively final)
+            List<Integer> finalSelectedItemIds;
+
+            if (requestItemIds != null && !requestItemIds.isEmpty()) {
+                finalSelectedItemIds = requestItemIds; // Ưu tiên ID từ request
+            } else {
+                // Fallback về Session
+                @SuppressWarnings("unchecked")
+                List<Integer> sessionIds = (List<Integer>) session.getAttribute("selectedCheckoutItemIds");
+                finalSelectedItemIds = sessionIds;
+            }
+
+            if (finalSelectedItemIds == null || finalSelectedItemIds.isEmpty()) {
+                response.put("error", "Phiên làm việc hết hạn. Vui lòng làm mới trang hoặc quay lại giỏ hàng.");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+            
+            // 1. Tìm kiếm và kiểm tra mã giảm giá
+            Optional<Promotion> promotionOpt = promotionRepository.findByPromoCodeAndStatusAndCreatedByShopID_ShopId(
+                    couponCode.toUpperCase(), 
+                    (byte) 1, 
+                    selectedShopId);
+            Promotion promotion = promotionOpt.orElse(null);
+
+            if (promotion == null || !"ORDER".equalsIgnoreCase(promotion.getPromotionType())) {
+                response.put("error", "Mã giảm giá không tồn tại hoặc không áp dụng cho đơn hàng.");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // 2. Kiểm tra các điều kiện (Ngày hết hạn, số lượng, v.v.)
+            if (promotion.getEndDate() != null && promotion.getEndDate().isBefore(LocalDateTime.now())) {
+                 response.put("error", "Mã giảm giá đã hết hạn.");
+                 return ResponseEntity.badRequest().body(response);
+            }
+            
+            // 3. Tải các Cart Item
+            Cart cart = cartRepository.findByUser_Id(user.getId())
+                    .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy giỏ hàng"));
+            
+            List<CartItem> itemsToCheckout = cart.getItems().stream()
+                    .filter(item -> finalSelectedItemIds.contains(item.getCartItemID())) 
+                    .collect(Collectors.toList());
+
+            if (itemsToCheckout.isEmpty()) {
+                 response.put("error", "Sản phẩm đã chọn không còn trong giỏ.");
+                 return ResponseEntity.badRequest().body(response);
+            }
+            
+            // 4. Tính toán giảm giá và tổng tiền mới
+            BigDecimal subtotal = cartService.calculateSubtotal(new HashSet<>(itemsToCheckout));
+            
+            // Kiểm tra giá trị đơn hàng tối thiểu
+            if (promotion.getMinOrderValue() != null && subtotal.compareTo(promotion.getMinOrderValue()) < 0) {
+                 response.put("error", "Đơn hàng chưa đạt giá trị tối thiểu (" + promotion.getMinOrderValue().toPlainString() + "đ).");
+                 return ResponseEntity.badRequest().body(response);
+            }
+            
+            // Áp dụng giảm giá
+            BigDecimal discountAmount = cartService.calculateDiscountAmount(subtotal, promotion);
+            BigDecimal shippingFee = new BigDecimal("20000"); 
+            BigDecimal grandTotal = subtotal.add(shippingFee).subtract(discountAmount);
+
+            // 5. Lưu mã giảm giá và số tiền giảm vào Session
+            session.setAttribute("currentCouponCode", couponCode.toUpperCase());
+            session.setAttribute("currentDiscountAmount", discountAmount);
+            session.setAttribute("selectedCheckoutItemIds", finalSelectedItemIds);
+
+            // 6. Trả về kết quả
+            response.put("success", "Áp dụng mã giảm giá thành công!");
+            response.put("discountAmount", discountAmount.toPlainString());
+            response.put("grandTotal", grandTotal.toPlainString());
+            response.put("couponCode", couponCode.toUpperCase());
+
+            return ResponseEntity.ok(response);
+
+        } catch (ResponseStatusException | UsernameNotFoundException e) {
+            response.put("error", "Vui lòng đăng nhập.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        } catch (Exception e) {
+            log.error("Error applying coupon", e);
+            response.put("error", "Lỗi hệ thống: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+    
+    /**
+     * API xóa mã giảm giá khỏi session (Dùng cho nút 'Xóa')
+     * Endpoint: /remove-coupon
+     */
+    @PostMapping("/remove-coupon")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> removeCoupon(HttpSession session) {
+        session.removeAttribute("currentCouponCode");
+        session.removeAttribute("currentDiscountAmount");
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        return ResponseEntity.ok(response);
+    }
+    
 
     /**
      * *** SỬA LỚN: XỬ LÝ ĐẶT HÀNG (ĐẢM BẢO SUBTOTAL VÀ ID TRƯỚC KHI LƯU) ***
@@ -229,6 +372,7 @@ public class OrderController {
             @RequestParam(required = false) Integer addressId,
             @RequestParam(required = false) String notes,
             @RequestParam(required = false) String paymentMethod,
+            @RequestParam(name = "selectedItemIds") List<Integer> selectedItemIds,
             HttpServletRequest request,
             HttpSession session,
             RedirectAttributes redirectAttributes) {
@@ -247,11 +391,8 @@ public class OrderController {
 
         try {
             // 1-5. Lấy data và tính tổng (Giữ nguyên)
-            @SuppressWarnings("unchecked")
-            List<Integer> selectedItemIds = (List<Integer>) session.getAttribute("selectedCheckoutItemIds");
-
-            if (selectedItemIds == null || selectedItemIds.isEmpty()) {
-                redirectAttributes.addFlashAttribute("errorMessage", "Phiên làm việc hết hạn hoặc chưa chọn sản phẩm.");
+        	if (selectedItemIds == null || selectedItemIds.isEmpty()) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Không có sản phẩm nào được chọn để đặt hàng.");
                 return "redirect:/cart";
             }
 
@@ -280,7 +421,20 @@ public class OrderController {
             BigDecimal subtotal = cartService.calculateSubtotal(new HashSet<>(itemsToOrder));
             BigDecimal shippingFee = new BigDecimal("20000");
             BigDecimal discount = BigDecimal.ZERO;
+            
+            // ✅ ĐỌC MÃ GIẢM GIÁ TỪ SESSION
+            BigDecimal sessionDiscount = (BigDecimal) session.getAttribute("currentDiscountAmount");
+            if (sessionDiscount != null) {
+                discount = sessionDiscount;
+                // Xóa mã giảm giá khỏi session ngay sau khi lấy ra
+                session.removeAttribute("currentCouponCode");
+                session.removeAttribute("currentDiscountAmount");
+            }
+            
+            // TÍNH GRAND TOTAL CUỐI CÙNG
             BigDecimal grandTotal = subtotal.add(shippingFee).subtract(discount);
+            
+            
 
             // 6. Tạo và lưu Order (Giữ nguyên)
             Order order = new Order();
@@ -292,13 +446,13 @@ public class OrderController {
             order.setRecipientPhone(chosenAddress.getPhoneNumber());
             order.setSubtotal(subtotal);
             order.setShippingFee(shippingFee);
-            order.setDiscountAmount(discount);
+            order.setDiscountAmount(discount); // ✅ LƯU SỐ TIỀN GIẢM VÀO DB
             order.setGrandTotal(grandTotal);
             order.setNotes(notes);
 
             savedOrder = orderRepository.saveAndFlush(order);
 
-            // === 7. SỬA LỚN: Xử lý OrderDetail và Topping ===
+            // === 7. SỬA LỚN: Xử lý OrderDetail và Topping (Giữ nguyên) ===
             List<OrderDetail> orderDetailList = new ArrayList<>();
             List<OrderDetailTopping> orderDetailToppingList = new ArrayList<>();
             
@@ -387,9 +541,6 @@ public class OrderController {
             cartItemRepository.flush();
             cartRepository.save(cart);
 
-            // === 9. Xóa session (Giữ nguyên) ===
-            session.removeAttribute("selectedCheckoutItemIds");
-
             // === 10. Thanh toán (Giữ nguyên) ===
             if ("Cash".equalsIgnoreCase(paymentMethod)) {
                 savedOrder.setOrderStatus("Pending");
@@ -401,50 +552,48 @@ public class OrderController {
 
          // Trong phương thức placeOrder(), phần VNPay
             if ("VNPay".equalsIgnoreCase(paymentMethod)) {
-                savedOrder.setOrderStatus("Pending");
-                savedOrder.setPaymentStatus("Processing");
-                orderRepository.save(savedOrder);
-
-                String vnp_TxnRef   = String.valueOf(savedOrder.getOrderID());
-                String vnp_OrderInfo = "Thanh toan don hang #" + savedOrder.getOrderID();
-
-                // ---- vnp_Amount: chính xác, không mất số lẻ ----
-                String vnp_Amount = savedOrder.getGrandTotal()
-                        .multiply(new BigDecimal("100"))
-                        .setScale(0, RoundingMode.HALF_UP)
-                        .toPlainString();
-
-                Map<String, String> vnp_Params = new HashMap<>();
-                vnp_Params.put("vnp_Version",    VNPayConfig.vnp_Version);
-                vnp_Params.put("vnp_Command",    VNPayConfig.vnp_Command);
-                vnp_Params.put("vnp_TmnCode",    VNPayConfig.vnp_TmnCode);
-                vnp_Params.put("vnp_Amount",     vnp_Amount);
-                vnp_Params.put("vnp_CurrCode",   "VND");
-                vnp_Params.put("vnp_TxnRef",     vnp_TxnRef);
-                vnp_Params.put("vnp_OrderInfo",  vnp_OrderInfo);
-                vnp_Params.put("vnp_OrderType",  "other");
-                vnp_Params.put("vnp_Locale",     "vn");
-                vnp_Params.put("vnp_ReturnUrl",  VNPayConfig.vnp_ReturnUrl);
-                vnp_Params.put("vnp_IpAddr",     VNPayUtil.getIpAddress(request));
-                
-                // ⭐ THÊM DÒNG NÀY - BẮT BUỘC
-                vnp_Params.put("vnp_CreateDate", VNPayUtil.getCreateDate());
-
-                // ---- Tạo hash ----
-                String queryForHash = VNPayUtil.getQueryString(vnp_Params);
-                String vnp_SecureHash = VNPayUtil.hmacSHA512(VNPayConfig.vnp_HashSecret, queryForHash);
-
-                // ---- URL cuối cùng ----
-                String paymentUrl = VNPayConfig.vnp_Url + "?" + queryForHash + "&vnp_SecureHash=" + vnp_SecureHash;
-                
-                System.out.println("=== VNPAY PAYMENT REQUEST ===");
-                vnp_Params.forEach((k, v) -> System.out.println(k + "=" + v));
-                System.out.println("Query for hash: " + queryForHash);
-                System.out.println("SecureHash: " + vnp_SecureHash);
-                System.out.println("Payment URL: " + paymentUrl);
-                System.out.println("==============================");
-
+            	String paymentUrl = vnPayService.createPaymentUrl(savedOrder, request);
                 return new RedirectView(paymentUrl);
+            }
+         // 10c. Thanh toán VIETQR (MỚI)
+            if ("VietQR".equalsIgnoreCase(paymentMethod)) {
+                
+                savedOrder.setOrderStatus("Pending");
+                savedOrder.setPaymentStatus("Unpaid");
+                orderRepository.save(savedOrder);
+                
+                // 1. Chuẩn bị dữ liệu
+                String orderCode = String.valueOf(savedOrder.getOrderID());
+                String amount = savedOrder.getGrandTotal().setScale(0, RoundingMode.HALF_UP).toPlainString();
+                String description = VIETQR_ADD_INFO + orderCode;
+                
+                String encodedDescription = java.net.URLEncoder.encode(description, "UTF-8");
+                
+                // 2. Tạo URL VietQR API
+                // URL có dạng: {BASE_URL}{BANK_ID}-{ACCOUNT_NO}/{AMOUNT}/{DESCRIPTION}?template=compact
+                String vietQrUrl = String.format(
+                        // Cú pháp đúng: {BASE}{BANK_ID}-{ACCOUNT_NO}-{TEMPLATE}.jpg?amount=...&addInfo=...&accountName=...
+                        "%s%s-%s-%s.jpg?amount=%s&addInfo=%s&accountName=%s",
+                        VIETQR_API_URL, // 1. https://img.vietqr.io/image/
+                        VIETQR_BANK_ID, // 2. Mã ngân hàng
+                        VIETQR_ACCOUNT_NO, // 3. Số tài khoản
+                        VIETQR_TEMPLATE, // 4. Mã template (compact)
+                        amount, // 5. Số tiền
+                        URLEncoder.encode(description, StandardCharsets.UTF_8), // 6. Nội dung (encoded)
+                        URLEncoder.encode(VIETQR_ACCOUNT_NAME, StandardCharsets.UTF_8) // 7. Tên tài khoản (encoded)
+                    );
+
+                
+                log.info("VietQR URL = {}", vietQrUrl);
+
+
+                // 3. Chuyển hướng đến trang xác nhận QR
+                redirectAttributes.addFlashAttribute("orderId", savedOrder.getOrderID());
+                redirectAttributes.addFlashAttribute("qrUrl", vietQrUrl);
+                redirectAttributes.addFlashAttribute("amount", savedOrder.getGrandTotal());
+                redirectAttributes.addFlashAttribute("description", description);
+                
+                return "redirect:/vietqr-confirmation";
             }
 
 
@@ -458,78 +607,73 @@ public class OrderController {
             redirectAttributes.addFlashAttribute("errorMessage", "Lỗi đặt hàng: " + e.getMessage());
             return "redirect:/checkout";
         } catch (Exception e) {
+            log.error("Đã xảy ra lỗi hệ thống khi đặt hàng.", e);
             redirectAttributes.addFlashAttribute("errorMessage", "Đã xảy ra lỗi hệ thống khi đặt hàng.");
             return "redirect:/checkout";
         }
     }
 
 
-    // Trang thành công (Giữ nguyên)
+ // Trang thành công (ĐÃ SỬA)
     @GetMapping("/order-success")
-    public String orderSuccessPage(Model model, @ModelAttribute("orderId") Integer orderId) {
+    public String orderSuccessPage(Model model, @ModelAttribute("orderId") Integer orderId, HttpSession session) {
+        
+        // ✅ LẤY THÔNG TIN SHOP
+        Integer selectedShopId = getSelectedShopId(session);
+        
         model.addAttribute("orderId", orderId);
         model.addAttribute("cartItemCount", getCurrentCartItemCount());
         model.addAttribute("categories", categoryService.findAll());
+        
+        // ✅ THÊM DỮ LIỆU SHOP
+        model.addAttribute("shops", storeService.findAllActiveShops());
+        model.addAttribute("selectedShopName", storeService.getShopNameById(selectedShopId));
+        
         return "shop/order-success"; 
     }
 
-    // Trang thất bại (Giữ nguyên)
+    // Trang thất bại (ĐÃ SỬA)
     @GetMapping("/order-failed")
-    public String orderFailedPage(Model model, @RequestParam(required = false) String reason) {
+    public String orderFailedPage(Model model, @RequestParam(required = false) String reason, HttpSession session) {
+        
+        // ✅ LẤY THÔNG TIN SHOP
+        Integer selectedShopId = getSelectedShopId(session);
+        
         model.addAttribute("reason", reason);
         model.addAttribute("cartItemCount", getCurrentCartItemCount());
         model.addAttribute("categories", categoryService.findAll());
+        
+        // ✅ THÊM DỮ LIỆU SHOP
+        model.addAttribute("shops", storeService.findAllActiveShops());
+        model.addAttribute("selectedShopName", storeService.getShopNameById(selectedShopId));
+        
         return "shop/order-failed"; 
     }
     
+    
     /**
-     * Xử lý kết quả trả về từ VNPay
+     * HIỂN THỊ TRANG XÁC NHẬN THANH TOÁN VIETQR (MỚI)
      */
-    @GetMapping("/vnpay-return")
-    public String vnpayReturn(
-            @RequestParam Map<String, String> queryParams,
-            HttpServletRequest request,
-            RedirectAttributes redirectAttributes) {
-
-        try {
-            String vnp_SecureHash = queryParams.get("vnp_SecureHash");
-            queryParams.remove("vnp_SecureHash");
-
-            String signValue = VNPayUtil.hmacSHA512(VNPayConfig.vnp_HashSecret, VNPayUtil.getQueryString(queryParams));
-            boolean isValidSignature = signValue.equals(vnp_SecureHash);
-
-            if (!isValidSignature) {
-                redirectAttributes.addFlashAttribute("errorMessage", "Chữ ký không hợp lệ.");
-                return "redirect:/order-failed?reason=invalid_signature";
-            }
-
-            String vnp_ResponseCode = queryParams.get("vnp_ResponseCode");
-            String vnp_TxnRef = queryParams.get("vnp_TxnRef");
-
-            if ("00".equals(vnp_ResponseCode)) {
-                // Thanh toán thành công
-                Optional<Order> orderOpt = orderRepository.findById(Integer.parseInt(vnp_TxnRef));
-                if (orderOpt.isPresent()) {
-                    Order order = orderOpt.get();
-                    order.setPaymentStatus("Paid");
-                    order.setOrderStatus("Confirmed");
-                    order.setPaidAt(LocalDateTime.now());
-                    orderRepository.save(order);
-
-                    redirectAttributes.addFlashAttribute("orderId", order.getOrderID());
-                    return "redirect:/order-success";
-                }
-            }
-
-            // Thanh toán thất bại
-            System.err.println("VNPay payment failed with code: " + vnp_ResponseCode);
-            redirectAttributes.addFlashAttribute("errorMessage", "Thanh toán thất bại. Mã lỗi: " + vnp_ResponseCode);
-            return "redirect:/order-failed?reason=" + vnp_ResponseCode;
-
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Lỗi xử lý thanh toán.");
-            return "redirect:/order-failed?reason=system_error";
+    @GetMapping("/vietqr-confirmation")
+    public String vietQrConfirmationPage(
+            Model model,
+            @ModelAttribute("orderId") Integer orderId,
+            @ModelAttribute("qrUrl") String qrUrl,
+            @ModelAttribute("amount") BigDecimal amount,
+            @ModelAttribute("description") String description) {
+        
+        if (orderId == null || qrUrl == null) {
+            return "redirect:/order-failed?reason=qr_missing_data";
         }
-    }
+        
+        model.addAttribute("orderId", orderId);
+        model.addAttribute("qrUrl", qrUrl);
+        model.addAttribute("amount", amount);
+        model.addAttribute("description", description);
+        model.addAttribute("cartItemCount", getCurrentCartItemCount());
+        model.addAttribute("categories", categoryService.findAll());
 
+        return "shop/vietqr-confirmation"; // Cần tạo view này
+    }
+   
 }

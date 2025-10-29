@@ -29,28 +29,25 @@
         </div>
 
         <ul class="nav nav-pills mb-4">
-            <li class="nav-item">
-                <a class="nav-link" th:classappend="${currentStatus == null} ? 'active'" th:href="@{/user/orders}">Tất cả</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" th:classappend="${currentStatus == 'Pending'}" th:href="@{/user/orders(status='Pending')}">Chờ xác nhận</a>
-            </li>
-            <li class="nav-item">
-                 <a class="nav-link" th:classappend="${currentStatus == 'Confirmed'}" th:href="@{/user/orders(status='Confirmed')}">Đã xác nhận</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" th:classappend="${currentStatus == 'Shipping'}" th:href="@{/user/orders(status='Shipping')}">Đang giao</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" th:classappend="${currentStatus == 'Completed'}" th:href="@{/user/orders(status='Completed')}">Hoàn thành</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" th:classappend="${currentStatus == 'Cancelled'}" th:href="@{/user/orders(status='Cancelled')}">Đã hủy</a>
-            </li>
-            <li class="nav-item">
-                 <a class="nav-link" th:classappend="${currentStatus == 'Refunded'}" th:href="@{/user/orders(status='Refunded')}">Đã hoàn tiền</a>
-            </li>
-        </ul>
+    <li class="nav-item">
+        <a class="nav-link" th:classappend="${currentStatus == null} ? 'active'" th:href="@{/user/orders}">Tất cả</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" th:classappend="${currentStatus == 'Pending'} ? 'active' : ''" th:href="@{/user/orders(status='Pending')}">Chờ xác nhận</a>
+    </li>
+    <li class="nav-item">
+         <a class="nav-link" th:classappend="${currentStatus == 'Confirmed'} ? 'active' : ''" th:href="@{/user/orders(status='Confirmed')}">Đã xác nhận</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" th:classappend="${currentStatus == 'Delivering'} ? 'active' : ''" th:href="@{/user/orders(status='Delivering')}">Đang giao</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" th:classappend="${currentStatus == 'Completed'} ? 'active' : ''" th:href="@{/user/orders(status='Completed')}">Hoàn thành</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" th:classappend="${currentStatus == 'Cancelled'} ? 'active' : ''" th:href="@{/user/orders(status='Cancelled')}">Đã hủy</a>
+    </li>
+</ul>
 
         <div th:if="${orders == null or #lists.isEmpty(orders)}" class="text-center py-5 border rounded-3 bg-light">
             <i class="fa-solid fa-receipt fa-4x text-muted mb-3"></i>

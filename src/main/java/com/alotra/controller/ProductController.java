@@ -12,6 +12,7 @@ import com.alotra.repository.product.ToppingRepository;
 import com.alotra.service.cart.CartService;
 import com.alotra.service.product.CategoryService;
 import com.alotra.service.product.ProductService;
+import com.alotra.service.shop.StoreService;
 import com.alotra.service.user.ReviewService;
 import com.alotra.service.user.UserService;
 
@@ -38,6 +39,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class ProductController {
@@ -54,6 +56,7 @@ public class ProductController {
 	private CartService cartService;
 	@Autowired
 	private UserService userService;
+	@Autowired private StoreService storeService; // Inject StoreService
     // Cần thêm StoreService nếu muốn truyền danh sách Shops và tên shop đã chọn vào view
 
     // --- Hàm trợ giúp lấy số lượng giỏ hàng (Giữ nguyên) ---
@@ -81,13 +84,22 @@ public class ProductController {
 
 	@GetMapping("/products/{id}")
 	// *** SỬA: THÊM HttpSession session ***
-	public String getProductDetail(@PathVariable("id") Integer id, Model model, HttpSession session) {
-		try {
-            // Lấy shopId từ Session
-            Integer selectedShopId = getSelectedShopId(session);
+	public String getProductDetail(@PathVariable("id") Integer id, Model model, HttpSession session, RedirectAttributes redirectAttributes) {
 
-			// 1. Lấy DTO chính của sản phẩm
-            // *** FIX LỖI: THÊM selectedShopId VÀO findProductSaleDataById ***
+		try {
+            // 1. Đồng bộ Shop ID (Khắc phục lỗi mất shop)
+			Integer selectedShopId = getSelectedShopId(session);
+			if (selectedShopId == 0) {
+		        // 1. Thêm thông báo lỗi vào Flash Attribute
+		        redirectAttributes.addFlashAttribute(
+		            "errorMessage", // ✅ Tên attribute mà view sẽ sử dụng
+		            "❌ Vui lòng chọn một cửa hàng để xem chi tiết sản phẩm."
+		        );
+		        
+		        // 2. Chuyển hướng về trang chủ
+		        return "redirect:/"; 
+		    }
+			// 2. Lấy DTO chính của sản phẩm (Lọc theo shop ID đã chọn)
 			ProductSaleDTO saleDTO = productService.findProductSaleDataById(id, selectedShopId)
 					.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm"));
 
@@ -96,17 +108,41 @@ public class ProductController {
 				throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Dữ liệu sản phẩm không hợp lệ.");
 			}
 
-			// 2. Lấy danh sách đánh giá
+			// 3. Lấy danh sách đánh giá
 			Pageable reviewPageable = PageRequest.of(0, 5); 
 			Page<Review> reviewPage = reviewService.findByProduct(product, reviewPageable); 
 
-			// 3. Lấy sản phẩm liên quan (cùng danh mục)
+			// 4. Lấy sản phẩm liên quan (cùng danh mục, lọc theo shop ID đã chọn)
 			Pageable relatedPageable = PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "soldCount"));
-            // *** FIX LỖI: THÊM selectedShopId VÀO findProductSaleDataByCategoryPaginated ***
 			Page<ProductSaleDTO> relatedProducts = productService
-					.findProductSaleDataByCategory(product.getCategory(), selectedShopId, relatedPageable); // Sửa tên hàm
+					.findProductSaleDataByCategory(product.getCategory(), selectedShopId, relatedPageable);
 
-			// 4. Đưa tất cả vào model
+            // 5. LỌC TOPPING THEO SẢN PHẨM VÀ SHOP
+            
+            // Lấy tất cả Topping ACTIVE có sẵn tại shop mà sản phẩm thuộc về (hoặc topping chung)
+            Integer productShopId = product.getShop().getShopId();
+            List<Topping> availableShopToppings;
+            
+            if (productShopId != null && productShopId != 0) {
+                // Sản phẩm thuộc shop cụ thể -> Lấy topping của shop đó
+                availableShopToppings = toppingRepository.findAllActiveToppingsByShop(productShopId);
+            } else {
+                // Sản phẩm Admin (ShopID NULL/0) -> Lấy topping chung
+                availableShopToppings = toppingRepository.findByStatusAndShopIsNull((byte) 1);
+            }
+            
+            // Lấy ID của các Topping được gán cho sản phẩm (Many-to-Many)
+            Set<Integer> productAssignedToppingIds = product.getAvailableToppings().stream()
+                .map(Topping::getToppingID)
+                .collect(Collectors.toSet());
+                
+            // Lọc ra những topping thỏa mãn cả 2 điều kiện: ACTIVE tại Shop VÀ được gán cho Sản phẩm
+            List<Topping> filteredToppings = availableShopToppings.stream()
+                .filter(topping -> productAssignedToppingIds.contains(topping.getToppingID()))
+                .collect(Collectors.toList());
+
+
+			// 6. Đưa tất cả vào model
 			model.addAttribute("saleDTO", saleDTO);
 			model.addAttribute("product", product);
 			model.addAttribute("variants", product.getVariants()); 
@@ -114,15 +150,19 @@ public class ProductController {
 			model.addAttribute("relatedProducts", relatedProducts.getContent());
 			model.addAttribute("cartItemCount", getCurrentCartItemCount());
 
-			List<Topping> activeToppings = toppingRepository.findAllActiveToppings();
-			model.addAttribute("toppings", activeToppings != null ? activeToppings : Collections.emptyList());
+			// ✅ CHỈ LẤY TOPPING ĐƯỢC PHÉP CHO SẢN PHẨM
+			model.addAttribute("toppings", filteredToppings != null ? filteredToppings : Collections.emptyList());
 
 			model.addAttribute("categories", categoryService.findAll());
 			model.addAttribute("isHomePage", false);
-            
-            // NOTE: Cần truyền thông tin Shop vào Model nếu muốn hiển thị tên Shop đã chọn trên thanh Navbar
+			
+			// Thêm dữ liệu Shop cho fragment
+	        model.addAttribute("shops", storeService.findAllActiveShops());
+	        model.addAttribute("selectedShopName", storeService.getShopNameById(selectedShopId));
+            model.addAttribute("shopId", selectedShopId); // ✅ THỐNG NHẤT TÊN CHO VIEW
 
 			return "product/detail";
+
 
 		} catch (ResponseStatusException e) {
 			System.err.println("Error loading product detail: " + e.getMessage());
@@ -142,9 +182,14 @@ public class ProductController {
 
         Integer selectedShopId = getSelectedShopId(session);
 
-		try {
+        try {
 			model.addAttribute("cartItemCount", getCurrentCartItemCount());
 			model.addAttribute("categories", categoryService.findAll());
+			
+			// Thêm dữ liệu Shop cho fragment
+	        model.addAttribute("shops", storeService.findAllActiveShops());
+	        model.addAttribute("selectedShopName", storeService.getShopNameById(selectedShopId));
+            model.addAttribute("shopId", selectedShopId); // ✅ THỐNG NHẤT TÊN
 		} catch (Exception e) {
 			System.err.println("Error preparing search page model: " + e.getMessage());
 		}
@@ -161,7 +206,6 @@ public class ProductController {
 
 		Pageable pageable = PageRequest.of(page, pageSize, sortOrder);
 
-        // *** FIX LỖI: THÊM selectedShopId VÀO findProductSaleDataByKeyword ***
 		Page<ProductSaleDTO> salePage = productService.findProductSaleDataByKeyword(keyword, selectedShopId, pageable);
 
 		model.addAttribute("sales", salePage);
