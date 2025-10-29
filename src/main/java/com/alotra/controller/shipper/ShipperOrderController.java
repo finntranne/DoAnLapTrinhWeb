@@ -158,9 +158,10 @@ public class ShipperOrderController {
 	 */
 	private String getSuccessMessage(String status) {
 		return switch (status) {
+		case "Assigned" -> "Đã xác nhận nhận đơn hàng";
 		case "Picking_Up" -> "Đã xác nhận đang lấy hàng";
 		case "Delivering" -> "Đã xác nhận đang giao hàng";
-		case "Delivery_Attempt" -> "Đã ghi nhận lần giao hàng";
+		case "Delivery_Attempt" -> "Đã ghi nhận lần thử giao hàng";
 		case "Delivered" -> "Đã xác nhận giao hàng thành công";
 		case "Failed_Delivery" -> "Đã hủy đơn hàng và tìm shipper khác";
 		default -> "Đã cập nhật trạng thái thành công";

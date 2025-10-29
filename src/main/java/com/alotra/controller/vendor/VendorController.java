@@ -803,6 +803,12 @@ public class VendorController {
 
 			model.addAttribute("order", order);
 
+			// Cần tải danh sách shipper nếu đơn hàng 'Đã xác nhận' (để gán)
+			// HOẶC 'Đang giao' (để có thể thay đổi)
+			if ("Confirmed".equals(order.getOrderStatus()) || "Delivering".equals(order.getOrderStatus())) {
+				List<ShopEmployeeDTO> availableShippers = vendorService.getAvailableShippers(shopId);
+				model.addAttribute("availableShippers", availableShippers);
+			}
 			return "vendor/orders/detail";
 
 		} catch (IllegalStateException e) {
@@ -832,6 +838,60 @@ public class VendorController {
 		} catch (Exception e) {
 			log.error("Error updating order status", e);
 			redirectAttributes.addFlashAttribute("error", e.getMessage());
+		}
+
+		return "redirect:/vendor/orders/" + id;
+	}
+
+	@PostMapping("/orders/{id}/assign-shipper")
+	public String assignShipper(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
+			@RequestParam Integer shipperId, RedirectAttributes redirectAttributes) {
+
+		try {
+			Integer shopId = getShopIdOrThrow(userDetails);
+			Integer userId = getUserIdOrThrow(userDetails);
+
+			vendorService.assignShipperToOrder(shopId, id, shipperId, userId);
+
+			redirectAttributes.addFlashAttribute("success", "Đã gán shipper cho đơn hàng thành công");
+
+		} catch (IllegalStateException e) {
+			log.error("Auth error: {}", e.getMessage());
+			redirectAttributes.addFlashAttribute("error", e.getMessage());
+			return "redirect:/shop/register";
+		} catch (Exception e) {
+			log.error("Error assigning shipper", e);
+			redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
+		}
+
+		return "redirect:/vendor/orders/" + id;
+	}
+
+	/**
+	 * Thay đổi shipper
+	 */
+	@PostMapping("/orders/{id}/reassign-shipper")
+	public String reassignShipper(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
+			@RequestParam Integer newShipperId, @RequestParam(required = false) String reason,
+			RedirectAttributes redirectAttributes) {
+
+		try {
+			Integer shopId = getShopIdOrThrow(userDetails);
+			Integer userId = getUserIdOrThrow(userDetails);
+
+			String finalReason = (reason != null && !reason.isEmpty()) ? reason : "Thay đổi shipper";
+
+			vendorService.reassignShipper(shopId, id, newShipperId, userId, finalReason);
+
+			redirectAttributes.addFlashAttribute("success", "Đã thay đổi shipper thành công");
+
+		} catch (IllegalStateException e) {
+			log.error("Auth error: {}", e.getMessage());
+			redirectAttributes.addFlashAttribute("error", e.getMessage());
+			return "redirect:/shop/register";
+		} catch (Exception e) {
+			log.error("Error reassigning shipper", e);
+			redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
 		}
 
 		return "redirect:/vendor/orders/" + id;
