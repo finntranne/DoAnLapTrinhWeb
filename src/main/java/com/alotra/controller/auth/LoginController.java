@@ -102,7 +102,7 @@ public class LoginController {
 			return "/vendor/dashboard";
 		}
 		if (authorities.stream().anyMatch(a -> a.getAuthority().equals("SHIPPER"))) {
-			return "/shipper/orders";
+			return "/shipper/dashboard";
 		}
 		if (authorities.stream().anyMatch(a -> a.getAuthority().equals("CUSTOMER"))) {
 			return "/";

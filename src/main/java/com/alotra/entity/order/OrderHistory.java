@@ -41,7 +41,7 @@ public class OrderHistory {
     @Column(name = "OldStatus", length = 30)
     private String oldStatus;
     
-    @Column(name = "NewStatus", nullable = false, length = 30)
+    @Column(name = "NewStatus", nullable = true, length = 30)
     private String newStatus;
     
     @ManyToOne(fetch = FetchType.LAZY)

@@ -40,4 +40,5 @@ public interface OrderShippingHistoryRepository extends JpaRepository<OrderShipp
            "AND h.timestamp = (SELECT MAX(h2.timestamp) FROM OrderShippingHistory h2 " +
            "                   WHERE h2.order.orderID = h.order.orderID AND h2.shipper.id = :shipperId)")
     List<Integer> findActiveOrderIdsByShipperId(@Param("shipperId") Integer shipperId);
+
 }

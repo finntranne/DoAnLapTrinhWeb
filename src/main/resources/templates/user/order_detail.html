@@ -1,145 +1,344 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layouts/main :: layout(~{::title}, ~{::section})}">
+	th:replace="~{layouts/main :: layout(~{::title}, ~{::section})}">
 <head>
-    <title th:text="'Chi Tiết Đơn Hàng #' + ${order.orderID}">Chi Tiết Đơn Hàng</title>
+<title th:text="'Chi Tiết Đơn Hàng #' + ${order.orderID}">Chi
+	Tiết Đơn Hàng</title>
+<style>
+.timeline {
+	position: relative;
+	padding: 20px 0;
+}
+
+.timeline-item {
+	position: relative;
+	padding-left: 45px;
+	padding-bottom: 30px;
+	min-height: 60px;
+}
+
+.timeline-item:last-child {
+	padding-bottom: 0;
+}
+
+.timeline-item::before {
+	content: '';
+	position: absolute;
+	left: 10px;
+	top: 0;
+	bottom: -30px;
+	width: 3px;
+	background: #dee2e6;
+}
+
+.timeline-item:last-child::before {
+	display: none;
+}
+
+.timeline-icon {
+	position: absolute;
+	left: 0;
+	top: 5px;
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	background: #6c757d;
+	border: 3px solid #fff;
+	box-shadow: 0 0 0 2px #dee2e6;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1;
+}
+
+.timeline-item.assigned .timeline-icon {
+	background: #ffc107;
+}
+
+.timeline-item.picking .timeline-icon {
+	background: #17a2b8;
+}
+
+.timeline-item.delivering .timeline-icon {
+	background: #0d6efd;
+}
+
+.timeline-item.success .timeline-icon {
+	background: #198754;
+}
+
+.timeline-item.danger .timeline-icon {
+	background: #dc3545;
+}
+
+.timeline-content {
+	background: #f8f9fa;
+	padding: 15px;
+	border-radius: 8px;
+	border-left: 3px solid #dee2e6;
+}
+
+.timeline-item.assigned .timeline-content {
+	border-left-color: #ffc107;
+	background: #fff9e6;
+}
+
+.timeline-item.picking .timeline-content {
+	border-left-color: #17a2b8;
+	background: #e6f7f9;
+}
+
+.timeline-item.delivering .timeline-content {
+	border-left-color: #0d6efd;
+	background: #e7f1ff;
+}
+
+.timeline-item.success .timeline-content {
+	border-left-color: #198754;
+	background: #e6f4ea;
+}
+
+.timeline-item.danger .timeline-content {
+	border-left-color: #dc3545;
+	background: #fde7e9;
+}
+
+.timeline-content h6 {
+	margin-bottom: 8px;
+	font-weight: 600;
+	color: #212529;
+}
+
+.timeline-content .timeline-time {
+	font-size: 0.875rem;
+	color: #6c757d;
+	margin-bottom: 10px;
+}
+
+.timeline-content .timeline-notes {
+	margin-top: 10px;
+	font-size: 0.9rem;
+	color: #495057;
+	font-style: italic;
+}
+</style>
 </head>
 <body>
-<section>
-    <nav class="breadcrumb-nav bg-light py-2">
-        <div class="container">
-            <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item"><a th:href="@{/}" class="text-decoration-none">Trang chủ</a></li>
-                <li class="breadcrumb-item"><a th:href="@{/user/orders}" class="text-decoration-none">Lịch sử đơn hàng</a></li>
-                <li class="breadcrumb-item active" aria-current="page" th:text="'Chi tiết Đơn hàng #' + ${order.orderID}"></li>
-            </ol>
-        </div>
-    </nav>
+	<section>
+		<nav class="breadcrumb-nav bg-light py-2">
+			<div class="container">
+				<ol class="breadcrumb mb-0">
+					<li class="breadcrumb-item"><a th:href="@{/}"
+						class="text-decoration-none">Trang chủ</a></li>
+					<li class="breadcrumb-item"><a th:href="@{/user/orders}"
+						class="text-decoration-none">Lịch sử đơn hàng</a></li>
+					<li class="breadcrumb-item active" aria-current="page"
+						th:text="'Chi tiết Đơn hàng #' + ${order.orderID}"></li>
+				</ol>
+			</div>
+		</nav>
 
-    <div class="container my-5" th:if="${order != null}">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="fw-bold" th:text="'Chi Tiết Đơn Hàng #' + ${order.orderID}"></h1>
-            <span class="badge fs-6"
-                  th:classappend="${order.orderStatus == 'Completed'} ? 'bg-success' : 'bg-info'"
-                  th:text="${order.orderStatus}">
-            </span>
-        </div>
+		<div class="container my-5" th:if="${order != null}">
+			<div class="d-flex justify-content-between align-items-center mb-4">
+				<h1 class="fw-bold"
+					th:text="'Chi Tiết Đơn Hàng #' + ${order.orderID}"></h1>
+				<span class="badge fs-6"
+					th:classappend="${order.orderStatus == 'Completed'} ? 'bg-success' : 'bg-info'"
+					th:text="${order.orderStatus}"> </span>
+			</div>
 
-        <div class="row g-4">
-            <div class="col-lg-8">
-                <div class="card shadow-sm border-0 rounded-3">
-                    <div class="card-header bg-white border-0 py-3">
-                        <h5 class="mb-0 fw-bold">Các sản phẩm đã mua</h5>
-                    </div>
-                    <div class="card-body p-0">
-                        <div th:each="item : ${order.orderDetails}" class="p-4 border-bottom">
-                            <div class="row align-items-center g-3">
-                                <div class="col-md-2 col-3">
-                                    <img th:src="${item.variant.product.images[0].imageURL}"
-                                         th:alt="${item.variant.product.productName}"
-                                         class="img-fluid rounded">
-                                </div>
-                                <div class="col-md-5 col-9">
-                                    <h6 class="mb-1 fw-bold" th:text="${item.variant.product.productName}"></h6>
-                                    <div class="product-meta">
-                                        <span class="badge bg-light text-dark me-1">
-                                            Size: <span th:text="${item.variant.size.sizeName}"></span>
-                                        </span>
-                                        
-                                        <div th:if="${item.toppings != null and !item.toppings.isEmpty()}" class="mt-2">
-                                            <small class="text-muted">
-                                                <i class="fa-solid fa-plus-circle me-1"></i>
-                                                <span th:each="toppingItem, iterStat : ${item.toppings}">
-                                                    <span th:text="${toppingItem.topping.toppingName}"></span>
-                                                    <span th:if="!${iterStat.last}">, </span>
-                                                </span>
-                                            </small>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-2 col-4">
-                                    <small class="text-muted d-block">Đơn giá</small>
-                                    <span th:text="${#numbers.formatDecimal(item.unitPrice, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
-                                </div>
-                                <div class="col-md-1 col-3">
-                                    <small class="text-muted d-block">SL</small>
-                                    <span th:text="'x' + ${item.quantity}"></span>
-                                </div>
-                                <div class="col-md-2 col-5 text-end">
-                                    <small class="text-muted d-block">Tổng</small>
-                                    <span class="fw-bold fs-6" th:text="${#numbers.formatDecimal(item.subtotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+			<div class="row g-4">
+				<div class="col-lg-8">
+					<!-- Các sản phẩm đã mua -->
+					<div class="card shadow-sm border-0 rounded-3 mb-4">
+						<div class="card-header bg-white border-0 py-3">
+							<h5 class="mb-0 fw-bold">Các sản phẩm đã mua</h5>
+						</div>
+						<div class="card-body p-0">
+							<div th:each="item : ${order.orderDetails}"
+								class="p-4 border-bottom">
+								<div class="row align-items-center g-3">
+									<div class="col-md-2 col-3">
+										<img th:src="${item.variant.product.images[0].imageURL}"
+											th:alt="${item.variant.product.productName}"
+											class="img-fluid rounded">
+									</div>
+									<div class="col-md-5 col-9">
+										<h6 class="mb-1 fw-bold"
+											th:text="${item.variant.product.productName}"></h6>
+										<div class="product-meta">
+											<span class="badge bg-light text-dark me-1"> Size: <span
+												th:text="${item.variant.size.sizeName}"></span>
+											</span>
 
-            <div class="col-lg-4">
-                <div class="card shadow-sm border-0 rounded-3 mb-4">
-                    <div class="card-body p-4">
-                        <h5 class="card-title mb-3 fw-bold">Thông tin giao hàng</h5>
-                        <ul class="list-unstyled">
-                            <li class="mb-2">
-                                <strong class="d-block text-muted">Người nhận:</strong>
-                                <span th:text="${order.recipientName}"></span>
-                            </li>
-                            <li class="mb-2">
-                                <strong class="d-block text-muted">Số điện thoại:</strong>
-                                <span th:text="${order.recipientPhone}"></span>
-                            </li>
-                            <li>
-                                <strong class="d-block text-muted">Địa chỉ:</strong>
-                                <span th:text="${order.shippingAddress}"></span>
-                            </li>
-                            <li th:if="${order.notes != null and !order.notes.isEmpty()}" class="mt-2">
-                                <strong class="d-block text-muted">Ghi chú:</strong>
-                                <span class="fst-italic" th:text="${order.notes}"></span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
+											<div
+												th:if="${item.toppings != null and !item.toppings.isEmpty()}"
+												class="mt-2">
+												<small class="text-muted"> <i
+													class="fa-solid fa-plus-circle me-1"></i> <span
+													th:each="toppingItem, iterStat : ${item.toppings}">
+														<span th:text="${toppingItem.topping.toppingName}"></span>
+														<span th:if="!${iterStat.last}">, </span>
+												</span>
+												</small>
+											</div>
+										</div>
+									</div>
+									<div class="col-md-2 col-4">
+										<small class="text-muted d-block">Đơn giá</small> <span
+											th:text="${#numbers.formatDecimal(item.unitPrice, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+									</div>
+									<div class="col-md-1 col-3">
+										<small class="text-muted d-block">SL</small> <span
+											th:text="'x' + ${item.quantity}"></span>
+									</div>
+									<div class="col-md-2 col-5 text-end">
+										<small class="text-muted d-block">Tổng</small> <span
+											class="fw-bold fs-6"
+											th:text="${#numbers.formatDecimal(item.subtotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
 
-                <div class="summary-card card shadow-sm border-0 rounded-3 position-sticky" style="top: 20px;">
-                    <div class="card-body p-4">
-                        <h5 class="card-title mb-4 fw-bold">Tổng kết đơn hàng</h5>
-                        
-                        <ul class="list-group list-group-flush mb-4">
-                            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                                <span class="text-white-50">Tạm tính</span>
-                                <span class="fw-semibold" th:text="${#numbers.formatDecimal(order.subtotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                                <span class="text-white-50">Phí vận chuyển</span>
-                                <span class="fw-semibold" th:text="${#numbers.formatDecimal(order.shippingFee, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                                <span class="text-white-50">Giảm giá</span>
-                                <span class="fw-semibold" th:text="'-' + ${#numbers.formatDecimal(order.discountAmount, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center py-3 border-top border-white border-opacity-25">
-                                <span class="fs-5 fw-bold">Tổng cộng</span>
-                                <span class="price-highlight" th:text="${#numbers.formatDecimal(order.grandTotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
-                            </li>
-                        </ul>
+					<!-- *** THÊM: Lịch sử giao hàng *** -->
+					<div class="card shadow-sm border-0 rounded-3 mb-4">
+						<div class="card-header bg-white border-0 py-3">
+							<h5 class="mb-0 fw-bold">
+								<i class="bi bi-clock-history"></i> Lịch sử giao hàng
+							</h5>
+						</div>
+						<div class="card-body">
+							<div class="timeline"
+								th:if="${shippingHistory != null and !shippingHistory.isEmpty()}">
+								<div class="timeline-item"
+									th:each="history : ${shippingHistory}"
+									th:classappend="${history.status == 'Delivered' ? 'success' : 
+                                                 (history.status == 'Failed_Delivery' ? 'danger' : 
+                                                 (history.status == 'Assigned' ? 'assigned' :
+                                                 (history.status == 'Picking_Up' ? 'picking' :
+                                                 (history.status == 'Delivering' ? 'delivering' :
+                                                 (history.status == 'Delivery_Attempt' ? 'delivering' : '')))))}">
+									<div class="timeline-icon"></div>
+									<div class="timeline-content">
+										<h6 th:switch="${history.status}">
+											<span th:case="'Assigned'"> <i
+												class="bi bi-check-circle-fill text-warning"></i> Đã nhận
+												đơn hàng
+											</span> <span th:case="'Picking_Up'"> <i
+												class="bi bi-box-arrow-up text-info"></i> Đang lấy hàng
+											</span> <span th:case="'Delivering'"> <i
+												class="bi bi-truck text-primary"></i> Đang giao hàng
+											</span> <span th:case="'Delivery_Attempt'"> <i
+												class="bi bi-arrow-repeat text-warning"></i> Đã giao hàng
+												(thử lại)
+											</span> <span th:case="'Delivered'"> <i
+												class="bi bi-check-circle-fill text-success"></i> Giao hàng
+												thành công
+											</span> <span th:case="'Failed_Delivery'"> <i
+												class="bi bi-x-circle-fill text-danger"></i> Giao hàng thất
+												bại
+											</span> <span th:case="*" th:text="${history.status}"></span>
+										</h6>
 
-                        <div class="border-top border-white border-opacity-25 pt-3">
-                            <p class="mb-1">
-                                <span class="text-white-50 me-2">P.thức thanh toán:</span>
-                                <strong th:text="${order.paymentMethod}"></strong>
-                            </p>
-                            <p class="mb-0">
-                                <span class="text-white-50 me-2">Trạng thái TT:</span>
-                                <strong th:classappend="${order.paymentStatus == 'Paid'} ? 'text-success' : 'text-warning'"
-                                        th:text="${order.paymentStatus == 'Paid'} ? 'Đã thanh toán' : 'Chưa thanh toán'">
-                                </strong>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+										<div class="timeline-time">
+											<i class="bi bi-clock"></i> <span
+												th:text="${#temporals.format(history.timestamp, 'dd/MM/yyyy HH:mm:ss')}"></span>
+										</div>
+
+										<div class="timeline-notes"
+											th:if="${history.notes != null and !#strings.isEmpty(history.notes)}"
+											th:text="${history.notes}"></div>
+
+										<div th:if="${history.imageURL != null}" class="mt-2">
+											<img th:src="${history.imageURL}" class="img-thumbnail"
+												style="max-width: 200px; max-height: 200px; object-fit: cover;"
+												alt="Ảnh chứng minh">
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="text-center py-4"
+								th:if="${shippingHistory == null or shippingHistory.isEmpty()}">
+								<i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+								<p class="text-muted mb-0 mt-2">Chưa có lịch sử giao hàng</p>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-lg-4">
+					<!-- Thông tin giao hàng -->
+					<div class="card shadow-sm border-0 rounded-3 mb-4">
+						<div class="card-body p-4">
+							<h5 class="card-title mb-3 fw-bold">Thông tin giao hàng</h5>
+							<ul class="list-unstyled">
+								<li class="mb-2"><strong class="d-block text-muted">Người
+										nhận:</strong> <span th:text="${order.recipientName}"></span></li>
+								<li class="mb-2"><strong class="d-block text-muted">Số
+										điện thoại:</strong> <span th:text="${order.recipientPhone}"></span></li>
+								<li><strong class="d-block text-muted">Địa chỉ:</strong> <span
+									th:text="${order.shippingAddress}"></span></li>
+								<li th:if="${order.notes != null and !order.notes.isEmpty()}"
+									class="mt-2"><strong class="d-block text-muted">Ghi
+										chú:</strong> <span class="fst-italic" th:text="${order.notes}"></span>
+								</li>
+							</ul>
+						</div>
+					</div>
+
+					<!-- Tổng kết đơn hàng -->
+					<div
+						class="summary-card card shadow-sm border-0 rounded-3 position-sticky"
+						style="top: 20px;">
+						<div class="card-body p-4">
+							<h5 class="card-title mb-4 fw-bold">Tổng kết đơn hàng</h5>
+
+							<ul class="list-group list-group-flush mb-4">
+								<li
+									class="list-group-item d-flex justify-content-between align-items-center py-3">
+									<span class="text-muted">Tạm tính</span> <span
+									class="fw-semibold"
+									th:text="${#numbers.formatDecimal(order.subtotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+								</li>
+								<li
+									class="list-group-item d-flex justify-content-between align-items-center py-3">
+									<span class="text-muted">Phí vận chuyển</span> <span
+									class="fw-semibold"
+									th:text="${#numbers.formatDecimal(order.shippingFee, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+								</li>
+								<li
+									class="list-group-item d-flex justify-content-between align-items-center py-3">
+									<span class="text-muted">Giảm giá</span> <span
+									class="fw-semibold"
+									th:text="'-' + ${#numbers.formatDecimal(order.discountAmount, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+								</li>
+								<li
+									class="list-group-item d-flex justify-content-between align-items-center py-3 border-top">
+									<span class="fs-5 fw-bold">Tổng cộng</span> <span
+									class="fs-4 fw-bold text-danger"
+									th:text="${#numbers.formatDecimal(order.grandTotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+								</li>
+							</ul>
+
+							<div class="border-top pt-3">
+								<p class="mb-1">
+									<span class="text-muted me-2">P.thức thanh toán:</span> <strong
+										th:text="${order.paymentMethod}"></strong>
+								</p>
+								<p class="mb-0">
+									<span class="text-muted me-2">Trạng thái TT:</span> <strong
+										th:classappend="${order.paymentStatus == 'Paid'} ? 'text-success' : 'text-warning'"
+										th:text="${order.paymentStatus == 'Paid'} ? 'Đã thanh toán' : 'Chưa thanh toán'">
+									</strong>
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
 </body>
 </html>

@@ -140,8 +140,9 @@
 								class="rounded-circle shadow" alt="User Image" />
 								<p>Vendor Account</p></li>
 							<li class="user-footer"><a href="#"
-								class="btn btn-default btn-flat">Profile</a> <a href="/logout"
-								class="btn btn-default btn-flat float-end">Sign out</a></li>
+								class="btn btn-default btn-flat">Profile</a> <a href="#"
+								id="vendorLogoutBtn" class="btn btn-default btn-flat float-end">Sign
+									out</a></li>
 						</ul></li>
 				</ul>
 			</div>
@@ -270,7 +271,7 @@
         });
     </script>
 	<script th:src="@{/js/adminlte.js}"></script>
-
+	<script th:src="@{/js/logout.js}"></script>
 	<!-- Page-specific scripts -->
 	<th:block layout:fragment="scripts"></th:block>
 </body>

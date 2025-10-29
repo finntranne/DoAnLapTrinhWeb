@@ -23,8 +23,9 @@
 
 .timeline-item {
 	position: relative;
-	padding-left: 40px;
+	padding-left: 45px;
 	padding-bottom: 30px;
+	min-height: 60px;
 }
 
 .timeline-item:last-child {
@@ -34,10 +35,10 @@
 .timeline-item::before {
 	content: '';
 	position: absolute;
-	left: 8px;
+	left: 10px;
 	top: 0;
 	bottom: -30px;
-	width: 2px;
+	width: 3px;
 	background: #dee2e6;
 }
 
@@ -48,25 +49,90 @@
 .timeline-icon {
 	position: absolute;
 	left: 0;
-	top: 0;
-	width: 18px;
-	height: 18px;
+	top: 5px;
+	width: 24px;
+	height: 24px;
 	border-radius: 50%;
-	background: #0d6efd;
+	background: #6c757d;
 	border: 3px solid #fff;
 	box-shadow: 0 0 0 2px #dee2e6;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1;
+}
+
+.timeline-item.assigned .timeline-icon {
+	background: #ffc107;
+}
+
+.timeline-item.picking .timeline-icon {
+	background: #17a2b8;
+}
+
+.timeline-item.delivering .timeline-icon {
+	background: #0d6efd;
 }
 
 .timeline-item.success .timeline-icon {
 	background: #198754;
 }
 
-.timeline-item.warning .timeline-icon {
-	background: #ffc107;
-}
-
 .timeline-item.danger .timeline-icon {
 	background: #dc3545;
+}
+
+.timeline-content {
+	background: #f8f9fa;
+	padding: 15px;
+	border-radius: 8px;
+	border-left: 3px solid #dee2e6;
+	word-wrap: break-word;
+	overflow-wrap: break-word;
+}
+
+.timeline-item.assigned .timeline-content {
+	border-left-color: #ffc107;
+	background: #fff9e6;
+}
+
+.timeline-item.picking .timeline-content {
+	border-left-color: #17a2b8;
+	background: #e6f7f9;
+}
+
+.timeline-item.delivering .timeline-content {
+	border-left-color: #0d6efd;
+	background: #e7f1ff;
+}
+
+.timeline-item.success .timeline-content {
+	border-left-color: #198754;
+	background: #e6f4ea;
+}
+
+.timeline-item.danger .timeline-content {
+	border-left-color: #dc3545;
+	background: #fde7e9;
+}
+
+.timeline-content h6 {
+	margin-bottom: 8px;
+	font-weight: 600;
+	color: #212529;
+}
+
+.timeline-content .timeline-time {
+	font-size: 0.875rem;
+	color: #6c757d;
+	margin-bottom: 10px;
+}
+
+.timeline-content .timeline-notes {
+	margin-top: 10px;
+	font-size: 0.9rem;
+	color: #495057;
+	font-style: italic;
 }
 
 .action-buttons .btn {
@@ -83,6 +149,37 @@
 	width: 24px;
 	text-align: center;
 	display: inline-block;
+}
+
+/* Status badge colors */
+.status-assigned {
+	background-color: #ffc107 !important;
+	color: #000 !important;
+}
+
+.status-picking {
+	background-color: #17a2b8 !important;
+	color: #fff !important;
+}
+
+.status-delivering {
+	background-color: #0d6efd !important;
+	color: #fff !important;
+}
+
+.status-delivered {
+	background-color: #198754 !important;
+	color: #fff !important;
+}
+
+.status-failed {
+	background-color: #dc3545 !important;
+	color: #fff !important;
+}
+
+.status-attempt {
+	background-color: #fd7e14 !important;
+	color: #fff !important;
 }
 </style>
 </head>
@@ -219,38 +316,53 @@
 							<div class="timeline-item" th:each="history : ${shippingHistory}"
 								th:classappend="${history.status == 'Delivered' ? 'success' : 
 								                 (history.status == 'Failed_Delivery' ? 'danger' : 
-								                 (history.status == 'Assigned' ? 'warning' : ''))}">
+								                 (history.status == 'Assigned' ? 'assigned' :
+								                 (history.status == 'Picking_Up' ? 'picking' :
+								                 (history.status == 'Delivering' ? 'delivering' :
+								                 (history.status == 'Delivery_Attempt' ? 'attempt' : '')))))}">
 								<div class="timeline-icon"></div>
-								<div>
-									<div class="d-flex justify-content-between align-items-start">
-										<div>
-											<h6 class="mb-1" th:switch="${history.status}">
-												<span th:case="'Assigned'">Đã nhận đơn hàng</span> <span
-													th:case="'Picking_Up'">Đang lấy hàng</span> <span
-													th:case="'Delivering'">Đang giao hàng</span> <span
-													th:case="'Delivery_Attempt'">Đã giao hàng (thử lại)</span>
-												<span th:case="'Delivered'">Giao hàng thành công</span> <span
-													th:case="'Failed_Delivery'">Giao hàng thất bại</span> <span
-													th:case="*" th:text="${history.status}"></span>
-											</h6>
-											<small class="text-muted"> <i class="bi bi-clock"></i>
-												<span
-												th:text="${#temporals.format(history.timestamp, 'dd/MM/yyyy HH:mm:ss')}"></span>
-											</small>
-										</div>
+								<div class="timeline-content">
+									<h6 th:switch="${history.status}">
+										<span th:case="'Assigned'"> <i
+											class="bi bi-check-circle-fill text-warning"></i> Đã nhận đơn
+											hàng
+										</span> <span th:case="'Picking_Up'"> <i
+											class="bi bi-box-arrow-up text-info"></i> Đang lấy hàng
+										</span> <span th:case="'Delivering'"> <i
+											class="bi bi-truck text-primary"></i> Đang giao hàng
+										</span> <span th:case="'Delivery_Attempt'"> <i
+											class="bi bi-arrow-repeat text-warning"></i> Đã giao hàng
+											(thử lại)
+										</span> <span th:case="'Delivered'"> <i
+											class="bi bi-check-circle-fill text-success"></i> Giao hàng
+											thành công
+										</span> <span th:case="'Failed_Delivery'"> <i
+											class="bi bi-x-circle-fill text-danger"></i> Giao hàng thất
+											bại
+										</span> <span th:case="*" th:text="${history.status}"></span>
+									</h6>
+
+									<div class="timeline-time">
+										<i class="bi bi-clock"></i> <span
+											th:text="${#temporals.format(history.timestamp, 'dd/MM/yyyy HH:mm:ss')}"></span>
 									</div>
-									<p class="mt-2 mb-0"
+
+									<div class="timeline-notes"
 										th:if="${history.notes != null and !#strings.isEmpty(history.notes)}"
-										th:text="${history.notes}"></p>
-									<div th:if="${history.imageURL != null}">
-										<img th:src="${history.imageURL}" class="img-thumbnail mt-2"
-											style="max-width: 200px;" alt="Ảnh chứng minh">
+										th:text="${history.notes}"></div>
+
+									<div th:if="${history.imageURL != null}" class="mt-2">
+										<img th:src="${history.imageURL}" class="img-thumbnail"
+											style="max-width: 200px; max-height: 200px; object-fit: cover;"
+											alt="Ảnh chứng minh">
 									</div>
 								</div>
 							</div>
 						</div>
-						<p class="text-muted mb-0" th:if="${shippingHistory.isEmpty()}">
-							Chưa có lịch sử giao hàng</p>
+						<div class="text-center py-4" th:if="${shippingHistory.isEmpty()}">
+							<i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+							<p class="text-muted mb-0 mt-2">Chưa có lịch sử giao hàng</p>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -295,7 +407,7 @@
 							<i class="bi bi-info-circle"></i> Trạng thái hiện tại
 						</h6>
 					</div>
-					<div class="card-body text-center">
+					<div class="card-body text-center status-section">
 						<span class="badge status-badge"
 							th:classappend="${order.currentShippingStatus == 'Assigned' ? 'bg-warning text-dark' :
 							                 (order.currentShippingStatus == 'Picking_Up' ? 'bg-info' :
@@ -311,16 +423,12 @@
 							th:case="*">Chờ xử lý</span>
 						</span>
 					</div>
-				</div>
 
-				<!-- Các hành động -->
-				<div class="card">
-					<div class="card-header">
-						<h6 class="mb-0">
+					<!-- Các hành động -->
+					<div class="card-body action-section">
+						<h6 class="mb-3">
 							<i class="bi bi-lightning"></i> Cập nhật trạng thái
 						</h6>
-					</div>
-					<div class="card-body">
 						<div class="d-grid gap-2 action-buttons">
 
 							<!-- Nút Đang lấy hàng -->
@@ -370,11 +478,12 @@
 						th:action="@{/shipper/orders/{id}/update-status(id=${order.orderId})}"
 						method="post">
 						<input type="hidden" name="status" value="Picking_Up">
-						<div class="modal-header">
+						<div class="modal-header bg-info text-white">
 							<h5 class="modal-title">
 								<i class="bi bi-box-arrow-up"></i> Xác nhận đang lấy hàng
 							</h5>
-							<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+							<button type="button" class="btn-close btn-close-white"
+								data-bs-dismiss="modal"></button>
 						</div>
 						<div class="modal-body">
 							<p>Bạn có chắc chắn đang trên đường đến lấy hàng?</p>
@@ -405,11 +514,12 @@
 						th:action="@{/shipper/orders/{id}/update-status(id=${order.orderId})}"
 						method="post">
 						<input type="hidden" name="status" value="Delivering">
-						<div class="modal-header">
+						<div class="modal-header bg-primary text-white">
 							<h5 class="modal-title">
 								<i class="bi bi-truck"></i> Xác nhận đang giao hàng
 							</h5>
-							<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+							<button type="button" class="btn-close btn-close-white"
+								data-bs-dismiss="modal"></button>
 						</div>
 						<div class="modal-body">
 							<p>Bạn đã lấy hàng thành công và đang trên đường giao hàng?</p>

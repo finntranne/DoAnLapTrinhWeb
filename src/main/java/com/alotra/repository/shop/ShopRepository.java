@@ -22,6 +22,8 @@ public interface ShopRepository extends JpaRepository<Shop, Integer> {
     
     List<Shop> findByStatus(Byte status);
     
+    boolean existsByShopName(String shopName);
+    
     @Query("SELECT s FROM Shop s WHERE s.status = 1 AND " +
            "(SELECT SUM(p.soldCount) FROM Product p WHERE p.shop = s) > :minSales")
     List<Shop> findActiveShopsWithMinSales(@Param("minSales") Integer minSales);
@@ -56,4 +58,5 @@ public interface ShopRepository extends JpaRepository<Shop, Integer> {
      	        @Param("status") Integer status,   	       
      	        Pageable pageable
      	);
+    
 }

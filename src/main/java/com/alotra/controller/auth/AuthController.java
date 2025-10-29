@@ -512,7 +512,7 @@ public class AuthController {
 					.body(Map.of("errorCode", "LOGOUT_ERROR", "message", "Lỗi khi đăng xuất. Vui lòng thử lại."));
 		}
 	}
-
+	
 	private String determineTargetUrl(Authentication authentication) {
 		Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
 
@@ -521,6 +521,9 @@ public class AuthController {
 		}
 		if (authorities.stream().anyMatch(a -> a.getAuthority().equals("VENDOR"))) {
 			return "/vendor/dashboard";
+		}
+		if (authorities.stream().anyMatch(a -> a.getAuthority().equals("SHIPPER"))) {
+			return "/shipper/dashboard";
 		}
 		if (authorities.stream().anyMatch(a -> a.getAuthority().equals("CUSTOMER"))) {
 			return "/";

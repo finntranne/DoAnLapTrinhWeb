@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{shipper/layouts/shipper-layout}" lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard - Shipper | AloTra</title>
+
+<style>
+.stat-card {
+	transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+	transform: translateY(-5px);
+	box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stat-icon {
+	width: 60px;
+	height: 60px;
+	border-radius: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 24px;
+}
+
+.order-list-item {
+	transition: background-color 0.2s;
+}
+
+.order-list-item:hover {
+	background-color: #f8f9fa;
+}
+
+.progress-thin {
+	height: 4px;
+}
+
+.badge-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	display: inline-block;
+	margin-right: 5px;
+}
+</style>
+</head>
+<body>
+
+	<div layout:fragment="content">
+
+		<!-- Header -->
+		<div
+			class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+			<h1 class="h2">
+				<i class="bi bi-speedometer2"></i> Dashboard Shipper
+			</h1>
+			<div class="btn-toolbar mb-2 mb-md-0">
+				<div class="btn-group me-2">
+					<a th:href="@{/shipper/orders}"
+						class="btn btn-sm btn-outline-primary"> <i
+						class="bi bi-list-ul"></i> Tất cả đơn hàng
+					</a>
+				</div>
+			</div>
+		</div>
+
+		<!-- Alert Messages -->
+		<div th:if="${success}"
+			class="alert alert-success alert-dismissible fade show">
+			<i class="bi bi-check-circle"></i> <span th:text="${success}"></span>
+			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+		</div>
+
+		<div th:if="${error}"
+			class="alert alert-danger alert-dismissible fade show">
+			<i class="bi bi-exclamation-triangle"></i> <span th:text="${error}"></span>
+			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+		</div>
+
+		<!-- Thông tin shipper -->
+		<div class="card mb-4 border-0 shadow-sm">
+			<div class="card-body">
+				<div class="row align-items-center">
+					<div class="col-auto">
+						<img
+							th:src="${shipperInfo.avatarURL ?: '/images/default-avatar.png'}"
+							alt="Avatar" class="rounded-circle"
+							style="width: 80px; height: 80px; object-fit: cover;">
+					</div>
+					<div class="col">
+						<h4 class="mb-1" th:text="${shipperInfo.fullName}">Tên
+							Shipper</h4>
+						<p class="text-muted mb-2">
+							<i class="bi bi-telephone"></i> <span
+								th:text="${shipperInfo.phoneNumber}"></span> | <i
+								class="bi bi-envelope"></i> <span th:text="${shipperInfo.email}"></span>
+						</p>
+						<span class="badge bg-success"> <i
+							class="bi bi-check-circle"></i> Đang hoạt động
+						</span>
+					</div>
+					<div class="col-auto text-end">
+						<div class="mb-2">
+							<small class="text-muted">Shop đang làm việc</small>
+							<h5 class="mb-0" th:text="${shipperInfo.shopName}">Tên Shop</h5>
+						</div>
+						<small class="text-muted"> <i class="bi bi-geo-alt"></i> <span
+							th:text="${shipperInfo.shopAddress}"></span>
+						</small>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Thống kê tổng quan -->
+		<div class="row g-3 mb-4">
+			<!-- Đơn được gán -->
+			<div class="col-md-3">
+				<div class="card border-0 shadow-sm stat-card">
+					<div class="card-body">
+						<div class="d-flex align-items-center">
+							<div class="stat-icon bg-warning bg-opacity-10 text-warning">
+								<i class="bi bi-inbox"></i>
+							</div>
+							<div class="ms-3 flex-grow-1">
+								<h6 class="text-muted mb-1 small">Đơn được gán</h6>
+								<h3 class="mb-0" th:text="${stats.assignedCount}">0</h3>
+								<small class="text-muted">Đang chờ xử lý</small>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Đang giao -->
+			<div class="col-md-3">
+				<div class="card border-0 shadow-sm stat-card">
+					<div class="card-body">
+						<div class="d-flex align-items-center">
+							<div class="stat-icon bg-primary bg-opacity-10 text-primary">
+								<i class="bi bi-truck"></i>
+							</div>
+							<div class="ms-3 flex-grow-1">
+								<h6 class="text-muted mb-1 small">Đang giao</h6>
+								<h3 class="mb-0" th:text="${stats.deliveringCount}">0</h3>
+								<small class="text-muted">Trên đường giao</small>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Hoàn thành hôm nay -->
+			<div class="col-md-3">
+				<div class="card border-0 shadow-sm stat-card">
+					<div class="card-body">
+						<div class="d-flex align-items-center">
+							<div class="stat-icon bg-success bg-opacity-10 text-success">
+								<i class="bi bi-check-circle"></i>
+							</div>
+							<div class="ms-3 flex-grow-1">
+								<h6 class="text-muted mb-1 small">Hoàn thành hôm nay</h6>
+								<h3 class="mb-0" th:text="${stats.completedTodayCount}">0</h3>
+								<small class="text-muted">Giao thành công</small>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Tổng tuần này -->
+			<div class="col-md-3">
+				<div class="card border-0 shadow-sm stat-card">
+					<div class="card-body">
+						<div class="d-flex align-items-center">
+							<div class="stat-icon bg-info bg-opacity-10 text-info">
+								<i class="bi bi-calendar-week"></i>
+							</div>
+							<div class="ms-3 flex-grow-1">
+								<h6 class="text-muted mb-1 small">Tuần này</h6>
+								<h3 class="mb-0" th:text="${stats.weeklyCount}">0</h3>
+								<small class="text-muted">Tổng đơn</small>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="row">
+			<!-- Đơn hàng cần xử lý -->
+			<div class="col-lg-8">
+				<div class="card border-0 shadow-sm mb-4">
+					<div class="card-header bg-white border-bottom">
+						<div class="d-flex justify-content-between align-items-center">
+							<h5 class="mb-0">
+								<i class="bi bi-exclamation-circle text-warning"></i> Đơn hàng
+								cần xử lý
+							</h5>
+							<a th:href="@{/shipper/orders(status='Confirmed')}"
+								class="btn btn-sm btn-outline-primary"> Xem tất cả <i
+								class="bi bi-arrow-right"></i>
+							</a>
+						</div>
+					</div>
+					<div class="card-body p-0">
+						<div th:if="${pendingOrders.isEmpty()}"
+							class="text-center py-5 text-muted">
+							<i class="bi bi-inbox" style="font-size: 3rem;"></i>
+							<p class="mt-2">Không có đơn hàng cần xử lý</p>
+						</div>
+
+						<div class="list-group list-group-flush">
+							<div th:each="order : ${pendingOrders}"
+								class="list-group-item order-list-item">
+								<div class="row align-items-center">
+									<div class="col-auto">
+										<div class="bg-warning bg-opacity-10 text-warning rounded p-2">
+											<i class="bi bi-box-seam fs-4"></i>
+										</div>
+									</div>
+									<div class="col">
+										<div
+											class="d-flex justify-content-between align-items-start mb-1">
+											<div>
+												<strong>#<span th:text="${order.orderId}"></span></strong> <span
+													class="badge bg-warning text-dark ms-2"> <span
+													class="badge-dot bg-warning"></span> Đã gán cho bạn
+												</span>
+											</div>
+											<small class="text-muted"> <i class="bi bi-clock"></i>
+												<span
+												th:text="${#temporals.format(order.orderDate, 'dd/MM/yyyy HH:mm')}"></span>
+											</small>
+										</div>
+										<div class="mb-2">
+											<i class="bi bi-person"></i> <strong
+												th:text="${order.customerName}"></strong> - <span
+												th:text="${order.customerPhone}"></span>
+										</div>
+										<div class="mb-2">
+											<i class="bi bi-geo-alt"></i> <small class="text-muted"
+												th:text="${order.shippingAddress}"></small>
+										</div>
+										<div class="d-flex justify-content-between align-items-center">
+											<span class="text-success fw-bold"> <i
+												class="bi bi-cash"></i> <span
+												th:text="${#numbers.formatDecimal(order.grandTotal, 0, 'COMMA', 0, 'POINT')}"></span>đ
+											</span> <a th:href="@{/shipper/orders/{id}(id=${order.orderId})}"
+												class="btn btn-sm btn-primary"> <i
+												class="bi bi-arrow-right"></i> Xử lý
+											</a>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Đơn đang giao -->
+				<div class="card border-0 shadow-sm">
+					<div class="card-header bg-white border-bottom">
+						<div class="d-flex justify-content-between align-items-center">
+							<h5 class="mb-0">
+								<i class="bi bi-truck text-primary"></i> Đơn đang giao
+							</h5>
+							<a th:href="@{/shipper/orders(status='Delivering')}"
+								class="btn btn-sm btn-outline-primary"> Xem tất cả <i
+								class="bi bi-arrow-right"></i>
+							</a>
+						</div>
+					</div>
+					<div class="card-body p-0">
+						<div th:if="${deliveringOrders.isEmpty()}"
+							class="text-center py-5 text-muted">
+							<i class="bi bi-truck" style="font-size: 3rem;"></i>
+							<p class="mt-2">Không có đơn hàng đang giao</p>
+						</div>
+
+						<div class="list-group list-group-flush">
+							<div th:each="order : ${deliveringOrders}"
+								class="list-group-item order-list-item">
+								<div class="row align-items-center">
+									<div class="col-auto">
+										<div class="bg-primary bg-opacity-10 text-primary rounded p-2">
+											<i class="bi bi-truck fs-4"></i>
+										</div>
+									</div>
+									<div class="col">
+										<div
+											class="d-flex justify-content-between align-items-start mb-1">
+											<div>
+												<strong>#<span th:text="${order.orderId}"></span></strong> <span
+													class="badge bg-primary ms-2"> <span
+													class="badge-dot bg-white"></span> Đang giao
+												</span>
+											</div>
+											<small class="text-muted"> <i class="bi bi-clock"></i>
+												<span
+												th:text="${#temporals.format(order.orderDate, 'dd/MM/yyyy HH:mm')}"></span>
+											</small>
+										</div>
+										<div class="mb-2">
+											<i class="bi bi-person"></i> <strong
+												th:text="${order.recipientName}"></strong> - <span
+												th:text="${order.recipientPhone}"></span>
+										</div>
+										<div class="mb-2">
+											<i class="bi bi-geo-alt"></i> <small class="text-muted"
+												th:text="${order.shippingAddress}"></small>
+										</div>
+										<div class="d-flex justify-content-between align-items-center">
+											<div>
+												<span class="badge bg-light text-dark"> <i
+													class="bi bi-box"></i> <span th:text="${order.totalItems}"></span>
+													sản phẩm
+												</span> <span class="text-success fw-bold ms-2"> <i
+													class="bi bi-cash"></i> <span
+													th:text="${#numbers.formatDecimal(order.grandTotal, 0, 'COMMA', 0, 'POINT')}"></span>đ
+												</span>
+											</div>
+											<a th:href="@{/shipper/orders/{id}(id=${order.orderId})}"
+												class="btn btn-sm btn-success"> <i
+												class="bi bi-check-circle"></i> Cập nhật
+											</a>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Sidebar -->
+			<div class="col-lg-4">
+				<!-- Thành tích -->
+				<div class="card border-0 shadow-sm mb-4">
+					<div class="card-header bg-white border-bottom">
+						<h5 class="mb-0">
+							<i class="bi bi-trophy text-warning"></i> Thành tích
+						</h5>
+					</div>
+					<div class="card-body">
+						<!-- Tổng đơn hoàn thành -->
+						<div class="mb-3">
+							<div class="d-flex justify-content-between mb-1">
+								<small class="text-muted">Tổng đơn hoàn thành</small> <strong
+									th:text="${stats.totalCompletedCount}">0</strong>
+							</div>
+							<div class="progress progress-thin">
+								<div class="progress-bar bg-success" role="progressbar"
+									style="width: 100%"></div>
+							</div>
+						</div>
+
+						<!-- Tỷ lệ thành công -->
+						<div class="mb-3">
+							<div class="d-flex justify-content-between mb-1">
+								<small class="text-muted">Tỷ lệ giao thành công</small> <strong>
+									<span th:text="${stats.successRate}">0</span>%
+								</strong>
+							</div>
+							<div class="progress progress-thin">
+								<div class="progress-bar bg-info" role="progressbar"
+									th:style="'width: ' + ${stats.successRate} + '%'"></div>
+							</div>
+						</div>
+
+						<!-- Số ngày làm việc -->
+						<div class="mb-0">
+							<div class="d-flex justify-content-between mb-1">
+								<small class="text-muted">Số ngày làm việc</small> <strong>
+									<span th:text="${stats.workingDays}">0</span> ngày
+								</strong>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Hướng dẫn nhanh -->
+				<div class="card border-0 shadow-sm mb-4">
+					<div class="card-header bg-white border-bottom">
+						<h5 class="mb-0">
+							<i class="bi bi-lightbulb text-info"></i> Hướng dẫn nhanh
+						</h5>
+					</div>
+					<div class="card-body">
+						<div class="mb-3">
+							<div class="d-flex align-items-start">
+								<div
+									class="bg-primary bg-opacity-10 text-primary rounded p-2 me-3">
+									<i class="bi bi-1-circle"></i>
+								</div>
+								<div>
+									<strong>Nhận đơn</strong>
+									<p class="small text-muted mb-0">Xác nhận nhận đơn hàng
+										được gán</p>
+								</div>
+							</div>
+						</div>
+
+						<div class="mb-3">
+							<div class="d-flex align-items-start">
+								<div
+									class="bg-primary bg-opacity-10 text-primary rounded p-2 me-3">
+									<i class="bi bi-2-circle"></i>
+								</div>
+								<div>
+									<strong>Lấy hàng</strong>
+									<p class="small text-muted mb-0">Đến shop lấy hàng và cập
+										nhật trạng thái</p>
+								</div>
+							</div>
+						</div>
+
+						<div class="mb-3">
+							<div class="d-flex align-items-start">
+								<div
+									class="bg-primary bg-opacity-10 text-primary rounded p-2 me-3">
+									<i class="bi bi-3-circle"></i>
+								</div>
+								<div>
+									<strong>Giao hàng</strong>
+									<p class="small text-muted mb-0">Giao hàng cho khách và cập
+										nhật</p>
+								</div>
+							</div>
+						</div>
+
+						<div class="mb-0">
+							<div class="d-flex align-items-start">
+								<div
+									class="bg-success bg-opacity-10 text-success rounded p-2 me-3">
+									<i class="bi bi-check-circle"></i>
+								</div>
+								<div>
+									<strong>Hoàn thành</strong>
+									<p class="small text-muted mb-0">Xác nhận đã giao thành
+										công</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Liên hệ hỗ trợ -->
+				<div class="card border-0 shadow-sm bg-light">
+					<div class="card-body text-center">
+						<i class="bi bi-headset fs-1 text-primary mb-3"></i>
+						<h6>Cần hỗ trợ?</h6>
+						<p class="small text-muted mb-3">Liên hệ với shop nếu bạn gặp
+							vấn đề</p>
+						<a th:href="'tel:' + ${shipperInfo.shopPhone}"
+							class="btn btn-primary btn-sm w-100"> <i
+							class="bi bi-telephone"></i> Gọi shop
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+
+	</div>
+</body>
+</html>

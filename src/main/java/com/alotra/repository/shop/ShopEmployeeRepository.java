@@ -39,4 +39,6 @@ public interface ShopEmployeeRepository extends JpaRepository<ShopEmployee, Inte
     
     // Lấy tất cả employee active của shop
     List<ShopEmployee> findByShop_ShopIdAndStatus(Integer shopId, String status);
+    
+    Optional<ShopEmployee> findFirstByUser_IdAndStatus(Integer userId, String status);
 }

@@ -20,4 +20,5 @@ public class ShopRegistrationDTO {
     @NotBlank(message = "Số điện thoại không được để trống.")
     @Size(min = 10, max = 15, message = "Số điện thoại không hợp lệ.")
     private String phoneNumber;
+    
 }

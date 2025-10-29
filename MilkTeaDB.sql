@@ -1007,7 +1007,9 @@ INSERT INTO dbo.Roles (RoleID, RoleName, Description) VALUES
 (1, 'ADMIN', N'Quản trị viên hệ thống'),
 (2, 'CUSTOMER', N'Khách hàng'),
 (3, 'VENDOR', N'Người bán hàng'),
-(4, 'SHIPPER', N'Nhân viên giao hàng');
+(4, 'SHIPPER', N'Nhân viên giao hàng của shop');
+(5, 'STAFF', N'Nhân viên của shop');
+
 
 -- 2. Users (default password: 123456789)
 -- Password hash generated with BCrypt
