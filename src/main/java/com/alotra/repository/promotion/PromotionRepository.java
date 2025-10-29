@@ -68,5 +68,7 @@ public interface PromotionRepository extends JpaRepository<Promotion, Integer> {
     boolean existsByPromoCode(String promoCode);
 
 	Promotion findByPromoCode(String promoCode);
+	
+	List<Promotion> findByStatus(Integer status);
 
 }

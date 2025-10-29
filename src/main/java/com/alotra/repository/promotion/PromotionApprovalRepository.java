@@ -3,11 +3,16 @@ package com.alotra.repository.promotion;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.alotra.entity.product.ProductApproval;
 import com.alotra.entity.promotion.PromotionApproval;
 
 @Repository
@@ -36,4 +41,18 @@ public interface PromotionApprovalRepository extends JpaRepository<PromotionAppr
     List<PromotionApproval> findByPromotion_PromotionIdAndStatus(Integer promotionId, String status);
     
     Optional<PromotionApproval> findTopByPromotion_PromotionIdOrderByRequestedAtDesc(Integer promotionId);
+    
+    Page<PromotionApproval> findByStatus(String status, Pageable pageable);
+    
+    @Transactional
+	@Modifying
+	@Query(value = "EXEC sp_ApprovePromotionChange @ApprovalID = :approvalId, @ReviewedByUserID = :reviewedByUserId", nativeQuery = true)
+	void approveProductChange(@Param("approvalId") Integer approvalId, @Param("reviewedByUserId") Integer reviewedByUserId);
+
+	@Transactional
+    @Modifying
+    @Query(value = "EXEC sp_RejectPromotionChange @ApprovalID = :approvalId, @ReviewedByUserID = :reviewedByUserId, @RejectionReason = :reason", nativeQuery = true)
+    void rejectProductChange(@Param("approvalId") Integer approvalId,
+                             @Param("reviewedByUserId") Integer reviewedByUserId,
+                             @Param("reason") String rejectionReason);
 }
