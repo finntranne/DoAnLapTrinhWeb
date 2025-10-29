@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat với Shop</title>
+
+  <!-- Bootstrap Icons & AdminLTE -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/styles/overlayscrollbars.min.css" />
+  <link rel="stylesheet" href="./css/adminlte.css" />
+
+  <style>
+    body {
+      background: #f8f9fa;
+      font-family: "Source Sans 3", sans-serif;
+    }
+
+    .card {
+      width: 500px;
+      margin: 40px auto;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+
+    .direct-chat-messages {
+      height: 500px; /* 🟢 Giảm chiều cao */
+      overflow-y: auto;
+      background: #fff;
+      padding: 10px;
+    }
+
+    .direct-chat-msg {
+      margin-bottom: 10px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .direct-chat-msg.end {
+      align-items: flex-end;
+    }
+
+    .direct-chat-text {
+      display: inline-block;
+      max-width: 80%; /* 🟢 Giới hạn độ rộng tin nhắn */
+      padding: 8px 12px;
+      border-radius: 15px;
+      word-wrap: break-word;
+      font-size: 15px;
+      line-height: 1.4;
+    }
+
+    .direct-chat-msg.end .direct-chat-text {
+      background-color: #28a745;
+      color: white;
+      border-top-right-radius: 0;
+    }
+
+    .direct-chat-msg:not(.end) .direct-chat-text {
+      background-color: #e9ecef;
+      color: #333;
+      border-top-left-radius: 0;
+    }
+
+    .direct-chat-infos {
+      font-size: 12px;
+      color: gray;
+      margin-bottom: 2px;
+    }
+
+    .card-footer {
+      background: #fff;
+      border-top: 1px solid #ddd;
+    }
+  </style>
+</head>
+
+<body class="hold-transition layout-top-nav bg-body-tertiary">
+
+<div class="card direct-chat direct-chat-success">
+  <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+    <h3 class="card-title mb-0">💬 Chat với Shop</h3>
+   
+  </div>
+
+  <!-- Chat Body -->
+  <div class="card-body">
+    <div id="chatBox" class="direct-chat-messages">
+      <!-- Lịch sử chat -->
+      <div th:each="msg : ${chatHistory}"
+           th:classappend="${msg.senderType == 'CUSTOMER'} ? 'direct-chat-msg end' : 'direct-chat-msg'">
+        <div class="direct-chat-infos">
+          <span th:text="${msg.senderType == 'CUSTOMER'} ? 'Bạn' : 'Shop'"></span> •
+          <span th:text="${#temporals.format(msg.timestamp, 'HH:mm')}"></span>
+        </div>
+        <div class="direct-chat-text" th:text="${msg.content}"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat Footer -->
+  <div class="card-footer">
+    <div class="input-group">
+      <input id="messageInput" type="text" placeholder="Nhập tin nhắn..." class="form-control">
+      <span class="input-group-text bg-success text-white" id="sendBtn" style="cursor:pointer;">Gửi</span>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden IDs -->
+<input type="hidden" id="shopId" th:value="${shopId}">
+<input type="hidden" id="customerId" th:value="${customerId}">
+
+<!-- WebSocket -->
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+
+<script th:inline="javascript">
+  let stompClient = null;
+  const shopId = /*[[${shopId}]]*/ 0;
+  const customerId = /*[[${customerId}]]*/ 0;
+
+  function connectWebSocket() {
+    const socket = new SockJS("/ws-chat");
+    stompClient = Stomp.over(socket);
+
+    stompClient.connect({}, function () {
+      console.log("✅ Customer connected to WebSocket");
+      stompClient.subscribe(`/topic/customer/${customerId}`, function (message) {
+        const msg = JSON.parse(message.body);
+        showMessage(msg, msg.type === 'CUSTOMER');
+      });
+    });
+  }
+
+  function sendMessage() {
+    const input = document.getElementById("messageInput");
+    const content = input.value.trim();
+    if (!content) return;
+
+    const msg = {
+      from: customerId,
+      to: shopId,
+      content: content,
+      type: "CUSTOMER"
+    };
+
+    stompClient.send("/app/sendMessage", {}, JSON.stringify(msg));
+    showMessage(msg, true);
+    input.value = "";
+  }
+
+  function showMessage(msg, mine) {
+    const chatBox = document.getElementById("chatBox");
+    const div = document.createElement("div");
+    div.className = mine ? "direct-chat-msg end" : "direct-chat-msg";
+    div.innerHTML = `
+      <div class="direct-chat-infos">
+        ${mine ? "Bạn" : "Shop"} • ${new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
+      </div>
+      <div class="direct-chat-text">${msg.content}</div>
+    `;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  document.getElementById("sendBtn").addEventListener("click", sendMessage);
+  document.getElementById("messageInput").addEventListener("keypress", e => {
+    if (e.key === "Enter") sendMessage();
+  });
+
+  window.onload = connectWebSocket;
+</script>
+
+</body>
+</html>

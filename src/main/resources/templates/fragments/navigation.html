@@ -2,259 +2,255 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 
 <div th:fragment="pageNavigation">
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-theme py-2">
-        <div class="container">
-            <a class="navbar-brand" href="/">
-                <img th:src="@{/images/logo.png}" alt="Logo" style="height: 60px;">
-            </a>
+	<nav class="navbar navbar-expand-lg navbar-dark navbar-theme py-2">
+		<div class="container">
+			<a class="navbar-brand" href="/"> <img
+				th:src="@{/images/logo.png}" alt="Logo" style="height: 60px;">
+			</a>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+			<button class="navbar-toggler" type="button"
+				data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+				<span class="navbar-toggler-icon"></span>
+			</button>
 
-            <div class="collapse navbar-collapse" id="mainNavbar">
-                <form class="search-bar mx-auto my-2 my-lg-0" th:action="@{/search}" method="GET">
-                    <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Tìm kiếm sản phẩm..." 
-                               name="keyword" th:value="${keyword}">
-                        <button class="btn btn-light" type="submit">
-                            <i class="fa fa-search text-muted"></i>
-                        </button>
-                    </div>
-                </form>
+			<div class="collapse navbar-collapse" id="mainNavbar">
+				<form class="search-bar mx-auto my-2 my-lg-0" th:action="@{/search}"
+					method="GET">
+					<div class="input-group">
+						<input type="text" class="form-control"
+							placeholder="Tìm kiếm sản phẩm..." name="keyword"
+							th:value="${keyword}">
+						<button class="btn btn-light" type="submit">
+							<i class="fa fa-search text-muted"></i>
+						</button>
+					</div>
+				</form>
 
-                <ul class="navbar-nav ms-auto align-items-center">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link text-white d-flex align-items-center dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fa-solid fa-store fa-2x"></i>
-                            <div class="ms-2">
-                                <span class="text small d-block">Cửa hàng</span>
-                                <span class="fw-bold d-block" 
-                                    th:text="${selectedShopName ?: 'Chọn cửa hàng'}">
-                                </span>
-                            </div>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end shop-select-dropdown">
-                            <!-- ✅ SHOP: Tất cả cửa hàng -->
-                            <li>
-                                <a class="dropdown-item shop-select-item" 
-                                   href="#"
-                                   data-shop-id="0" 
-                                   data-shop-name="Tất cả cửa hàng"
-                                   onclick="selectShop(0, 'Tất cả cửa hàng')"> 
-                                   <i class="fa-solid fa-globe me-2"></i>Xem tất cả sản phẩm
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            
-                            <!-- ✅ SHOP LOOP: Sửa th:onclick thành data attributes -->
-                            <li th:each="shop : ${shops}">
-                                <a class="dropdown-item shop-select-item" 
-                                   href="#"
-                                   th:data-shop-id="${shop.shopId}" 
-                                   th:data-shop-name="${shop.shopName}"
-                                   th:text="${shop.shopName}"
-                                   onclick="selectShop(this.dataset.shopId, this.dataset.shopName)">
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                    
-                    <li class="nav-item" th:if="${#authorization.expression('!isAuthenticated()')}">
-                        <a href="/login" class="nav-link text-white d-flex align-items-center">
-                            <i class="fa-solid fa-user fa-2x"></i>
-                            <div class="ms-2">
-                                <span class="text small d-block">Tài khoản</span>
-                                <span class="fw-bold d-block">Đăng nhập</span>
-                            </div>
-                        </a>
-                    </li>
+				<ul class="navbar-nav ms-auto align-items-center">
+					<li class="nav-item dropdown"><a
+						class="nav-link text-white d-flex align-items-center dropdown-toggle"
+						href="#" role="button" data-bs-toggle="dropdown"> <i
+							class="fa-solid fa-store fa-2x"></i>
+							<div class="ms-2">
+								<span class="text small d-block">Cửa hàng</span> <span
+									class="fw-bold d-block"
+									th:text="${selectedShopName ?: 'Chọn cửa hàng'}"> </span>
+							</div>
+					</a>
+						<ul class="dropdown-menu dropdown-menu-end shop-select-dropdown">
+							<!-- ✅ SHOP: Tất cả cửa hàng -->
+							<li><a class="dropdown-item shop-select-item" href="#"
+								data-shop-id="0" data-shop-name="Tất cả cửa hàng"
+								onclick="selectShop(0, 'Tất cả cửa hàng')"> <i
+									class="fa-solid fa-globe me-2"></i>Xem tất cả sản phẩm
+							</a></li>
+							<li><hr class="dropdown-divider"></li>
 
-                    <li class="nav-item dropdown" th:if="${#authorization.expression('isAuthenticated()')}">
-                        <a class="nav-link text-white d-flex align-items-center dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fa-solid fa-user-check fa-2x"></i>
-                            <div class="ms-2">
-                                <span class="text small d-block">Xin chào,</span>
-                                <span class="fw-bold d-block" th:text="${#authentication.name}"></span>
-                            </div>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="/user/profile">
-                            <i class="fa-solid fa-address-card me-2"></i>Hồ sơ của tôi
-                        </a></li>
-                        <li><a class="dropdown-item" href="/shop/register">
-                            <i class="fa-solid fa-store me-2"></i>Đăng ký Shop
-                        </a></li>
-                        <li><a class="dropdown-item" href="/user/orders">
-                            <i class="fa-solid fa-receipt me-2"></i>Lịch sử mua hàng
-                        </a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="/logout">
-                            <i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất
-                        </a></li>
-                    </ul>
-                    </li>
-                    
-                    <li class="nav-item">
-                        <a href="/cart" class="sticky-nav-item position-relative">
-                            <i class="fa-solid fa-cart-shopping"></i>
-                            <div class="nav-text">
-                                <strong>Giỏ hàng</strong>
-                            </div>
-                            <span class="cart-badge"
-                                  th:if="${cartItemCount != null and cartItemCount > 0}"
-                                  th:text="${cartItemCount}">
-                            </span>
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+							<!-- ✅ SHOP LOOP: Sửa th:onclick thành data attributes -->
+							<li th:each="shop : ${shops}"><a
+								class="dropdown-item shop-select-item" href="#"
+								th:data-shop-id="${shop.shopId}"
+								th:data-shop-name="${shop.shopName}" th:text="${shop.shopName}"
+								onclick="selectShop(this.dataset.shopId, this.dataset.shopName)">
+							</a></li>
+						</ul></li>
 
-    <nav class="main-nav py-2">
-        <div class="container d-flex justify-content-start align-items-center">
-            <div class="dropdown">
-                <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    <i class="fa-solid fa-bars me-2"></i>
-                    Danh mục sản phẩm
-                </button>
-                <ul class="dropdown-menu" th:if="${categories != null}">
-                    <li th:each="category : ${categories}">
-                        <a class="dropdown-item" 
-                           th:href="@{/categories/{id}(id=${category.categoryID})}" 
-                           th:text="${category.categoryName}"></a>
-                    </li>
-                </ul>
-            </div>
+					<li class="nav-item"
+						th:if="${#authorization.expression('!isAuthenticated()')}"><a
+						href="/login"
+						class="nav-link text-white d-flex align-items-center"> <i
+							class="fa-solid fa-user fa-2x"></i>
+							<div class="ms-2">
+								<span class="text small d-block">Tài khoản</span> <span
+									class="fw-bold d-block">Đăng nhập</span>
+							</div>
+					</a></li>
 
-            <ul class="nav main-nav-links ms-4">
-                <li class="nav-item me-4 d-flex align-items-center">
-                    <i class="fa-solid fa-rotate-left me-2"></i>
-                    <a class="nav-link fw-bold p-0" href="#">Chính sách đổi trả</a>
-                </li>
-                <li class="nav-item me-4 d-flex align-items-center">
-                    <i class="fa-solid fa-phone me-2"></i>
-                    <a class="nav-link fw-bold p-0" href="#">Liên hệ</a>
-                </li>
-                <li class="nav-item d-flex align-items-center">
-                    <i class="fa-solid fa-newspaper me-2"></i>
-                    <a class="nav-link fw-bold p-0" href="#">Tin tức</a>
-                </li>
-            </ul>
-        </div>
-    </nav>
+					<li class="nav-item dropdown"
+						th:if="${#authorization.expression('isAuthenticated()')}"><a
+						class="nav-link text-white d-flex align-items-center dropdown-toggle"
+						href="#" role="button" data-bs-toggle="dropdown"> <i
+							class="fa-solid fa-user-check fa-2x"></i>
+							<div class="ms-2">
+								<span class="text small d-block">Xin chào,</span> <span
+									class="fw-bold d-block" th:text="${#authentication.name}"></span>
+							</div>
+					</a>
+						<ul class="dropdown-menu dropdown-menu-end">
+							<li><a class="dropdown-item" href="/user/profile"> <i
+									class="fa-solid fa-address-card me-2"></i>Hồ sơ của tôi
+							</a></li>
+							<li><a class="dropdown-item" href="/shop/register"> <i
+									class="fa-solid fa-store me-2"></i>Đăng ký Shop
+							</a></li>
+							<li><a class="dropdown-item" href="/user/orders"> <i
+									class="fa-solid fa-receipt me-2"></i>Lịch sử mua hàng
+							</a></li>
+							<li><hr class="dropdown-divider"></li>
+							<li><a class="dropdown-item" href="/logout"> <i
+									class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất
+							</a></li>
+						</ul></li>
 
-    <!-- STICKY NAV -->
-    <nav class="sticky-nav" id="stickyNav">
-        <div class="container">
-            <div class="sticky-nav-left">
-                <div class="dropdown">
-                    <button class="btn-category dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                        <i class="fa-solid fa-bars me-2"></i>
-                        <span>Danh mục sản phẩm</span>
-                    </button>
-                    <ul class="dropdown-menu" th:if="${categories != null}">
-                        <li th:each="category : ${categories}">
-                            <a class="dropdown-item" 
-                           th:href="@{/categories/{id}(id=${category.categoryID})}" 
-                           th:text="${category.categoryName}"></a>
-                        </li>
-                    </ul>
-                </div>
-                
-                <form class="sticky-search-bar" th:action="@{/search}" method="GET">
-                    <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Tìm kiếm sản phẩm..."
-                               name="keyword" th:value="${keyword}">
-                        <button class="btn-search" type="submit">
-                            <i class="fa fa-search"></i>
-                        </button>
-                    </div>
-                </form>
-            </div>
-            
-            <div class="sticky-nav-right">
-                <div class="dropdown">
-                    <a class="sticky-nav-item dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                        <i class="fa-solid fa-store"></i>
-                        <div class="nav-text">
-                            <span class="small">Cửa hàng</span>
-                            <strong th:text="${selectedShopName ?: 'Chọn cửa hàng'}"></strong>
-                        </div>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end shop-select-dropdown">
-                        <!-- ✅ SHOP: Tất cả cửa hàng -->
-                        <li>
-                            <a class="dropdown-item shop-select-item" 
-                               href="#"
-                               data-shop-id="0" 
-                               data-shop-name="Tất cả cửa hàng"
-                               onclick="selectShop(0, 'Tất cả cửa hàng')">
-                                <i class="fa-solid fa-globe me-2"></i>Xem tất cả sản phẩm
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider"></li>
-                        
-                        <!-- ✅ SHOP LOOP: Sửa th:onclick thành data attributes -->
-                        <li th:each="shop : ${shops}">
-                            <a class="dropdown-item shop-select-item" 
-                               href="#"
-                               th:data-shop-id="${shop.shopId}" 
-                               th:data-shop-name="${shop.shopName}"
-                               th:text="${shop.shopName}"
-                               onclick="selectShop(this.dataset.shopId, this.dataset.shopName)">
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-                
-                <a href="/login" class="sticky-nav-item" th:if="${#authorization.expression('!isAuthenticated()')}">
-                    <i class="fa-solid fa-user"></i>
-                    <div class="nav-text">
-                        <span class="small">Tài khoản</span>
-                        <strong>Đăng nhập</strong>
-                    </div>
-                </a>
-                
-                <div class="dropdown" th:if="${#authorization.expression('isAuthenticated()')}">
-                    <a class="sticky-nav-item dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                        <i class="fa-solid fa-user-check"></i>
-                        <div class="nav-text">
-                            <span class="small">Xin chào,</span>
-                            <strong th:text="${#authentication.name}">User</strong>
-                        </div>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="/user/profile">
-                            <i class="fa-solid fa-address-card me-2"></i>Hồ sơ của tôi
-                        </a></li>
-                        <li><a class="dropdown-item" href="/shop/register">
-                            <i class="fa-solid fa-store me-2"></i>Đăng ký Shop
-                        </a></li>
-                        <li><a class="dropdown-item" href="/user/orders">
-                            <i class="fa-solid fa-receipt me-2"></i>Lịch sử mua hàng
-                        </a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="/logout">
-                            <i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất
-                        </a></li>
-                    </ul>
-                </div>
-                
-                <a href="/cart" class="sticky-nav-item position-relative">
-                    <i class="fa-solid fa-cart-shopping"></i>
-                    <div class="nav-text">
-                        <strong>Giỏ hàng</strong>
-                    </div>
-                    <span class="cart-badge"
-                          th:if="${cartItemCount != null and cartItemCount > 0}"
-                          th:text="${cartItemCount}">
-                    </span>
-                </a>
-            </div>
-        </div>
-    </nav>
+					<li class="nav-item"><a href="/cart"
+						class="sticky-nav-item position-relative"> <i
+							class="fa-solid fa-cart-shopping"></i>
+							<div class="nav-text">
+								<strong>Giỏ hàng</strong>
+							</div> <span class="cart-badge"
+							th:if="${cartItemCount != null and cartItemCount > 0}"
+							th:text="${cartItemCount}"> </span>
+					</a></li>
+				</ul>
+			</div>
+		</div>
+	</nav>
+
+	<nav class="main-nav py-2">
+		<div class="container d-flex justify-content-start align-items-center">
+			<div class="dropdown">
+				<button class="btn dropdown-toggle" type="button"
+					data-bs-toggle="dropdown">
+					<i class="fa-solid fa-bars me-2"></i> Danh mục sản phẩm
+				</button>
+				<ul class="dropdown-menu" th:if="${categories != null}">
+					<li th:each="category : ${categories}"><a
+						class="dropdown-item"
+						th:href="@{/categories/{id}(id=${category.categoryID})}"
+						th:text="${category.categoryName}"></a></li>
+				</ul>
+			</div>
+
+			<ul class="nav main-nav-links ms-4">
+				<li class="nav-item me-4 d-flex align-items-center"><i
+					class="fa-solid fa-rotate-left me-2"></i> <a
+					class="nav-link fw-bold p-0" href="#">Chính sách đổi trả</a></li>
+				<li class="nav-item dropdown me-4 d-flex align-items-center">
+					<div class="dropdown">
+						<button class="btn dropdown-toggle" type="button"
+							data-bs-toggle="dropdown">
+							<i class="fa-solid fa-message me-2"></i>Chat với Shop
+						</button>
+						<ul class="dropdown-menu" th:if="${shops != null}">
+							<li th:each="shop : ${shops}"><a
+								class="dropdown-item"
+								th:href="@{'/chat'(customerId=${#authentication.principal.id}, shopId=${shop.shopId})}"
+               					th:text="${shop.shopName}"></a></li>
+						</ul>
+					</div>
+
+				</li>
+
+				<li class="nav-item d-flex align-items-center"><i
+					class="fa-solid fa-newspaper me-2"></i> <a
+					class="nav-link fw-bold p-0" href="#">Tin tức</a></li>
+			</ul>
+		</div>
+	</nav>
+
+	<!-- STICKY NAV -->
+	<nav class="sticky-nav" id="stickyNav">
+		<div class="container">
+			<div class="sticky-nav-left">
+				<div class="dropdown">
+					<button class="btn-category dropdown-toggle" type="button"
+						data-bs-toggle="dropdown">
+						<i class="fa-solid fa-bars me-2"></i> <span>Danh mục sản
+							phẩm</span>
+					</button>
+					<ul class="dropdown-menu" th:if="${categories != null}">
+						<li th:each="category : ${categories}"><a
+							class="dropdown-item"
+							th:href="@{/categories/{id}(id=${category.categoryID})}"
+							th:text="${category.categoryName}"></a></li>
+					</ul>
+				</div>
+
+				<form class="sticky-search-bar" th:action="@{/search}" method="GET">
+					<div class="input-group">
+						<input type="text" class="form-control"
+							placeholder="Tìm kiếm sản phẩm..." name="keyword"
+							th:value="${keyword}">
+						<button class="btn-search" type="submit">
+							<i class="fa fa-search"></i>
+						</button>
+					</div>
+				</form>
+			</div>
+
+			<div class="sticky-nav-right">
+				<div class="dropdown">
+					<a class="sticky-nav-item dropdown-toggle" href="#" role="button"
+						data-bs-toggle="dropdown"> <i class="fa-solid fa-store"></i>
+						<div class="nav-text">
+							<span class="small">Cửa hàng</span> <strong
+								th:text="${selectedShopName ?: 'Chọn cửa hàng'}"></strong>
+						</div>
+					</a>
+					<ul class="dropdown-menu dropdown-menu-end shop-select-dropdown">
+						<!-- ✅ SHOP: Tất cả cửa hàng -->
+						<li><a class="dropdown-item shop-select-item" href="#"
+							data-shop-id="0" data-shop-name="Tất cả cửa hàng"
+							onclick="selectShop(0, 'Tất cả cửa hàng')"> <i
+								class="fa-solid fa-globe me-2"></i>Xem tất cả sản phẩm
+						</a></li>
+						<li><hr class="dropdown-divider"></li>
+
+						<!-- ✅ SHOP LOOP: Sửa th:onclick thành data attributes -->
+						<li th:each="shop : ${shops}"><a
+							class="dropdown-item shop-select-item" href="#"
+							th:data-shop-id="${shop.shopId}"
+							th:data-shop-name="${shop.shopName}" th:text="${shop.shopName}"
+							onclick="selectShop(this.dataset.shopId, this.dataset.shopName)">
+						</a></li>
+					</ul>
+				</div>
+
+				<a href="/login" class="sticky-nav-item"
+					th:if="${#authorization.expression('!isAuthenticated()')}"> <i
+					class="fa-solid fa-user"></i>
+					<div class="nav-text">
+						<span class="small">Tài khoản</span> <strong>Đăng nhập</strong>
+					</div>
+				</a>
+
+				<div class="dropdown"
+					th:if="${#authorization.expression('isAuthenticated()')}">
+					<a class="sticky-nav-item dropdown-toggle" href="#" role="button"
+						data-bs-toggle="dropdown"> <i class="fa-solid fa-user-check"></i>
+						<div class="nav-text">
+							<span class="small">Xin chào,</span> <strong
+								th:text="${#authentication.name}">User</strong>
+						</div>
+					</a>
+					<ul class="dropdown-menu dropdown-menu-end">
+						<li><a class="dropdown-item" href="/user/profile"> <i
+								class="fa-solid fa-address-card me-2"></i>Hồ sơ của tôi
+						</a></li>
+						<li><a class="dropdown-item" href="/shop/register"> <i
+								class="fa-solid fa-store me-2"></i>Đăng ký Shop
+						</a></li>
+						<li><a class="dropdown-item" href="/user/orders"> <i
+								class="fa-solid fa-receipt me-2"></i>Lịch sử mua hàng
+						</a></li>
+						<li><hr class="dropdown-divider"></li>
+						<li><a class="dropdown-item" href="/logout"> <i
+								class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất
+						</a></li>
+					</ul>
+				</div>
+
+				<a href="/cart" class="sticky-nav-item position-relative"> <i
+					class="fa-solid fa-cart-shopping"></i>
+					<div class="nav-text">
+						<strong>Giỏ hàng</strong>
+					</div> <span class="cart-badge"
+					th:if="${cartItemCount != null and cartItemCount > 0}"
+					th:text="${cartItemCount}"> </span>
+				</a>
+			</div>
+		</div>
+	</nav>
 </div>
 
 </html>

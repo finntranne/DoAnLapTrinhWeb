@@ -63,7 +63,7 @@ public class WebSecurityConfig {
                         "/products/**",             
                         "/api/auth/**", // Chỉ cho phép api/auth
                         "/api/debug/**",
-                        "/css/**", "/js/**", "/images/**", "/assets/**"
+                        "/css/**", "/js/**", "/images/**", "/assets/**", "/ws/**"
                         // ĐÃ XÓA /vendor/** khỏi đây
                     ).permitAll()
                     
