@@ -316,11 +316,9 @@
 								<div class="col-md-6" id="usageLimitField"
 									style="display: none;">
 									<label for="usageLimit" class="form-label">Số lượt sử
-										dụng tối đa</label> <input type="number" class="form-control"
+										dụng tối đa</label> <input type="number" class="form-control" min="0"
 										id="usageLimit" th:field="*{usageLimit}" placeholder="0"
-										min="1" value="0">
-									<div class="form-text">Để 0 hoặc bỏ trống = không giới
-										hạn</div>
+										value="0">
 								</div>
 							</div>
 						</div>
@@ -409,227 +407,271 @@
 		</form>
 
 		<th:block layout:fragment="scripts">
+			<!-- Chỉ cần thay thế phần JavaScript validation trong form.html -->
 			<script th:inline="javascript">
-		        /*<![CDATA[*/
-		        
-		        // Format number with thousand separators
-				function formatNumber(num) {
-					return new Intl.NumberFormat('vi-VN').format(num);
-				}
+/*<![CDATA[*/
 
-				// Format datetime
-				function formatDateTime(dateStr) {
-					if (!dateStr) return '---';
-					const date = new Date(dateStr);
-					return date.toLocaleString('vi-VN', {
-						day: '2-digit',
-						month: '2-digit',
-						year: 'numeric',
-						hour: '2-digit',
-						minute: '2-digit'
-					});
-				}
-				
-				// Toggle discount fields based on type
-				function toggleDiscountFields() {
-					const discountType = document.getElementById('discountType').value;
-					const maxDiscountField = document.getElementById('maxDiscountField');
-					const discountValueUnit = document.getElementById('discountValueUnit');
-					const discountValueHelp = document.getElementById('discountValueHelp');
-					const discountValue = document.getElementById('discountValue');
+// Format number with thousand separators
+function formatNumber(num) {
+    return new Intl.NumberFormat('vi-VN').format(num);
+}
 
-					if (discountType === 'PERCENTAGE') {
-						maxDiscountField.style.display = 'block';
-						discountValueUnit.textContent = '%';
-						discountValueHelp.textContent = 'Nhập phần trăm giảm giá (0-100)';
-						discountValue.max = 100;
-						discountValue.placeholder = '0-100';
-					} else if (discountType === 'FIXED') {
-						maxDiscountField.style.display = 'none';
-						discountValueUnit.textContent = 'VNĐ';
-						discountValueHelp.textContent = 'Nhập số tiền giảm cố định';
-						discountValue.max = '';
-						discountValue.placeholder = '0';
-						document.getElementById('maxDiscountAmount').value = '';
-					}
+// Format datetime
+function formatDateTime(dateStr) {
+    if (!dateStr) return '---';
+    const date = new Date(dateStr);
+    return date.toLocaleString('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
 
-					updatePreview();
-				}
-				
-				// Toggle usage limit field
-				function toggleUsageLimit() {
-					const hasLimit = document.getElementById('hasUsageLimit').checked;
-					const usageLimitField = document.getElementById('usageLimitField');
-					const usageLimitInput = document.getElementById('usageLimit');
+// Toggle discount fields based on type
+function toggleDiscountFields() {
+    const discountType = document.getElementById('discountType').value;
+    const maxDiscountField = document.getElementById('maxDiscountField');
+    const discountValueUnit = document.getElementById('discountValueUnit');
+    const discountValueHelp = document.getElementById('discountValueHelp');
+    const discountValue = document.getElementById('discountValue');
 
-					if (hasLimit) {
-						usageLimitField.style.display = 'block';
-						usageLimitInput.required = true;
-						usageLimitInput.min = 1;
-					} else {
-						usageLimitField.style.display = 'none';
-						usageLimitInput.required = false;
-						usageLimitInput.value = 0;
-					}
+    if (discountType === 'PERCENTAGE') {
+        maxDiscountField.style.display = 'block';
+        discountValueUnit.textContent = '%';
+        discountValueHelp.textContent = 'Nhập phần trăm giảm giá (0-100)';
+        discountValue.max = 100;
+        discountValue.placeholder = '0-100';
+    } else if (discountType === 'FIXED') {
+        maxDiscountField.style.display = 'none';
+        discountValueUnit.textContent = 'VNĐ';
+        discountValueHelp.textContent = 'Nhập số tiền giảm cố định';
+        discountValue.max = '';
+        discountValue.placeholder = '0';
+        document.getElementById('maxDiscountAmount').value = '';
+    }
 
-					updatePreview();
-				}
-				
-				// Update preview
-				function updatePreview() {
-					// Name and description
-					const name = document.getElementById('promotionName').value || 'Tên khuyến mãi';
-					const description = document.getElementById('description').value || 'Mô tả chương trình';
-					document.getElementById('previewName').textContent = name;
-					document.getElementById('previewDescription').textContent = description;
+    updatePreview();
+}
 
-					// Promo code
-					const code = document.getElementById('promoCode').value || '---';
-					document.getElementById('previewCode').textContent = code.toUpperCase();
+// Toggle usage limit field
+function toggleUsageLimit() {
+    const hasLimit = document.getElementById('hasUsageLimit').checked;
+    const usageLimitField = document.getElementById('usageLimitField');
+    const usageLimitInput = document.getElementById('usageLimit');
 
-					// Discount type and value
-					const discountType = document.getElementById('discountType').value;
-					
-					const typeText = discountType === 'PERCENTAGE' ? 'Phần trăm' : discountType === 'FIXED' ? 'Cố định' : '---';
-					document.getElementById('previewType').textContent = typeText;
-					
-					const value = parseFloat(document.getElementById('discountValue').value) || 0;
-					let discountText = '---';
-					if (discountType === 'PERCENTAGE') {
-						discountText = value + '%';
-					} else if (discountType === 'FIXED') {
-						discountText = formatNumber(value) + 'đ';
-					}
-					document.getElementById('previewDiscount').textContent = discountText;
+    console.log('toggleUsageLimit - hasLimit:', hasLimit);
 
-					// Max discount (only for percentage)
-					const maxDiscountRow = document.getElementById('previewMaxRow');
-					if (discountType === 'PERCENTAGE') {
-						const maxDiscount = parseFloat(document.getElementById('maxDiscountAmount').value) || 0;
-						document.getElementById('previewMax').textContent = formatNumber(maxDiscount) + 'đ';
-						maxDiscountRow.style.display = 'flex';
-					} else {
-						maxDiscountRow.style.display = 'none';
-					}
+    if (hasLimit) {
+        usageLimitField.style.display = 'block';
+        usageLimitInput.required = false;
+        usageLimitInput.disabled = false;
+        usageLimitInput.min = '1'; // Có giới hạn: min = 1
+        usageLimitInput.classList.remove('is-invalid'); // Xóa class invalid
+    } else {
+        usageLimitField.style.display = 'none';
+        usageLimitInput.required = false;
+        usageLimitInput.disabled = false;
+        usageLimitInput.value = 0; // Set về 0
+        usageLimitInput.min = '0'; // *** FIX: Cho phép 0 khi không giới hạn ***
+        usageLimitInput.classList.remove('is-invalid'); // Xóa class invalid
+    }
 
-					// Min order value
-					document.getElementById('previewMinRow').style.display = 'flex';
-					const minOrder = parseFloat(document.getElementById('minOrderValue').value) || 0;
-					document.getElementById('previewMin').textContent = formatNumber(minOrder) + 'đ';
+    console.log('After toggle - value:', usageLimitInput.value, 'disabled:', usageLimitInput.disabled, 'min:', usageLimitInput.min);
+    updatePreview();
+}
 
-					// Dates
-					const startDate = document.getElementById('startDate').value;
-					const endDate = document.getElementById('endDate').value;
-					document.getElementById('previewStart').textContent = formatDateTime(startDate);
-					document.getElementById('previewEnd').textContent = formatDateTime(endDate);
+// Update preview
+function updatePreview() {
+    // Name and description
+    const name = document.getElementById('promotionName').value || 'Tên khuyến mãi';
+    const description = document.getElementById('description').value || 'Mô tả chương trình';
+    document.getElementById('previewName').textContent = name;
+    document.getElementById('previewDescription').textContent = description;
 
-					// Usage limit
-					const hasLimit = document.getElementById('hasUsageLimit').checked;
-					const limitRow = document.getElementById('previewLimitRow');
-					if (hasLimit) {
-						const limit = document.getElementById('usageLimit').value || 0;
-						document.getElementById('previewLimit').textContent = limit > 0 ? formatNumber(limit) + ' lượt' : 'Không giới hạn';
-						limitRow.style.display = 'block';
-					} else {
-						document.getElementById('previewLimit').textContent = 'Không giới hạn';
-						limitRow.style.display = 'block';
-					}
-				}
-		
-				// Form validation
-				document.getElementById('promotionForm').addEventListener('submit', function(e) {
-					const discountType = document.getElementById('discountType').value;
-					const discountValue = parseFloat(document.getElementById('discountValue').value) || 0;
-					const startDate = new Date(document.getElementById('startDate').value);
-					const endDate = new Date(document.getElementById('endDate').value);
+    // Promo code
+    const code = document.getElementById('promoCode').value || '---';
+    document.getElementById('previewCode').textContent = code.toUpperCase();
 
-					// Validate discount type
-					if (!discountType) {
-						e.preventDefault();
-						alert('Vui lòng chọn Loại giảm giá.');
-						return false;
-					}
-					
-					// Validate discount value
-					if (discountType === 'PERCENTAGE') {
-						if (discountValue < 0 || discountValue > 100) {
-							e.preventDefault();
-							alert('Giá trị giảm giá phần trăm phải từ 0-100%');
-							return false;
-						}
-					} else if (discountType === 'FIXED') {
-						if (discountValue <= 0) {
-							e.preventDefault();
-							alert('Giá trị giảm giá cố định phải lớn hơn 0');
-							return false;
-						}
-					}
+    // Discount type and value
+    const discountType = document.getElementById('discountType').value;
+    
+    const typeText = discountType === 'PERCENTAGE' ? 'Phần trăm' : discountType === 'FIXED' ? 'Cố định' : '---';
+    document.getElementById('previewType').textContent = typeText;
+    
+    const value = parseFloat(document.getElementById('discountValue').value) || 0;
+    let discountText = '---';
+    if (discountType === 'PERCENTAGE') {
+        discountText = value + '%';
+    } else if (discountType === 'FIXED') {
+        discountText = formatNumber(value) + 'đ';
+    }
+    document.getElementById('previewDiscount').textContent = discountText;
 
-					// Validate dates
-					if (endDate <= startDate) {
-						e.preventDefault();
-						alert('Ngày kết thúc phải sau ngày bắt đầu');
-						return false;
-					}
+    // Max discount (only for percentage)
+    const maxDiscountRow = document.getElementById('previewMaxRow');
+    if (discountType === 'PERCENTAGE') {
+        const maxDiscount = parseFloat(document.getElementById('maxDiscountAmount').value) || 0;
+        document.getElementById('previewMax').textContent = formatNumber(maxDiscount) + 'đ';
+        maxDiscountRow.style.display = 'flex';
+    } else {
+        maxDiscountRow.style.display = 'none';
+    }
 
-					// Validate promo code
-					const promoCode = document.getElementById('promoCode').value;
-					if (!/^[A-Z0-9]+$/.test(promoCode)) {
-						e.preventDefault();
-						alert('Mã giảm giá chỉ được chứa chữ cái in hoa và số');
-						return false;
-					}
+    // Min order value
+    document.getElementById('previewMinRow').style.display = 'flex';
+    const minOrder = parseFloat(document.getElementById('minOrderValue').value) || 0;
+    document.getElementById('previewMin').textContent = formatNumber(minOrder) + 'đ';
 
-					return true;
-				});
-				
-				// Auto-uppercase promo code
-				document.getElementById('promoCode').addEventListener('input', function(e) {
-					e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-					updatePreview();
-				});
+    // Dates
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    document.getElementById('previewStart').textContent = formatDateTime(startDate);
+    document.getElementById('previewEnd').textContent = formatDateTime(endDate);
 
-				// Listen to all form inputs for preview update
-				document.querySelectorAll('#promotionForm input, #promotionForm select, #promotionForm textarea').forEach(element => {
-					element.addEventListener('input', updatePreview);
-					element.addEventListener('change', updatePreview);
-				});
-				
-				// Initialize on page load
-				document.addEventListener('DOMContentLoaded', function() {
-					const action = /*[[${action}]]*/ 'create';
-					const startDateInput = document.getElementById('startDate');
-					const endDateInput = document.getElementById('endDate');
-					
-					// Set default dates if creating new
-					if (action === 'create') {
-						if (!startDateInput.value) {
-							const now = new Date();
-							now.setHours(0, 0, 0, 0);
-							startDateInput.value = now.toISOString().slice(0, 16);
-						}
-						
-						if (!endDateInput.value) {
-							const endDate = new Date();
-							endDate.setDate(endDate.getDate() + 30);
-							endDate.setHours(23, 59, 0, 0);
-							endDateInput.value = endDate.toISOString().slice(0, 16);
-						}
-					}
+    // Usage limit
+    const hasLimit = document.getElementById('hasUsageLimit').checked;
+    const limitRow = document.getElementById('previewLimitRow');
+    if (hasLimit) {
+        const limit = document.getElementById('usageLimit').value || 0;
+        document.getElementById('previewLimit').textContent = limit > 0 ? formatNumber(limit) + ' lượt' : 'Không giới hạn';
+        limitRow.style.display = 'block';
+    } else {
+        document.getElementById('previewLimit').textContent = 'Không giới hạn';
+        limitRow.style.display = 'block';
+    }
+}
 
-					// Check if editing and has usage limit
-					const usageLimit = parseInt(document.getElementById('usageLimit').value) || 0;
-					if (usageLimit > 0) {
-						document.getElementById('hasUsageLimit').checked = true;
-						toggleUsageLimit();
-					}
+// Form validation - KHÔNG BLOCK SUBMIT NẾU HỢP LỆ
+document.getElementById('promotionForm').addEventListener('submit', function(e) {
+    console.log('=== FORM SUBMIT EVENT ===');
+    
+    const usageLimitInput = document.getElementById('usageLimit');
+    const hasLimit = document.getElementById('hasUsageLimit').checked;
+    
+    console.log('hasUsageLimit checked:', hasLimit);
+    console.log('usageLimit value:', usageLimitInput.value);
+    console.log('usageLimit disabled:', usageLimitInput.disabled);
+    
+    const discountType = document.getElementById('discountType').value;
+    const discountValue = parseFloat(document.getElementById('discountValue').value) || 0;
+    const startDate = new Date(document.getElementById('startDate').value);
+    const endDate = new Date(document.getElementById('endDate').value);
 
-					// Initial field setup
-					toggleDiscountFields();
-					updatePreview();
-				});
-		        /*]]>*/
-		    </script>
+    // Validate discount type
+    if (!discountType) {
+        e.preventDefault();
+        alert('Vui lòng chọn Loại giảm giá.');
+        console.log('BLOCKED: No discount type');
+        return false;
+    }
+    
+    // Validate discount value
+    if (discountType === 'PERCENTAGE') {
+        if (discountValue < 0 || discountValue > 100) {
+            e.preventDefault();
+            alert('Giá trị giảm giá phần trăm phải từ 0-100%');
+            console.log('BLOCKED: Invalid percentage');
+            return false;
+        }
+    } else if (discountType === 'FIXED') {
+        if (discountValue <= 0) {
+            e.preventDefault();
+            alert('Giá trị giảm giá cố định phải lớn hơn 0');
+            console.log('BLOCKED: Invalid fixed amount');
+            return false;
+        }
+    }
+
+    // Validate dates
+    if (endDate <= startDate) {
+        e.preventDefault();
+        alert('Ngày kết thúc phải sau ngày bắt đầu');
+        console.log('BLOCKED: Invalid date range');
+        return false;
+    }
+
+    // Validate promo code
+    const promoCode = document.getElementById('promoCode').value;
+    if (promoCode && !/^[A-Z0-9]+$/.test(promoCode)) {
+        e.preventDefault();
+        alert('Mã giảm giá chỉ được chứa chữ cái in hoa và số');
+        console.log('BLOCKED: Invalid promo code');
+        return false;
+    }
+
+    console.log('FORM VALIDATION PASSED - Submitting...');
+    // Không preventDefault() - cho phép form submit
+    return true;
+});
+
+// Auto-uppercase promo code
+document.getElementById('promoCode').addEventListener('input', function(e) {
+    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    updatePreview();
+});
+
+// Listen to all form inputs for preview update
+document.querySelectorAll('#promotionForm input, #promotionForm select, #promotionForm textarea').forEach(element => {
+    element.addEventListener('input', updatePreview);
+    element.addEventListener('change', updatePreview);
+});
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== PAGE LOADED ===');
+    
+    const action = /*[[${action}]]*/ 'create';
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    const usageLimitInput = document.getElementById('usageLimit');
+    const hasUsageLimitCheckbox = document.getElementById('hasUsageLimit');
+    
+    console.log('Action:', action);
+    console.log('Initial usageLimit value:', usageLimitInput.value);
+    
+    // Set default dates if creating new
+    if (action === 'create') {
+        if (!startDateInput.value) {
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+            startDateInput.value = now.toISOString().slice(0, 16);
+        }
+        
+        if (!endDateInput.value) {
+            const endDate = new Date();
+            endDate.setDate(endDate.getDate() + 30);
+            endDate.setHours(23, 59, 0, 0);
+            endDateInput.value = endDate.toISOString().slice(0, 16);
+        }
+    }
+
+    // Check if editing and has usage limit
+    const usageLimit = parseInt(usageLimitInput.value) || 0;
+    console.log('Parsed usageLimit:', usageLimit);
+    
+    if (usageLimit > 0) {
+        console.log('Setting hasUsageLimit checked = true');
+        hasUsageLimitCheckbox.checked = true;
+        toggleUsageLimit();
+    } else {
+        console.log('Setting hasUsageLimit checked = false');
+        hasUsageLimitCheckbox.checked = false;
+        usageLimitInput.value = 0;
+        toggleUsageLimit();
+    }
+
+    // Initial field setup
+    toggleDiscountFields();
+    updatePreview();
+    
+    console.log('Final usageLimit value:', usageLimitInput.value);
+    console.log('Final usageLimit disabled:', usageLimitInput.disabled);
+});
+
+/*]]>*/
+</script>
 		</th:block>
 
 	</div>

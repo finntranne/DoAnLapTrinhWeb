@@ -204,8 +204,8 @@ public class Promotion {
     @Column(name = "MinOrderValue", precision = 10, scale = 2) // Khớp DB
     private BigDecimal minOrderValue = BigDecimal.ZERO; // Giữ mặc định
 
-    @Column(name = "UsageLimit") // Khớp DB
-    private Integer usageLimit; // Null nghĩa là không giới hạn
+    @Column(name = "UsageLimit")
+    private Integer usageLimit;
 
     @Column(name = "UsedCount") // Khớp DB
     private Integer usedCount = 0; // Giữ mặc định

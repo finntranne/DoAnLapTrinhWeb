@@ -35,11 +35,6 @@ import lombok.extern.slf4j.Slf4j;
 public class VendorPromotionController {
 	private final VendorPromotionService vendorPromotionService;
 
-	// ==================== HELPER METHOD ====================
-
-	/**
-	 * Lấy shopId từ authenticated user Throw exception nếu user chưa có shop
-	 */
 	private Integer getShopIdOrThrow(@AuthenticationPrincipal MyUserDetails userDetails) {
 		if (userDetails == null) {
 			throw new IllegalStateException("User is not authenticated");
@@ -54,17 +49,12 @@ public class VendorPromotionController {
 		return shopId;
 	}
 
-	/**
-	 * Lấy userId từ authenticated user
-	 */
 	private Integer getUserIdOrThrow(@AuthenticationPrincipal MyUserDetails userDetails) {
 		if (userDetails == null || userDetails.getUser() == null) {
 			throw new IllegalStateException("User is not authenticated");
 		}
 		return userDetails.getUser().getId();
 	}
-
-	// ==================== PROMOTION MANAGEMENT ====================
 
 	@GetMapping("/promotions")
 	public String listPromotions(@AuthenticationPrincipal MyUserDetails userDetails,
@@ -76,8 +66,8 @@ public class VendorPromotionController {
 			Integer shopId = getShopIdOrThrow(userDetails);
 			Pageable pageable = PageRequest.of(page, size);
 
-			Page<PromotionStatisticsDTO> promotions = vendorPromotionService.getShopPromotions(shopId, status, promotionType,
-					pageable);
+			Page<PromotionStatisticsDTO> promotions = vendorPromotionService.getShopPromotions(shopId, status,
+					promotionType, pageable);
 
 			model.addAttribute("promotions", promotions);
 			model.addAttribute("currentPage", page);
@@ -99,7 +89,6 @@ public class VendorPromotionController {
 			getShopIdOrThrow(userDetails);
 			model.addAttribute("promotion", new PromotionRequestDTO());
 			model.addAttribute("action", "create");
-			// *** BỎ: model.addAttribute("shopProducts", ...) ***
 			return "vendor/promotions/form";
 		} catch (IllegalStateException e) {
 			redirectAttributes.addFlashAttribute("error", e.getMessage());
@@ -109,10 +98,17 @@ public class VendorPromotionController {
 
 	@PostMapping("/promotions/create")
 	public String createPromotion(@AuthenticationPrincipal MyUserDetails userDetails,
-			@Valid @ModelAttribute("promotion") PromotionRequestDTO request, BindingResult result,
+			@Valid @ModelAttribute("promotion") PromotionRequestDTO request, BindingResult result, Model model,
 			RedirectAttributes redirectAttributes) {
 
+		log.info("=== CREATE PROMOTION REQUEST ===");
+		log.info("UsageLimit from form: {}", request.getUsageLimit());
+		log.info("DiscountType: {}", request.getDiscountType());
+		log.info("DiscountValue: {}", request.getDiscountValue());
+
 		if (result.hasErrors()) {
+			log.error("Validation errors: {}", result.getAllErrors());
+			model.addAttribute("action", "create");
 			return "vendor/promotions/form";
 		}
 
@@ -130,10 +126,16 @@ public class VendorPromotionController {
 		} catch (IllegalStateException e) {
 			redirectAttributes.addFlashAttribute("error", e.getMessage());
 			return "redirect:/shop/register";
+		} catch (IllegalArgumentException e) {
+			log.error("Validation error from service: {}", e.getMessage());
+			model.addAttribute("error", e.getMessage());
+			model.addAttribute("action", "create");
+			return "vendor/promotions/form";
 		} catch (JsonProcessingException e) {
 			log.error("Error creating promotion", e);
-			redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra khi tạo khuyến mãi");
-			return "redirect:/vendor/promotions/create";
+			model.addAttribute("error", "Có lỗi xảy ra khi tạo khuyến mãi");
+			model.addAttribute("action", "create");
+			return "vendor/promotions/form";
 		}
 	}
 
@@ -144,17 +146,19 @@ public class VendorPromotionController {
 			Integer shopId = getShopIdOrThrow(userDetails);
 			Promotion promotion = vendorPromotionService.getPromotionDetail(shopId, id);
 
-			// *** KIỂM TRA PROMOTION TYPE ***
 			if ("PRODUCT".equals(promotion.getPromotionType())) {
-				// Nếu là PRODUCT type → Chỉ hiển thị thông tin (read-only)
 				model.addAttribute("promotion", promotion);
 				model.addAttribute("action", "edit");
 				model.addAttribute("promotionId", id);
-				return "vendor/promotions/form"; // Trả về cùng view nhưng sẽ hiển thị form khác
+				return "vendor/promotions/form";
 			}
 
-			// *** BỎ convertPromotionToDTOWithProducts, CHỈ dùng convertPromotionToDTO ***
 			PromotionRequestDTO dto = vendorPromotionService.convertPromotionToDTO(promotion);
+
+			log.info("=== LOAD EDIT FORM ===");
+			log.info("Promotion ID: {}", id);
+			log.info("Current UsageLimit in DB: {}", promotion.getUsageLimit());
+			log.info("DTO UsageLimit: {}", dto.getUsageLimit());
 
 			model.addAttribute("promotion", dto);
 			model.addAttribute("action", "edit");
@@ -167,7 +171,6 @@ public class VendorPromotionController {
 				model.addAttribute("formattedEndDate", dto.getEndDate().toString().substring(0, 16));
 			}
 
-			// *** BỎ: model.addAttribute("shopProducts", ...) ***
 			return "vendor/promotions/form";
 		} catch (IllegalStateException e) {
 			redirectAttributes.addFlashAttribute("error", e.getMessage());
@@ -184,20 +187,31 @@ public class VendorPromotionController {
 			@Valid @ModelAttribute("promotion") PromotionRequestDTO request, BindingResult result, Model model,
 			RedirectAttributes redirectAttributes) {
 
+		log.info("=== UPDATE PROMOTION REQUEST ===");
+		log.info("Promotion ID: {}", id);
+		log.info("UsageLimit from form: {}", request.getUsageLimit());
+		log.info("DiscountType: {}", request.getDiscountType());
+		log.info("DiscountValue: {}", request.getDiscountValue());
+		log.info("PromoCode: {}", request.getPromoCode());
+		log.info("StartDate: {}", request.getStartDate());
+		log.info("EndDate: {}", request.getEndDate());
+
 		try {
 			Integer shopId = getShopIdOrThrow(userDetails);
 			Promotion promotion = vendorPromotionService.getPromotionDetail(shopId, id);
 
-			// *** KIỂM TRA: KHÔNG CHO SỬA PROMOTION PRODUCT TYPE ***
 			if ("PRODUCT".equals(promotion.getPromotionType())) {
+				log.warn("Attempt to edit PRODUCT type promotion");
 				redirectAttributes.addFlashAttribute("error",
 						"Không thể chỉnh sửa khuyến mãi sản phẩm. Vui lòng sửa ở trang Quản lý sản phẩm.");
 				return "redirect:/vendor/promotions";
 			}
 
-			// *** CHỈ XỬ LÝ ORDER TYPE ***
 			if (result.hasErrors()) {
 				log.error("Validation errors: {}", result.getAllErrors());
+				result.getAllErrors().forEach(error -> {
+					log.error("  - {}", error.toString());
+				});
 				model.addAttribute("action", "edit");
 				model.addAttribute("promotionId", id);
 				return "vendor/promotions/form";
@@ -205,10 +219,10 @@ public class VendorPromotionController {
 
 			Integer userId = getUserIdOrThrow(userDetails);
 
-			log.info("Updating promotion request - Promotion ID: {}, Shop ID: {}, User ID: {}", id, shopId, userId);
-
+			log.info("Calling service.requestPromotionUpdate...");
 			request.setPromotionId(id);
 			vendorPromotionService.requestPromotionUpdate(shopId, request, userId);
+			log.info("Service call completed successfully");
 
 			redirectAttributes.addFlashAttribute("success",
 					"Yêu cầu cập nhật khuyến mãi đã được gửi. Vui lòng chờ admin phê duyệt.");
@@ -216,11 +230,34 @@ public class VendorPromotionController {
 			return "redirect:/vendor/promotions";
 
 		} catch (IllegalStateException e) {
-			log.error("Auth error: {}", e.getMessage());
+			log.error("Auth error: {}", e.getMessage(), e);
 			redirectAttributes.addFlashAttribute("error", e.getMessage());
 			return "redirect:/shop/register";
+		} catch (IllegalArgumentException e) {
+			log.error("Validation error from service: {}", e.getMessage(), e);
+			model.addAttribute("error", e.getMessage());
+			model.addAttribute("action", "edit");
+			model.addAttribute("promotionId", id);
+
+			// Load lại promotion data để form không bị trống
+			try {
+				Promotion promotion = vendorPromotionService.getPromotionDetail(getShopIdOrThrow(userDetails), id);
+				PromotionRequestDTO dto = vendorPromotionService.convertPromotionToDTO(promotion);
+				model.addAttribute("promotion", dto);
+
+				if (dto.getStartDate() != null) {
+					model.addAttribute("formattedStartDate", dto.getStartDate().toString().substring(0, 16));
+				}
+				if (dto.getEndDate() != null) {
+					model.addAttribute("formattedEndDate", dto.getEndDate().toString().substring(0, 16));
+				}
+			} catch (Exception ex) {
+				log.error("Error reloading promotion data", ex);
+			}
+
+			return "vendor/promotions/form";
 		} catch (Exception e) {
-			log.error("Error updating promotion", e);
+			log.error("Unexpected error updating promotion", e);
 
 			if (e.getMessage() != null && e.getMessage().contains("đã có yêu cầu đang chờ phê duyệt")) {
 				redirectAttributes.addFlashAttribute("warning", e.getMessage());
@@ -236,6 +273,9 @@ public class VendorPromotionController {
 	public String deletePromotion(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
 			RedirectAttributes redirectAttributes) {
 
+		log.info("=== DELETE PROMOTION REQUEST ===");
+		log.info("Promotion ID: {}", id);
+
 		try {
 			Integer shopId = getShopIdOrThrow(userDetails);
 			Integer userId = getUserIdOrThrow(userDetails);
@@ -246,6 +286,7 @@ public class VendorPromotionController {
 					"Yêu cầu xóa khuyến mãi đã được gửi. Vui lòng chờ admin phê duyệt.");
 
 		} catch (IllegalStateException e) {
+			log.error("Auth error: {}", e.getMessage(), e);
 			redirectAttributes.addFlashAttribute("error", e.getMessage());
 		} catch (Exception e) {
 			log.error("Error deleting promotion", e);
@@ -254,5 +295,4 @@ public class VendorPromotionController {
 
 		return "redirect:/vendor/promotions";
 	}
-
 }
