@@ -30,7 +30,7 @@ public class Notification {
     @JoinColumn(name = "UserID", nullable = false)
     private User user;
     
-    @Column(name = "Title", nullable = false, length = 255)
+    @Column(name = "Title", nullable = false, columnDefinition = "NVARCHAR(MAX)")
     private String title;
     
     @Column(name = "Message", nullable = false, columnDefinition = "NVARCHAR(MAX)")

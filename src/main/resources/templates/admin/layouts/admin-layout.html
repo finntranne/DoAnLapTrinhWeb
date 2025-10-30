@@ -69,16 +69,17 @@
 
 								<a
 									th:href="
-										    ( ${#strings.contains(notify.message?.toLowerCase(), 'product')} ? 
-										        @{/admin/products/pending} :
-										    ( ${#strings.contains(notify.message?.toLowerCase(), 'shop')}  ? 
-										        @{/admin/shops} :
-										    ( ${#strings.contains(notify.message?.toLowerCase(), 'topping')} ? 
-										        @{/admin/toppings/pending} :
-										        @{/admin/notifications/all}
-										    )))"
-									class="dropdown-item"> <i
-									class="bi bi-info-circle-fill me-2"></i> <span class_ ="text-truncate" th:text="${notify.message}">Nội dung thông báo ở đây...</span>
+							            ( ${#strings.contains(notify.message?.toLowerCase(), 'product')} ? 
+							                @{/admin/products/pending} :
+							            ( ${#strings.contains(notify.message?.toLowerCase(), 'promotion')}  ? 
+							                @{/admin/promotions/pending} :
+							            ( ${#strings.contains(notify.message?.toLowerCase(), 'topping')} ? 
+							                @{/admin/toppings/pending} :
+							            
+							                @{/admin/notifications/all}
+							            )))"
+									class="dropdown-item text-truncate"> <i
+									class="bi bi-info-circle-fill me-2"></i> <span th:text="${notify.message}">Nội dung thông báo ở đây...</span>
 
 								</a>
 							</th:block>

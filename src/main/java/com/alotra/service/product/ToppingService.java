@@ -12,6 +12,8 @@ import com.alotra.entity.product.Topping;
 import com.alotra.entity.product.ToppingApproval;
 import com.alotra.repository.product.ToppingRepository;
 
+import jakarta.validation.Valid;
+
 @Service
 public class ToppingService {
 
@@ -36,6 +38,15 @@ public class ToppingService {
     
     public Page<Topping> findAllApproved(Pageable pageable) {
 		return toppingRepository.findByStatus(ACTIVE_STATUS, pageable);
+	}
+    
+    public Optional<Topping> findById(Integer id){
+    	return toppingRepository.findById(id);
+    }
+
+
+	public void save(@Valid Topping toppingFromForm) {
+		toppingRepository.save(toppingFromForm);
 	}
     
    
