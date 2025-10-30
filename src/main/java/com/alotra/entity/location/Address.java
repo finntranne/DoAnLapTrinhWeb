@@ -32,16 +32,16 @@ public class Address {
     @JoinColumn(name = "UserID", nullable = false)
     private User user;
     
-    @Column(name = "AddressName", nullable = false, length = 100)
+    @Column(name = "AddressName", nullable = false, length = 100, columnDefinition = "NVARCHAR(100)")
     private String addressName;
     
-    @Column(name = "FullAddress", nullable = false, length = 500)
+    @Column(name = "FullAddress", nullable = false, length = 500, columnDefinition = "NVARCHAR(500)")
     private String fullAddress;
     
     @Column(name = "PhoneNumber", nullable = false, length = 20)
     private String phoneNumber;
     
-    @Column(name = "RecipientName", nullable = false, length = 255)
+    @Column(name = "RecipientName", nullable = false, length = 255, columnDefinition = "NVARCHAR(255)")
     private String recipientName;
     
     @Column(name = "IsDefault", nullable = false)

@@ -150,6 +150,7 @@
 
 package com.alotra.controller; // Giữ package này
 
+import com.alotra.dto.auth.ChangePasswordDto;
 // Import entity đã merge
 import com.alotra.entity.location.Address;
 import com.alotra.entity.user.User; // Sử dụng User
@@ -163,6 +164,7 @@ import com.alotra.service.shop.StoreService;
 import com.alotra.service.user.UserService; // Sử dụng UserService
 
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 
 import java.util.List; // Import List
 import java.util.Optional;
@@ -173,6 +175,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException; // Thêm exception
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BeanPropertyBindingResult; // Import BindingResult
@@ -192,6 +195,8 @@ public class UserProfileController { // Giữ tên class
     @Autowired private CartService cartService;
     @Autowired private CategoryService categoryService;
     @Autowired private StoreService storeService;
+    @Autowired 
+    private PasswordEncoder passwordEncoder;
 
     // === Hàm trợ giúp lấy User (Giống CartController) ===
     private User getCurrentAuthenticatedUser() {
@@ -322,7 +327,96 @@ public class UserProfileController { // Giữ tên class
         }
     }
 
-     // === CÓ THỂ THÊM CÁC ENDPOINT KHÁC ===
-     // Ví dụ: GET /user/profile/edit -> Trả về form edit chi tiết hơn
-     //        POST /user/profile/change-password -> Xử lý đổi mật khẩu
+    /**
+     * Hiển thị trang Đổi mật khẩu
+     * GET /user/profile/change-password
+     */
+    @GetMapping("/change-password")
+    public String showChangePasswordForm(Model model, HttpSession session) {
+        try {
+            // Kiểm tra người dùng đã đăng nhập chưa (sẽ được kiểm tra trong getCurrentAuthenticatedUser())
+            getCurrentAuthenticatedUser(); 
+
+            // Cần cho phép form truy cập các thông tin chung của layout (nếu layout cần)
+            Integer selectedShopId = getSelectedShopId(session);
+            model.addAttribute("cartItemCount", getCurrentCartItemCount());
+            model.addAttribute("categories", categoryService.findAll());
+            model.addAttribute("shops", storeService.findAllActiveShops());
+            model.addAttribute("selectedShopName", storeService.getShopNameById(selectedShopId));
+
+            // Truyền DTO rỗng vào Model để form Thymeleaf có thể bind
+            if (!model.containsAttribute("changePasswordDto")) {
+                model.addAttribute("changePasswordDto", new ChangePasswordDto());
+            }
+
+            return "user/change-password"; 
+
+        } catch (ResponseStatusException | UsernameNotFoundException e) {
+            return "redirect:/login"; // Redirect về trang login nếu chưa đăng nhập
+        }
+    }
+    
+    /**
+     * Xử lý POST Đổi mật khẩu
+     * POST /user/profile/change-password
+     */
+    @PostMapping("/change-password")
+    public String changePassword(@ModelAttribute("changePasswordDto") @Valid ChangePasswordDto changePasswordDto,
+                                 BindingResult bindingResult,
+                                 RedirectAttributes redirectAttributes,
+                                 Model model) { // Cần Model để tái hiển thị form nếu có lỗi
+        
+        // 1. Kiểm tra lỗi Validation cơ bản (NotBlank, Size)
+        if (bindingResult.hasErrors()) {
+            // Thêm lại các thông tin chung của layout trước khi return
+            model.addAttribute("cartItemCount", getCurrentCartItemCount());
+            model.addAttribute("categories", categoryService.findAll());
+            return "user/change-password"; 
+        }
+
+        try {
+            User user = getCurrentAuthenticatedUser();
+            
+            // 2. Kiểm tra mật khẩu mới và xác nhận mật khẩu có khớp nhau không
+            if (!changePasswordDto.getNewPassword().equals(changePasswordDto.getConfirmPassword())) {
+                bindingResult.rejectValue("confirmPassword", "password.mismatch", "Xác nhận mật khẩu không khớp với mật khẩu mới.");
+                // Thêm một attribute riêng cho lỗi này trên Thymeleaf
+                model.addAttribute("passwordMismatchError", "Xác nhận mật khẩu không khớp với mật khẩu mới.");
+                
+                // Tái hiển thị form
+                model.addAttribute("cartItemCount", getCurrentCartItemCount());
+                model.addAttribute("categories", categoryService.findAll());
+                return "user/change-password";
+            }
+            
+            // 3. Kiểm tra Mật khẩu hiện tại có đúng không
+            if (!passwordEncoder.matches(changePasswordDto.getCurrentPassword(), user.getPassword())) {
+                bindingResult.rejectValue("currentPassword", "password.incorrect", "Mật khẩu hiện tại không đúng.");
+                redirectAttributes.addFlashAttribute("errorMessage", "Mật khẩu hiện tại không đúng. Vui lòng thử lại.");
+                
+                // Tái hiển thị form (sử dụng flash attributes cho lỗi này, hoặc thêm vào model và return)
+                // Dùng redirectAttributes và redirect để đảm bảo thông báo hiện sau reload.
+                redirectAttributes.addFlashAttribute("changePasswordDto", changePasswordDto);
+                redirectAttributes.addFlashAttribute(BindingResult.MODEL_KEY_PREFIX + "changePasswordDto", bindingResult);
+                return "redirect:/user/profile/change-password"; 
+            }
+            
+            // 4. Mã hóa và Cập nhật mật khẩu mới
+            String encodedNewPassword = passwordEncoder.encode(changePasswordDto.getNewPassword());
+            user.setPassword(encodedNewPassword);
+            userService.save(user); // Lưu mật khẩu mới vào database
+            
+            // 5. Thành công: Gửi thông báo và redirect về trang hồ sơ
+            redirectAttributes.addFlashAttribute("successMessage", "Đổi mật khẩu thành công! Vui lòng sử dụng mật khẩu mới cho lần đăng nhập tiếp theo.");
+            return "redirect:/user/profile"; 
+
+        } catch (ResponseStatusException | UsernameNotFoundException e) {
+            // Xử lý trường hợp người dùng bị lỗi (ví dụ: mất session)
+            return "redirect:/login";
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("errorMessage", "Lỗi hệ thống khi đổi mật khẩu.");
+            return "redirect:/user/profile/change-password";
+        }
+    }
 }

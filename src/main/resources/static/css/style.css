@@ -25,7 +25,7 @@ body{
     overflow: hidden;
     width: 768px;
     max-width: 100%;
-    min-height: 480px;
+    min-height: 550px; /* Tăng chiều cao để chứa form đăng ký */
 }
 
 .container p{
@@ -75,10 +75,16 @@ body{
     height: 100%;
 }
 
+/* Riêng cho form đăng ký */
+#signupForm {
+    justify-content: flex-start;
+    padding: 30px 40px;
+    overflow-y: auto;
+}
+
 .container input{
     background-color: #eee;
     border: none;
-    margin: 8px 0;
     padding: 10px 15px;
     font-size: 13px;
     border-radius: 8px;
@@ -119,8 +125,8 @@ body{
 }
 
 #signupForm h1 {
-	margin-bottom: 10px;
-
+	margin-bottom: 12px;
+	margin-top: 0;
 }
 
 @keyframes move{
@@ -214,6 +220,7 @@ body{
 .container.active .toggle-right{
     transform: translateX(200%);
 }
+
 .otp-form-wrapper {
   position: absolute;
   top: 0;
@@ -266,17 +273,17 @@ body{
 }
 
 .otp-input {
-  width: 60px; /* Tăng từ 50px để to hơn */
-  height: 60px; /* Tăng từ 50px để cân đối */
-  min-width: 60px; /* Ngăn co giãn */
-  max-width: 60px; /* Ngăn kéo dài */
+  width: 60px;
+  height: 60px;
+  min-width: 60px;
+  max-width: 60px;
   text-align: center;
-  font-size: 36px !important; /* Tăng từ 36px để chữ to hơn */
+  font-size: 36px !important;
   font-family: Arial, sans-serif;
   border: 1px solid #ccc;
   border-radius: 8px;
   text-transform: uppercase;
-  padding: 5px; /* Tăng từ 2px để cân đối */
+  padding: 5px;
   box-sizing: border-box;
 }
 
@@ -285,7 +292,6 @@ body{
   border-color: #2da0a8;
 }
 
-
 #forgotPasswordLink {
     display: inline-block;
     margin: 10px 0;
@@ -293,13 +299,13 @@ body{
     cursor: pointer;
     text-decoration: underline;
 }
+
 #forgotPasswordLink:hover {
     color: #0056b3;
 }
 
-
 .forgot-password {
-    display: none;  /* ẩn ban đầu, JS sẽ hiển thị */
+    display: none;
 }
 
 #forgotPasswordContainer {
@@ -313,7 +319,7 @@ body{
     box-sizing: border-box;
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0,0,0,0.2);
-    display: none;            /* ẩn ban đầu, JS sẽ hiển thị */
+    display: none;
     flex-direction: column;
     align-items: flex-start;
 }
@@ -329,12 +335,18 @@ body{
     box-sizing: border-box;
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0,0,0,0.2);
-    display: none;            /* ẩn ban đầu, JS sẽ hiển thị */
+    display: none;
     flex-direction: column;
     align-items: flex-start;
 }
+
+/* FIX: Tạo khoảng cách cố định cho mỗi input-group */
 .input-group {
     width: 100%;
+    margin-bottom: 12px;
+}
+
+.input-group input {
     margin: 0;
 }
 
@@ -342,13 +354,51 @@ body{
     display: block;
     color: #ff3860;
     font-size: 12px;
-    margin-top: 5px;
-    margin-bottom: 5px;
+    margin-top: 3px;
     text-align: left;
     width: 100%;
-    min-height: 18px;
+    height: 15px; /* Chiều cao cố định */
+    line-height: 15px;
+    opacity: 0; /* Ẩn nhưng vẫn giữ chỗ */
+    transition: opacity 0.2s ease;
 }
 
+/* Hiển thị khi có class 'show' */
+.error-message.show {
+    opacity: 1;
+}
+
+/* Đảm bảo các input không có margin riêng */
 .form-container input {
     margin: 0;
+}
+
+/* Khoảng cách cho link forgot password */
+.form-container a {
+    display: block;
+    margin: 8px 0;
+}
+
+/* Khoảng cách cho button submit */
+.form-container button[type="submit"] {
+    margin-top: 8px;
+}
+
+/* Khoảng cách cho h1 trong form */
+.form-container h1 {
+    margin-bottom: 12px;
+    margin-top: 0;
+}
+
+/* Riêng cho form đăng nhập - giữ khoảng cách thoáng hơn */
+#signinForm .input-group {
+    margin-bottom: 20px;
+}
+
+#signinForm h1 {
+    margin-bottom: 20px;
+}
+
+#signinForm button[type="submit"] {
+    margin-top: 15px;
 }

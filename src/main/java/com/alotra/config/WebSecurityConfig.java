@@ -144,7 +144,7 @@ public class WebSecurityConfig {
                         .requestMatchers("/vendor/**").hasAuthority("VENDOR")
                         .requestMatchers("/shipper/**").hasAuthority("SHIPPER")
                         .requestMatchers("/user/**", "/user/profile/**", "/user/addresses/**", "/user/orders/**")
-                            .hasAuthority("CUSTOMER")
+                            .hasAnyAuthority("CUSTOMER", "VENDOR")
                     
                         // --- CÁC TRANG CẦN ĐĂNG NHẬP (Bất kỳ quyền nào) ---
                         .requestMatchers("/checkout/**", "/place-order", "/cart/**", "/cart/buy-now")

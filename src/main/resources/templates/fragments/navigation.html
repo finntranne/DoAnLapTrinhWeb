@@ -129,13 +129,8 @@
             </div>
 
             <ul class="nav main-nav-links ms-4">
-                <li class="nav-item me-4 d-flex align-items-center">
-                    <i class="fa-solid fa-rotate-left me-2"></i>
-                    <a class="nav-link fw-bold p-0" href="#">Chính sách đổi trả</a>
-                </li>
                 <li class="nav-item dropdown me-4 d-flex align-items-center">
-					<div class="dropdown">
-						<button class="btn dropdown-toggle" type="button"
+					<div class="dropdown" sec:authorize="isAuthenticated()"> <button class="btn dropdown-toggle" type="button"
 							data-bs-toggle="dropdown">
 							<i class="fa-solid fa-message me-2"></i>Chat với Shop
 						</button>
@@ -146,12 +141,14 @@
                					th:text="${shop.shopName}"></a></li>
 						</ul>
 					</div>
+                    
+                    <div th:unless="${#authorization.expression('isAuthenticated()')}">
+                         <button class="btn btn-secondary disabled" type="button">
+                            <i class="fa-solid fa-message me-2"></i>Chat (Đăng nhập để sử dụng)
+                        </button>
+                    </div>
 
 				</li>
-                <li class="nav-item d-flex align-items-center">
-                    <i class="fa-solid fa-newspaper me-2"></i>
-                    <a class="nav-link fw-bold p-0" href="#">Tin tức</a>
-                </li>
             </ul>
         </div>
     </nav>

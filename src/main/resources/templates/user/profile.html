@@ -157,15 +157,14 @@
                     </div>
                     <div class="profile-card-body">
                         <div class="quick-actions flex-column">
-                            <a href="/user/change-password" class="quick-action-btn">
-                                <div class="quick-action-icon">
-                                    <i class="fa-solid fa-key"></i>
-                                </div>
-                                <div>
-                                    <div class="fw-semibold">Đổi mật khẩu</div>
-                                    <small class="text-muted">Cập nhật mật khẩu mới</small>
-                                </div>
-                            </a>
+                            <a th:href="@{/user/profile/change-password}" class="quick-action-btn"> <div class="quick-action-icon">
+            <i class="fa-solid fa-key"></i>
+        </div>
+        <div>
+            <div class="fw-semibold">Đổi mật khẩu</div>
+            <small class="text-muted">Cập nhật mật khẩu mới</small>
+        </div>
+    </a>
                             <a href="/user/orders" class="quick-action-btn">
                                 <div class="quick-action-icon">
                                     <i class="fa-solid fa-shopping-bag"></i>

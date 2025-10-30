@@ -173,7 +173,7 @@ public class Promotion {
     @JoinColumn(name = "CreatedByShopID") // Khớp DB
     private Shop createdByShopID; // Có thể null nếu Admin tạo
 
-    @Column(name = "PromotionName", nullable = false, length = 255) // Khớp DB
+    @Column(name = "PromotionName", nullable = false, length = 255, columnDefinition = "NVARCHAR(255)") // Khớp DB
     private String promotionName;
 
     @Column(name = "Description", columnDefinition = "NVARCHAR(MAX)") // Khớp DB

@@ -137,7 +137,7 @@ public class Shop {
     @JoinColumn(name = "UserID", nullable = false, unique = true) // Khớp DB
     private User user; // Chủ shop
 
-    @Column(name = "ShopName", nullable = false, unique = true, length = 255) // Khớp DB
+    @Column(name = "ShopName", nullable = false, unique = true, length = 255, columnDefinition = "NVARCHAR(255)") // Khớp DB
     private String shopName;
 
     @Column(name = "Description", columnDefinition = "NVARCHAR(MAX)") // Khớp DB
@@ -149,7 +149,7 @@ public class Shop {
     @Column(name = "CoverImageURL", length = 500) // Khớp DB
     private String coverImageURL;
 
-    @Column(name = "Address", nullable = false, length = 500) // Khớp DB
+    @Column(name = "Address", nullable = false, length = 500, columnDefinition = "NVARCHAR(500)") // Khớp DB
     private String address;
 
     @Column(name = "PhoneNumber", nullable = false, length = 20) // Khớp DB

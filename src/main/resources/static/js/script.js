@@ -135,7 +135,7 @@ function displayValidationErrors(errors) {
 		const errorElement = document.getElementById(`${field}-error`);
 		if (errorElement) {
 			errorElement.textContent = message;
-			errorElement.style.display = 'block';
+			errorElement.classList.add('show'); // Chỉ dùng class, không dùng style.display
 		}
 	}
 }
@@ -144,7 +144,7 @@ function clearValidationErrors() {
 	const errorElements = document.querySelectorAll('.error-message');
 	errorElements.forEach(element => {
 		element.textContent = '';
-		element.style.display = 'none';
+		element.classList.remove('show'); // Chỉ dùng class, không dùng style.display
 	});
 }
 
@@ -213,7 +213,7 @@ function displaySigninErrors(errors) {
 		const errorElement = document.getElementById(`signin-${field}-error`);
 		if (errorElement) {
 			errorElement.textContent = message;
-			errorElement.style.display = 'block';
+			errorElement.classList.add('show'); // Chỉ dùng class
 		}
 	}
 }
@@ -222,7 +222,7 @@ function clearSigninErrors() {
 	const errorElements = document.querySelectorAll('#signinForm .error-message');
 	errorElements.forEach(element => {
 		element.textContent = '';
-		element.style.display = 'none';
+		element.classList.remove('show'); // Chỉ dùng class
 	});
 }
 
@@ -529,7 +529,7 @@ function displayForgotPasswordErrors(errors) {
 		const errorElement = document.getElementById(`forgot-${field}-error`);
 		if (errorElement) {
 			errorElement.textContent = message;
-			errorElement.style.display = 'block';
+			errorElement.classList.add('show'); // Chỉ dùng class
 		}
 	}
 }
@@ -538,7 +538,7 @@ function clearForgotPasswordErrors() {
 	const errorElements = document.querySelectorAll('#forgotPasswordForm .error-message');
 	errorElements.forEach(element => {
 		element.textContent = '';
-		element.style.display = 'none';
+		element.classList.remove('show'); // Chỉ dùng class
 	});
 }
 

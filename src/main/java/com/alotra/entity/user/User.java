@@ -34,7 +34,7 @@ public class User {
 	@Column(name = "PhoneNumber", unique = true, length = 20)
 	private String phoneNumber;
 
-	@Column(name = "FullName", nullable = false, length = 255)
+	@Column(name = "FullName", nullable = false, length = 255, columnDefinition = "NVARCHAR(255)")
 	private String fullName;
 
 	@Column(name = "Status", nullable = false)

@@ -63,7 +63,7 @@ public class ShopController {
         // Kiểm tra nếu đã đăng ký shop (Ngăn người dùng cố gắng truy cập form lần 2)
         if (storeService.hasShop(userId)) {
             redirectAttributes.addFlashAttribute("errorMessage", "Bạn đã đăng ký Shop rồi.");
-            return "redirect:/user/profile"; 
+            return "redirect:/vendor/dashboard"; 
         }
 
         model.addAttribute("shopRegistrationDTO", new ShopRegistrationDTO());

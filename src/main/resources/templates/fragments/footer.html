@@ -8,24 +8,24 @@
 
             <div class="col-lg-4 col-md-6 mb-4">
                 <h5 class="text-dark fw-bold mb-4">Thông tin công ty</h5>
-                <a href="#" class="mb-3 d-block">
-                    <img th:src="@{/images/logo.png}" alt="Highlands Coffee Logo" style="max-width: 150px;">
+                <a th:href="@{/}" class="mb-3 d-block">
+                    <img th:src="@{/images/logo.png}" alt="AloTra Logo" style="max-width: 150px;">
                 </a>
                 <p class="small text-body-secondary">
-                    Highlands Coffee® Order thuộc CÔNG TY CỔ PHẦN DỊCH VỤ CÀ PHÊ CAO NGUYÊN tự hào là nhà phân phối hợp lệ cho tất cả các sản phẩm mang thương hiệu Highlands Coffee®.
+                    AloTra là nền tảng thương mại điện tử chuyên cung cấp các sản phẩm trà chất lượng cao, cam kết mang đến những trải nghiệm mua sắm tốt nhất.
                 </p>
                 <ul class="list-unstyled small text-body-secondary">
                     <li class="d-flex mb-2">
                         <i class="fa-solid fa-location-dot me-2 mt-1"></i>
-                        <span>125-127 Nguyễn Cơ Thạch, phường An Lợi Đông, Thủ Đức, TP.HCM</span>
+                        <span>Số 1, Đường Võ Văn Ngân, TP.Thủ Đức</span>
                     </li>
                     <li class="d-flex mb-2">
                         <i class="fa-solid fa-phone me-2 mt-1"></i>
-                        <span>Số điện thoại: 19001755</span>
+                        <span>Số điện thoại: 0369550806</span> 
                     </li>
                     <li class="d-flex mb-3">
                         <i class="fa-solid fa-envelope me-2 mt-1"></i>
-                        <span>Email: customerservice@highlandscoffee.com.vn</span>
+                        <span>Email: hotro@alotra.vn</span>
                     </li>
                 </ul>
                 <div>
@@ -40,34 +40,34 @@
                 <ul class="list-unstyled footer-links small">
                     <li class="mb-2"><a href="#">Chính sách đặt hàng</a></li>
                     <li class="mb-2"><a href="#">Chính sách bảo mật</a></li>
-                    <li class="mb-2"><a href="#">Chính sách thanh toán</a></li>
+                    <li class="mb-2"><a href="@{#}">Chính sách thanh toán</a></li>
                 </ul>
             </div>
 
             <div class="col-lg-2 col-md-6 mb-4">
                 <h5 class="text-dark fw-bold mb-4">Hỗ trợ</h5>
                 <ul class="list-unstyled footer-links small">
-                    <li class="mb-2"><a href="#">Tìm kiếm</a></li>
-                    <li class="mb-2"><a href="#">Đăng nhập</a></li>
-                    <li class="mb-2"><a href="#">Đăng ký</a></li>
-                    <li class="mb-2"><a href="#">Giỏ hàng</a></li>
-                    <li class="mb-2"><a href="#">Liên hệ</a></li>
+                    <li class="mb-2"><a th:href="@{/search}">Tìm kiếm</a></li>
+                    <li class="mb-2"><a th:href="@{/login}">Đăng nhập</a></li>
+                    <li class="mb-2"><a th:href="@{/login}">Đăng ký</a></li>
+                    <li class="mb-2"><a th:href="@{/cart}">Giỏ hàng</a></li>
+                    <li class="mb-2"><a th:href="@{/#}">Liên hệ</a></li>
                 </ul>
             </div>
 
             <div class="col-lg-4 col-md-6 mb-4">
                 <h5 class="text-dark fw-bold mb-4">Đăng ký nhận tin</h5>
-                <p class="small text-body-secondary">Nhận thông tin sản phẩm mới nhất và các chương trình khuyến mãi đặc biệt từ Highlands Coffee.</p>
+                <p class="small text-body-secondary">Nhận thông tin sản phẩm mới nhất và các chương trình khuyến mãi đặc biệt từ AloTra.</p>
                 <div class="input-group mb-3">
                     <input type="email" class="form-control" placeholder="Nhập địa chỉ email">
-                    <button class="btn btn-danger" type="button" style="background-color: var(--highlands-red);">Đăng ký</button>
+                    <button class="btn btn-primary" type="button" style="background-color: #007bff; border-color: #007bff;">Đăng ký</button> 
                 </div>
                 <img src="https://bizweb.dktcdn.net/100/487/455/themes/917232/assets/logo_bct.png?1759892738511" alt="Bộ Công Thương" style="max-width: 160px;">
             </div>
         </div>
         <hr class="my-4">
         <div class="text-center small text-body-secondary">
-            <p class="mb-0">© 2025 Highlands Coffee. All rights reserved</p>
+            <p class="mb-0">© 2025 AloTra. All rights reserved</p>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
