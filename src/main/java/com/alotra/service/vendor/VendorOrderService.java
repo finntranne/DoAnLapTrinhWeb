@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -85,17 +86,17 @@ public class VendorOrderService {
 	 */
 	public Map<String, Long> getOrderStatusCounts(Integer shopId) {
 		Map<String, Long> counts = new HashMap<>();
-		
+
 		// Đếm tổng số đơn hàng
 		counts.put("ALL", orderRepository.countByShopId(shopId));
-		
+
 		// Đếm theo từng trạng thái
 		counts.put("Pending", orderRepository.countByShopIdAndStatus(shopId, "Pending"));
 		counts.put("Confirmed", orderRepository.countByShopIdAndStatus(shopId, "Confirmed"));
 		counts.put("Delivering", orderRepository.countByShopIdAndStatus(shopId, "Delivering"));
 		counts.put("Completed", orderRepository.countByShopIdAndStatus(shopId, "Completed"));
 		counts.put("Cancelled", orderRepository.countByShopIdAndStatus(shopId, "Cancelled"));
-		
+
 		return counts;
 	}
 
@@ -185,6 +186,13 @@ public class VendorOrderService {
 		history.setTimestamp(LocalDateTime.now());
 		orderHistoryRepository.save(history);
 
+		try {
+			notificationService.notifyShipperAboutAssignment(order.getShipper().getId(), orderId,
+					order.getShippingAddress());
+		} catch (Exception e) {
+			log.error("Error sending notification: {}", e.getMessage());
+		}
+		
 		log.info("Assigned shipper {} to order {}", shipperId, orderId);
 	}
 
@@ -255,6 +263,13 @@ public class VendorOrderService {
 				+ newShipperEmployee.getUser().getFullName() + ". Lý do: " + reason);
 		history.setTimestamp(LocalDateTime.now());
 		orderHistoryRepository.save(history);
+
+		try {
+			notificationService.notifyShipperAboutAssignment(newShipperEmployee.getUser().getId(), orderId,
+					order.getShippingAddress());
+		} catch (Exception e) {
+			log.error("Error sending notification: {}", e.getMessage());
+		}
 
 		log.info("Reassigned order {} from shipper {} to shipper {}", orderId, oldShipper.getId(), newShipperId);
 	}

@@ -25,6 +25,7 @@ import com.alotra.repository.promotion.PromotionRepository; // ✅ THÊM REPOSIT
 import com.alotra.service.cart.CartService;
 import com.alotra.service.order.ShipperOrderService;
 import com.alotra.service.checkout.VNPayService;
+import com.alotra.service.notification.NotificationService;
 import com.alotra.service.product.CategoryService;
 import com.alotra.service.product.ProductService;
 import com.alotra.service.shop.StoreService;
@@ -122,6 +123,8 @@ public class OrderController {
 	// Trong OrderController.java
 	@Autowired
 	private PdfGeneratorService pdfGeneratorService; // Inject Service mới
+	@Autowired
+	private NotificationService notificationService;
 
 	// === HÀM TRỢ GIÚP: Lấy User (Giữ nguyên) ===
 	private User getCurrentAuthenticatedUser() {
@@ -507,6 +510,16 @@ public class OrderController {
 			}
 
 			savedOrder = orderRepository.saveAndFlush(order);
+			
+			// Gửi thông báo
+			try {
+				notificationService.notifyVendorAboutNewOrder(
+						itemsToOrder.get(0).getVariant().getProduct().getShop().getUser().getId(), order.getOrderID(),
+						user.getFullName());
+				notificationService.notifyShipperAboutAssignment(order.getShipper().getId(), order.getOrderID(), order.getShippingAddress());
+			} catch (Exception e) {
+				log.error("Error sending notification: {}", e.getMessage());
+			}
 
 			// === 7. SỬA LỚN: Xử lý OrderDetail và Topping (Giữ nguyên) ===
 			List<OrderDetail> orderDetailList = new ArrayList<>();

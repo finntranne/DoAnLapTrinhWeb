@@ -94,30 +94,41 @@
 					<li class="nav-item dropdown"><a class="nav-link"
 						data-bs-toggle="dropdown" href="#" aria-expanded="false"> <i
 							class="bi bi-bell-fill"></i> <span
-							class="navbar-badge badge text-bg-warning">15</span>
+							th:if="${unreadNotificationCount > 0}"
+							class="navbar-badge badge text-bg-warning"
+							th:text="${unreadNotificationCount}"></span>
 					</a>
+
 						<div class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
-							<span class="dropdown-item dropdown-header">15
-								Notifications</span>
+							<span class="dropdown-item dropdown-header"
+								th:text="${unreadNotificationCount == 0 ? 'Không có thông báo mới' : unreadNotificationCount + ' Thông báo'}">
+							</span>
+
+							<th:block th:each="notify : ${unreadNotifications}">
+								<div class="dropdown-divider"></div>
+
+								<a
+									th:with="
+					url = ${#strings.containsIgnoreCase(notify.message, 'order') or 
+							#strings.containsIgnoreCase(notify.message, 'đơn hàng') ? '/vendor/orders' :
+						  (#strings.containsIgnoreCase(notify.message, 'product') or 
+							#strings.containsIgnoreCase(notify.message, 'sản phẩm') ? '/vendor/products' :
+						  (#strings.containsIgnoreCase(notify.message, 'review') or 
+							#strings.containsIgnoreCase(notify.message, 'đánh giá') ? '/vendor/products' :
+						  (#strings.containsIgnoreCase(notify.message, 'topping') ? '/vendor/toppings' :
+							'/vendor/dashboard')))}"
+									th:href="@{${url}}" class="dropdown-item text-truncate"> <i
+									class="bi bi-info-circle-fill me-2"></i> <span
+									th:text="${notify.message}">Nội dung thông báo ở đây...</span>
+								</a>
+							</th:block>
+
 							<div class="dropdown-divider"></div>
-							<a href="#" class="dropdown-item"> <i
-								class="bi bi-envelope me-2"></i> 4 new messages <span
-								class="float-end text-secondary fs-7">3 mins</span>
+							<a th:href="@{/vendor/notifications/all}"
+								class="dropdown-item dropdown-footer"> Xem tất cả thông báo
 							</a>
-							<div class="dropdown-divider"></div>
-							<a href="#" class="dropdown-item"> <i
-								class="bi bi-people-fill me-2"></i> 8 friend requests <span
-								class="float-end text-secondary fs-7">12 hours</span>
-							</a>
-							<div class="dropdown-divider"></div>
-							<a href="#" class="dropdown-item"> <i
-								class="bi bi-file-earmark-fill me-2"></i> 3 new reports <span
-								class="float-end text-secondary fs-7">2 days</span>
-							</a>
-							<div class="dropdown-divider"></div>
-							<a href="#" class="dropdown-item dropdown-footer"> See All
-								Notifications </a>
 						</div></li>
+
 
 					<li class="nav-item"><a class="nav-link" href="#"
 						data-lte-toggle="fullscreen"> <i data-lte-icon="maximize"
@@ -137,8 +148,7 @@
 								class="rounded-circle shadow" alt="User Image" />
 								<p>Vendor Account</p></li>
 							<li class="user-footer"><a th:href="@{/user/profile}"
-								class="btn btn-default btn-flat">Profile</a> 
-								<a href="#"
+								class="btn btn-default btn-flat">Profile</a> <a href="#"
 								id="vendorLogoutBtn" class="btn btn-default btn-flat float-end">
 									Đăng Xuất </a></li>
 						</ul></li>
