@@ -3,35 +3,122 @@
       th:replace="~{layouts/main :: layout(~{::title}, ~{::section})}">
 <head>
     <title>Đặt Hàng Thành Công - AloTra</title>
+    
 </head>
 <body>
 <section>
-    <div class="container my-5 py-5">
-        <div class="row justify-content-center">
-            <div class="col-md-8 col-lg-6 text-center">
-                
-                <div class="success-icon mb-4">
-                    <i class="fa-solid fa-circle-check fa-5x text-success"></i>
+    <div class="success-container">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-12 col-md-10 col-lg-8">
+                    <div class="success-card text-center">
+
+                        <!-- Icon thành công -->
+                        <div class="success-icon mb-4">
+                            <i class="fa-solid fa-circle-check fa-5x text-success"></i>
+                        </div>
+
+                        <!-- Tiêu đề -->
+                        <h1 class="fw-bold mb-3" style="color: #2c3e50;">
+                            Đặt hàng thành công!
+                        </h1>
+
+                        <!-- Mô tả -->
+                        <p class="info-text mb-4">
+                            Cảm ơn bạn đã tin tưởng và mua hàng tại <strong style="color: #667eea;">AloTra</strong>.<br>
+                            Đơn hàng của bạn đang được xử lý và sẽ sớm được giao đến bạn.
+                        </p>
+
+                        <!-- Nội dung khi có orderId -->
+                        <div th:if="${orderId != null}">
+                            
+                            <!-- Mã đơn hàng -->
+                            <p class="mb-2" style="color: #7f8c8d; font-size: 0.9rem;">
+                                Mã đơn hàng của bạn:
+                            </p>
+                            <div class="order-number">
+                                <i class="fa-solid fa-receipt me-2"></i>
+                                <span th:text="'#ALOTRA-' + ${orderId}">#ALOTRA-12345</span>
+                            </div>
+
+                            <!-- Đường kẻ phân cách -->
+                            <div class="divider"></div>
+
+                            <!-- Các nút hành động -->
+                            <div class="d-flex flex-column flex-md-row gap-3 justify-content-center align-items-stretch mb-4">
+                                
+                                <!-- Nút xem hóa đơn -->
+                                <a th:href="@{'/order/invoice/' + ${orderId}}"
+                                   class="btn btn-custom btn-invoice flex-fill"
+                                   target="_blank">
+                                    <i class="fa-solid fa-file-invoice me-2"></i>
+                                    Xem Hóa Đơn
+                                </a>
+
+                                <!-- Nút tải PDF -->
+                                <a th:href="@{'/order/export-pdf/' + ${orderId}}"
+                                   class="btn btn-custom btn-pdf flex-fill"
+                                   download>
+                                    <i class="fa-solid fa-file-pdf me-2"></i>
+                                    Tải PDF
+                                </a>
+                            </div>
+
+                            <!-- Các nút phụ -->
+                            <div class="d-flex flex-column flex-md-row gap-2 justify-content-center align-items-stretch">
+                                
+                                <!-- Về trang chủ -->
+                                <a th:href="@{/}" 
+                                   class="btn btn-custom btn-home flex-fill">
+                                    <i class="fa-solid fa-home me-2"></i>
+                                    Về Trang chủ
+                                </a>
+
+                                <!-- Lịch sử đơn hàng -->
+                                <a th:href="@{/user/orders}" 
+                                   class="btn btn-custom btn-orders flex-fill">
+                                    <i class="fa-solid fa-clock-rotate-left me-2"></i>
+                                    Lịch sử Đơn hàng
+                                </a>
+                            </div>
+
+                            <!-- Thông tin bổ sung -->
+                            <div class="mt-4 pt-3" style="border-top: 1px dashed #e0e0e0;">
+                                <p class="info-text mb-2">
+                                    <i class="fa-solid fa-info-circle me-2" style="color: #3498db;"></i>
+                                    Bạn có thể theo dõi trạng thái đơn hàng trong mục 
+                                    <strong>Lịch sử Đơn hàng</strong>
+                                </p>
+                                <p class="info-text mb-0">
+                                    <i class="fa-solid fa-headset me-2" style="color: #e74c3c;"></i>
+                                    Hotline hỗ trợ: <strong>1900-xxxx</strong> (8:00 - 22:00)
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Nội dung khi KHÔNG có orderId -->
+                        <div th:unless="${orderId != null}">
+                            <div class="alert alert-warning d-inline-block mb-4" role="alert">
+                                <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                                Không tìm thấy thông tin đơn hàng
+                            </div>
+
+                            <div class="d-flex flex-column flex-md-row gap-2 justify-content-center">
+                                <a th:href="@{/}" 
+                                   class="btn btn-custom btn-invoice">
+                                    <i class="fa-solid fa-home me-2"></i>
+                                    Về Trang chủ
+                                </a>
+                                <a th:href="@{/user/orders}" 
+                                   class="btn btn-custom btn-home">
+                                    <i class="fa-solid fa-receipt me-2"></i>
+                                    Xem đơn hàng
+                                </a>
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
-
-                <h1 class="fw-bold mb-3">Đặt hàng thành công!</h1>
-                
-                <p class="text-muted fs-5 mb-4">
-                    Cảm ơn bạn đã tin tưởng và mua hàng tại AloTra.
-                    Đơn hàng của bạn đang được xử lý.
-                </p>
-
-                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
-                    <a th:href="@{/}" class="btn btn-primary btn-lg px-4 me-md-2">
-                        <i class="fa-solid fa-home me-2"></i>
-                        Về Trang chủ
-                    </a>
-                    <a href="/user/orders" class="btn btn-outline-secondary btn-lg px-4">
-                        <i class="fa-solid fa-receipt me-2"></i>
-                        Xem đơn hàng
-                    </a>
-                </div>
-
             </div>
         </div>
     </div>

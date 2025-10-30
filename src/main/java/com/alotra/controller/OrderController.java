@@ -29,6 +29,7 @@ import com.alotra.service.product.CategoryService;
 import com.alotra.service.product.ProductService;
 import com.alotra.service.shop.StoreService;
 import com.alotra.service.user.UserService;
+import com.alotra.util.PdfGeneratorService;
 import com.alotra.util.VNPayUtil;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -38,7 +39,10 @@ import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j; // ✅ THÊM SLF4J
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -114,6 +118,10 @@ public class OrderController {
 	private ShopEmployeeRepository shopEmployeeRepository;
 	@Autowired
 	private com.alotra.config.VNPayConfig vnPayConfig;
+	
+	// Trong OrderController.java
+	@Autowired
+	private PdfGeneratorService pdfGeneratorService; // Inject Service mới
 
 	// === HÀM TRỢ GIÚP: Lấy User (Giữ nguyên) ===
 	private User getCurrentAuthenticatedUser() {
@@ -735,5 +743,106 @@ public class OrderController {
 
 		return "shop/vietqr-confirmation"; // Cần tạo view này
 	}
+	
+	/**
+     * *** HIỂN THỊ HÓA ĐƠN ĐIỆN TỬ ***
+     * Endpoint: /order/invoice/{orderId}
+     */
+	@Transactional
+    @GetMapping("/order/invoice/{orderId}")
+    public String showInvoicePage(@PathVariable Integer orderId, Model model, HttpSession session, RedirectAttributes redirectAttributes) {
+
+        try {
+            User user = getCurrentAuthenticatedUser();
+            
+            // 1. Tải Order
+            Order order = orderRepository.findById(orderId)
+                    .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy đơn hàng #ID: " + orderId));
+            
+            // 2. Kiểm tra quyền sở hữu
+            if (!order.getUser().getId().equals(user.getId())) {
+                throw new AccessDeniedException("Bạn không có quyền truy cập hóa đơn này.");
+            }
+
+            // 3. Tải chi tiết đơn hàng và các thông tin liên quan
+            // (OrderDetails sẽ được tải tự động nếu OrderDetails được fetch EAGER, 
+            // hoặc dùng repository nếu là LAZY)
+            
+            // Nếu orderDetails là LAZY, cần gọi order.getOrderDetails().size() để đảm bảo tải dữ liệu
+            List<OrderDetail> details = order.getOrderDetails(); 
+            
+            // 4. Đưa dữ liệu ra View
+            model.addAttribute("order", order);
+            model.addAttribute("orderDetails", details);
+            
+            // Lấy thông tin cần thiết cho layout (nếu template dùng layout)
+            Integer selectedShopId = getSelectedShopId(session);
+            model.addAttribute("cartItemCount", getCurrentCartItemCount());
+            model.addAttribute("categories", categoryService.findAll());
+            model.addAttribute("shops", storeService.findAllActiveShops());
+            model.addAttribute("selectedShopName", storeService.getShopNameById(selectedShopId));
+
+            return "shop/invoice"; // Cần tạo file invoice.html
+
+        } catch (ResponseStatusException | UsernameNotFoundException e) {
+            return "redirect:/login";
+        } catch (EntityNotFoundException | AccessDeniedException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy hoặc không có quyền truy cập hóa đơn.");
+            return "redirect:/user/orders"; // Quay về trang danh sách đơn hàng
+        } catch (Exception e) {
+            log.error("Lỗi khi tải hóa đơn #{}", orderId, e);
+            redirectAttributes.addFlashAttribute("errorMessage", "Lỗi hệ thống khi tải hóa đơn.");
+            return "redirect:/user/orders";
+        }
+        
+    }
+        
+        /**
+         * *** EXPORT HÓA ĐƠN DƯỚI DẠNG PDF ***
+         * Endpoint: /order/export-pdf/{orderId}
+         */
+	@Transactional
+        @GetMapping("/order/export-pdf/{orderId}")
+        public ResponseEntity<byte[]> exportInvoicePdf(@PathVariable Integer orderId) {
+
+            try {
+                User user = getCurrentAuthenticatedUser();
+                
+                Order order = orderRepository.findById(orderId)
+                        .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy đơn hàng #ID: " + orderId));
+                
+                // Kiểm tra quyền sở hữu
+                if (!order.getUser().getId().equals(user.getId())) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+                }
+
+                // Chuẩn bị dữ liệu cho PDF
+                Map<String, Object> data = new HashMap<>();
+                data.put("order", order);
+                data.put("orderDetails", order.getOrderDetails());
+                
+                // Tải nội dung PDF
+                byte[] pdfBytes = pdfGeneratorService.generatePdf("shop/invoice", data); 
+
+                String filename = "HoaDon_AloTra_" + orderId + ".pdf";
+                
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_PDF);
+                headers.setContentDisposition(ContentDisposition.attachment().filename(filename).build());
+                headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                        .body(pdfBytes);
+
+            } catch (ResponseStatusException | UsernameNotFoundException e) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            } catch (EntityNotFoundException e) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            } catch (Exception e) {
+                log.error("Lỗi khi tạo PDF hóa đơn #{}", orderId, e);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
+        }   
 
 }
