@@ -16,7 +16,7 @@
 				</div>
 
 				<div class="mb-3">
-					<a th:href="@{/admin/toppings/selling}"
+					<a th:href="@{/admin/toppings}"
 						class="btn btn-success me-2"> Toppping đang bán </a> <a
 						th:href="@{/admin/toppings/pending}" class="btn btn-warning me-2">
 						Chờ phê duyệt </a>
@@ -68,8 +68,8 @@
 								<td>
 									<div class="d-flex gap-2 justify-content-start">
 										<a
-											th:href="@{'/admin/toppings/selling/detail/' + ${topping.toppingID}}"
-											class="btn btn-outline-info btn-sm "> <i
+											th:href="@{'/admin/toppings/edit/' + ${topping.toppingID}}"
+											class="btn btn-outline-warning btn-sm "> <i
 											class="bi bi-eye"></i>
 										</a> <a
 											th:href="@{'/admin/toppings/delete/' + ${topping.toppingID}(page=${currentPage})}"

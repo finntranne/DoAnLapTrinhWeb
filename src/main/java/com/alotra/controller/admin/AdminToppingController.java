@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.validation.Valid;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 
@@ -18,11 +21,14 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.alotra.entity.product.Product;
@@ -30,6 +36,7 @@ import com.alotra.entity.product.ProductApproval;
 import com.alotra.entity.product.Topping;
 import com.alotra.entity.product.ToppingApproval;
 import com.alotra.repository.product.ToppingRepository;
+import com.alotra.service.cloudinary.CloudinaryService;
 import com.alotra.service.product.ToppingApprovalService;
 import com.alotra.service.product.ToppingService;
 
@@ -46,8 +53,11 @@ public class AdminToppingController {
 	
 	@Autowired
 	ToppingApprovalService toppingApprovalService;
+	
+	@Autowired
+	CloudinaryService cloudinary;
 
-	@GetMapping({ "", "/selling" })
+	@GetMapping("")
 	public String listSelling(ModelMap model, @RequestParam(name = "page", defaultValue = "1") int page,
 			@RequestParam(name = "size", defaultValue = "10") int size) {
 		Pageable pageable = PageRequest.of(page - 1, size);
@@ -63,6 +73,84 @@ public class AdminToppingController {
 
 		return "admin/toppings/selling";
 	}
+	
+	@GetMapping("/edit/{id}")
+	public String editForm(@PathVariable("id") Integer id, ModelMap model) {
+	    Optional<Topping> toppingOpt = toppingService.findById(id);
+
+	    if (toppingOpt.isPresent()) {
+	        model.addAttribute("topping", toppingOpt.get());
+	        model.addAttribute("activeMenu", "toppings"); 
+	        return "admin/toppings/edit"; 
+	    } else {
+	        
+	        return "redirect:/admin/toppings";
+	    }
+	}
+	
+	@PostMapping("/edit/{id}")
+    public String updateTopping(@PathVariable("id") Integer id,
+                                @Valid @ModelAttribute("topping") Topping toppingFromForm,
+                                BindingResult bindingResult,
+                                @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
+                                ModelMap model,
+                                RedirectAttributes redirectAttributes) {
+
+        if (bindingResult.hasErrors()) {
+            toppingService.findById(id).ifPresent(existing -> {
+                toppingFromForm.setImageURL(existing.getImageURL());
+            });
+            
+            model.addAttribute("activeMenu", "toppings");
+            return "admin/toppings/edit"; 
+        }
+
+        try {
+            
+            Topping existingTopping = toppingService.findById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy topping có ID: " + id));
+
+            
+            if (imageFile != null && !imageFile.isEmpty()) {
+                try {
+                    
+                    if (existingTopping.getImageURL() != null && !existingTopping.getImageURL().isEmpty()) {
+                        String oldPublicId = cloudinary.extractPublicIdFromUrl(existingTopping.getImageURL());
+                        if (oldPublicId != null) {
+                            cloudinary.deleteImage(oldPublicId);
+                        }
+                    }
+
+             
+                    String uploadedUrl = cloudinary.uploadImage(imageFile, "toppings", existingTopping.getToppingID());
+
+                    toppingFromForm.setImageURL(uploadedUrl); 
+
+                } catch (Exception e) {
+                    log.error("Lỗi khi upload ảnh cho topping {}: {}", existingTopping.getToppingName(), e.getMessage());
+                    redirectAttributes.addFlashAttribute("errorMessage", "Không thể cập nhật ảnh. Vui lòng thử lại!");
+                    return "redirect:/admin/toppings/edit/" + id;
+                }
+            } else {
+                
+                toppingFromForm.setImageURL(existingTopping.getImageURL());
+            }
+
+            toppingFromForm.setToppingID(id);
+
+
+            toppingService.save(toppingFromForm); 
+
+            redirectAttributes.addFlashAttribute("message", "Cập nhật topping thành công!");
+            return "redirect:/admin/toppings";
+
+        } catch (Exception e) {
+            log.error("Lỗi khi cập nhật topping {}: {}", id, e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "Đã xảy ra lỗi: " + e.getMessage());
+            return "redirect:/admin/toppings/edit/" + id;
+        }
+    }
+
 	
 	@GetMapping("/pending")
 	public String listPending(ModelMap model, @RequestParam(name = "page", defaultValue = "1") int page,
