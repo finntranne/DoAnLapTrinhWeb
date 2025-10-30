@@ -136,7 +136,7 @@ public class WebSecurityConfig {
                             "/api/auth/**", // API đăng nhập/đăng ký
                             "/api/debug/**",
                             "/css/**", "/js/**", "/images/**", "/assets/**","/ws/**",
-                            "/favicon.ico", "/error"
+                            "/favicon.ico", "/error", "/categories/**", "/search/**"
                         ).permitAll()
                         
                         // --- PHÂN QUYỀN CHO CÁC VAI TRÒ CỤ THỂ ---
