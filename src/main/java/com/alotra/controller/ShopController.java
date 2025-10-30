@@ -36,12 +36,18 @@ public class ShopController {
     // --- Hàm trợ giúp lấy User ID đang đăng nhập ---
     private Integer getCurrentUserId(String username) {
          return userService.findByUsername(username).map(User::getId).orElse(null);
+         
     }
+    private Integer getSelectedShopId(HttpSession session) {
+        Integer selectedShopId = (Integer) session.getAttribute("selectedShopId");
+        return (selectedShopId == null) ? 0 : selectedShopId; // Mặc định là 0 (Xem tất cả)
+    }
+    
 
     @GetMapping("/register")
     @PreAuthorize("isAuthenticated()") // Bắt buộc đăng nhập
-    public String showRegistrationForm(Model model, RedirectAttributes redirectAttributes) {
-        
+    public String showRegistrationForm(Model model, RedirectAttributes redirectAttributes, HttpSession session) {
+    	Integer selectedShopId = getSelectedShopId(session);
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || auth.getName().equals("anonymousUser")) {
              return "redirect:/login";
@@ -61,6 +67,9 @@ public class ShopController {
         }
 
         model.addAttribute("shopRegistrationDTO", new ShopRegistrationDTO());
+        
+        model.addAttribute("shops", storeService.findAllActiveShops());
+        model.addAttribute("selectedShopName", storeService.getShopNameById(selectedShopId));
         // Có thể cần thêm categories cho layout
         return "shop/register_form"; // Tạo file register_form.html
     }

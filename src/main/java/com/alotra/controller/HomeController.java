@@ -96,7 +96,7 @@ public class HomeController {
         
         Integer selectedShopId = getSelectedShopId(session); // Lấy shopId
 
-        
+        System.out.println("DEBUG: selectedShopId from session = " + selectedShopId);
         
         model.addAttribute("categories", categoryService.findAll());
         model.addAttribute("isHomePage", true);

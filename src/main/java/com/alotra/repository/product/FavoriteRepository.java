@@ -10,6 +10,8 @@ import org.springframework.stereotype.Repository;
 
 import com.alotra.entity.product.Favorite;
 
+import jakarta.transaction.Transactional;
+
 @Repository
 public interface FavoriteRepository extends JpaRepository<Favorite, Integer> {
     
@@ -19,6 +21,7 @@ public interface FavoriteRepository extends JpaRepository<Favorite, Integer> {
     
     Boolean existsByUser_IdAndProduct_ProductID(Integer userId, Integer productId);
     
+    @Transactional 
     void deleteByUser_IdAndProduct_ProductID(Integer userId, Integer productId);
     
     @Query("SELECT COUNT(f) FROM Favorite f WHERE f.product.productID = :productId")

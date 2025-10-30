@@ -8,6 +8,13 @@
 
 <body>
     <section>
+    <div th:if="${errorMessage}" class="container my-4">
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                <span th:text="${errorMessage}">Nội dung thông báo lỗi sẽ hiển thị tại đây.</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
 <div class="my-5">
     <h2 class="text-center mb-4">Sản Phẩm Bán Chạy</h2>
     <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-4" th:if="${topProducts != null and not #lists.isEmpty(topProducts)}">

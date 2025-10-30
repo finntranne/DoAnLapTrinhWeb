@@ -161,30 +161,67 @@
                 </ul>
 
                 <div class="tab-content mt-4" id="productTabsContent">
-                    <div class="tab-pane fade show active" id="description" role="tabpanel">
-                        <p th:utext="${product.description}"></p>
+    <div class="tab-pane fade" id="reviews" role="tabpanel">
+        <div th:if="${#lists.isEmpty(reviews)}">
+            <p>Chưa có đánh giá nào cho sản phẩm này.</p>
+        </div>
+        <div th:unless="${#lists.isEmpty(reviews)}">
+            <div th:each="review : ${reviews}" class="border-bottom pb-3 mb-3">
+                
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <strong th:text="${review.user.fullName}"></strong>
+                        
+                        <div class="mb-1 mt-1">
+                            <span th:each="i : ${#numbers.sequence(1, 5)}">
+                                <i class="fa-solid fa-star"
+                                   th:style="${i <= review.rating} ? 'color: #ffc107;' : 'color: #ccc;'"></i>
+                            </span>
+                        </div>
                     </div>
 
-                    <div class="tab-pane fade" id="reviews" role="tabpanel">
-                        <div th:if="${#lists.isEmpty(reviews)}">
-                            <p>Chưa có đánh giá nào cho sản phẩm này.</p>
-                        </div>
-                        <div th:unless="${#lists.isEmpty(reviews)}">
-                            <div th:each="review : ${reviews}" class="border-bottom pb-3 mb-3">
-                                <strong th:text="${review.user.fullName}"></strong>
-                                <div class="mb-1">
-                                    <span th:each="i : ${#numbers.sequence(1, 5)}">
-                                        <i class="fa-solid fa-star"
-                                           th:style="${i <= review.rating} ? 'color: #ffc107;' : 'color: #ccc;'"></i>
-                                    </span>
-                                </div>
-                                <p class="mb-0" th:text="${review.comment}"></p>
-                                <small class="text-muted"
-                                       th:text="${#temporals.format(review.reviewDate, 'dd/MM/yyyy')}"></small>
-                            </div>
+                    <small class="text-muted"
+                           th:text="${#temporals.format(review.reviewDate, 'dd/MM/yyyy')}"></small>
+                </div>
+                
+                <p class="mb-2" th:text="${review.comment}"></p>
+
+                <th:block th:if="${review.mediaURLs != null and !review.mediaURLs.isEmpty()}">
+                    <div th:with="mediaUrls=${#strings.arraySplit(review.mediaURLs, ',')}"
+                         class="media-gallery d-flex flex-wrap gap-2 mb-3">
+                        
+                        <div th:each="url : ${mediaUrls}">
+                            <th:block th:with="urlTrimmed=${#strings.trim(url)}">
+                                
+                                <a th:if="${#strings.contains(urlTrimmed, '/image/upload/')}" 
+                                   th:href="${urlTrimmed}" 
+                                   target="_blank"
+                                   class="d-block media-thumbnail">
+                                    <img th:src="${urlTrimmed}" 
+                                         alt="Review Image"
+                                         class="rounded"
+                                         style="width: 80px; height: 80px; object-fit: cover; cursor: pointer;">
+                                </a>
+
+                                <a th:if="${#strings.contains(urlTrimmed, '/video/upload/')}" 
+                                   th:href="${urlTrimmed}" 
+                                   target="_blank"
+                                   class="d-block media-thumbnail position-relative">
+                                    <img th:src="@{/images/video_placeholder.png}" 
+                                         alt="Review Video"
+                                         class="rounded"
+                                         style="width: 80px; height: 80px; object-fit: cover; filter: brightness(0.7);">
+                                    <i class="fa-solid fa-play position-absolute top-50 start-50 translate-middle text-white fs-4"></i>
+                                </a>
+                                
+                            </th:block>
                         </div>
                     </div>
+                </th:block>
                 </div>
+        </div>
+    </div>
+</div>
             </div>
         </div>
 

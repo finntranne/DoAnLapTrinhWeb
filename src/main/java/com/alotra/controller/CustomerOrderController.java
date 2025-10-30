@@ -5,11 +5,19 @@ import com.alotra.entity.order.OrderShippingHistory;
 import com.alotra.entity.user.User;
 import com.alotra.repository.order.OrderRepository;
 import com.alotra.repository.order.OrderShippingHistoryRepository;
+import com.alotra.entity.order.OrderDetail;
+import com.alotra.entity.user.User;
+import com.alotra.repository.order.OrderRepository;
+import com.alotra.repository.product.FavoriteRepository;
+import com.alotra.repository.product.ReviewRepository;
 import com.alotra.service.cart.CartService;
 import com.alotra.service.product.CategoryService;
+import com.alotra.service.shop.StoreService;
 import com.alotra.service.user.UserService;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpSession;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page; // *** THÊM ***
 import org.springframework.data.domain.PageRequest; // *** THÊM ***
@@ -26,7 +34,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Controller
@@ -43,6 +53,12 @@ public class CustomerOrderController {
 	private CategoryService categoryService;
 	@Autowired
 	private UserService userService;
+	@Autowired
+	private ReviewRepository reviewRepository; // <== THÊM
+	@Autowired
+	private FavoriteRepository favoriteRepository; // <== THÊM
+	@Autowired
+	private StoreService storeService;
 
 	// === Hàm trợ giúp lấy User (Giữ nguyên) ===
 	private User getCurrentAuthenticatedUser() {
@@ -55,7 +71,7 @@ public class CustomerOrderController {
 				.orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng với email: " + username));
 	}
 
-	// --- Hàm trợ giúp lấy số lượng giỏ hàng (Giữ nguyên) ---
+    // --- Hàm trợ giúp lấy số lượng giỏ hàng (Giữ nguyên) ---
 	private int getCurrentCartItemCount() {
 		try {
 			User user = getCurrentAuthenticatedUser();
@@ -65,15 +81,22 @@ public class CustomerOrderController {
 		}
 	}
 
+	private Integer getSelectedShopId(HttpSession session) {
+		Integer selectedShopId = (Integer) session.getAttribute("selectedShopId");
+		return (selectedShopId == null) ? 0 : selectedShopId; // Mặc định là 0 (Xem tất cả)
+	}
+
 	/**
-	 * XEM LỊCH SỬ ĐƠN HÀNG (ĐÃ SỬA + Thêm Phân Trang)
-	 */
-	@GetMapping("/orders")
-	public String showOrderHistory(Model model, @RequestParam(name = "status", required = false) String status,
-			@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) { // Mặc định 10
-																										// đơn/trang
-		try {
-			User user = getCurrentAuthenticatedUser();
+     * XEM LỊCH SỬ ĐƠN HÀNG (ĐÃ SỬA + Thêm Phân Trang)
+     */
+    @GetMapping("/orders")
+    public String showOrderHistory(Model model,
+                                   @RequestParam(name = "status", required = false) String status,
+                                   @RequestParam(defaultValue = "0") int page,
+                                   @RequestParam(defaultValue = "10") int size, HttpSession session) { // Mặc định 10 đơn/trang
+        try {
+        	Integer selectedShopId = getSelectedShopId(session);
+            User user = getCurrentAuthenticatedUser();
 
 			Pageable pageable = PageRequest.of(page, size, Sort.by("orderDate").descending());
 
@@ -89,13 +112,15 @@ public class CustomerOrderController {
 			}
 			// *** KẾT THÚC SỬA ***
 
-			model.addAttribute("orderPage", orderPage); // Truyền Page object
-			model.addAttribute("orders", orderPage.getContent()); // List cho trang hiện tại
-			model.addAttribute("currentPage", page);
-			model.addAttribute("totalPages", orderPage.getTotalPages());
-			model.addAttribute("currentStatus", status);
-			model.addAttribute("cartItemCount", getCurrentCartItemCount());
-			model.addAttribute("categories", categoryService.findAll());
+            model.addAttribute("orderPage", orderPage); // Truyền Page object
+            model.addAttribute("orders", orderPage.getContent()); // List cho trang hiện tại
+            model.addAttribute("currentPage", page);
+            model.addAttribute("totalPages", orderPage.getTotalPages());
+            model.addAttribute("currentStatus", status);
+            model.addAttribute("cartItemCount", getCurrentCartItemCount());
+            model.addAttribute("categories", categoryService.findAll());
+            model.addAttribute("shops", storeService.findAllActiveShops());
+            model.addAttribute("selectedShopName", storeService.getShopNameById(selectedShopId));
 
 			return "user/order_history";
 
@@ -118,16 +143,46 @@ public class CustomerOrderController {
 	 */
 	@GetMapping("/orders/{id}")
 	public String showOrderDetail(@PathVariable("id") Integer orderId, Model model,
-			RedirectAttributes redirectAttributes) {
+			RedirectAttributes redirectAttributes, HttpSession session) {
 		try {
+			Integer selectedShopId = getSelectedShopId(session);
 			User user = getCurrentAuthenticatedUser();
 			Order order = orderRepository.findById(orderId)
 					.orElseThrow(() -> new EntityNotFoundException("Không tìm thấy đơn hàng #" + orderId));
 
-			// Kiểm tra User ID
 			if (!order.getUser().getId().equals(user.getId())) {
 				throw new AccessDeniedException("Bạn không có quyền xem đơn hàng này.");
 			}
+
+			// === BỔ SUNG LOGIC CHO REVIEW VÀ FAVORITE ===
+			if ("Completed".equalsIgnoreCase(order.getOrderStatus())) {
+				// Map: OrderDetailID -> Boolean (true nếu đã đánh giá)
+				Map<Integer, Boolean> reviewStatusMap = new HashMap<>();
+				// Map: ProductID -> Boolean (true nếu đã yêu thích)
+				Map<Integer, Boolean> favoriteStatusMap = new HashMap<>();
+
+				for (OrderDetail detail : order.getOrderDetails()) {
+					Integer orderDetailId = detail.getOrderDetailID();
+					Integer productId = detail.getVariant().getProduct().getProductID();
+
+					// 1. Kiểm tra trạng thái Review
+					// Dùng phương thức đã có trong ReviewRepository
+					boolean isReviewed = reviewRepository.existsByOrderDetail_OrderDetailID(orderDetailId);
+					reviewStatusMap.put(orderDetailId, isReviewed);
+
+					// 2. Kiểm tra trạng thái Favorite
+					if (!favoriteStatusMap.containsKey(productId)) {
+						// Dùng phương thức đã có trong FavoriteRepository
+						boolean isFavorited = favoriteRepository.existsByUser_IdAndProduct_ProductID(user.getId(),
+								productId);
+						favoriteStatusMap.put(productId, isFavorited);
+					}
+				}
+
+				model.addAttribute("reviewStatusMap", reviewStatusMap);
+				model.addAttribute("favoriteStatusMap", favoriteStatusMap);
+			}
+			// === KẾT THÚC BỔ SUNG ===
 
 			// *** THÊM: Lấy lịch sử giao hàng ***
 			List<OrderShippingHistory> shippingHistory = orderShippingHistoryRepository
@@ -137,6 +192,8 @@ public class CustomerOrderController {
 			model.addAttribute("shippingHistory", shippingHistory); // *** THÊM ***
 			model.addAttribute("cartItemCount", getCurrentCartItemCount());
 			model.addAttribute("categories", categoryService.findAll());
+			model.addAttribute("shops", storeService.findAllActiveShops());
+			model.addAttribute("selectedShopName", storeService.getShopNameById(selectedShopId));
 
 			return "user/order_detail";
 

@@ -347,9 +347,11 @@ import com.alotra.entity.user.User; // Sử dụng User
 import com.alotra.repository.location.AddressRepository; // Sử dụng AddressRepository đã sửa
 import com.alotra.service.cart.CartService;
 import com.alotra.service.product.CategoryService;
+import com.alotra.service.shop.StoreService;
 import com.alotra.service.user.UserService; // Sử dụng UserService
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpSession;
 
 import org.springframework.beans.factory.annotation.Autowired;
 // Bỏ import Qualifier nếu không cần thiết
@@ -380,6 +382,7 @@ public class CustomerAddressController { // Tên class có thể giữ nguyên h
 
     @Autowired private CartService cartService;
     @Autowired private CategoryService categoryService;
+    @Autowired private StoreService storeService;
 
     // === Hàm trợ giúp lấy User (Giống CartController) ===
     private User getCurrentAuthenticatedUser() {
@@ -401,20 +404,27 @@ public class CustomerAddressController { // Tên class có thể giữ nguyên h
             return 0; // Trả về 0 nếu chưa đăng nhập hoặc có lỗi
         }
     }
+    private Integer getSelectedShopId(HttpSession session) {
+        Integer selectedShopId = (Integer) session.getAttribute("selectedShopId");
+        return (selectedShopId == null) ? 0 : selectedShopId; // Mặc định là 0 (Xem tất cả)
+    }
 
     /**
      * HIỂN THỊ DANH SÁCH ĐỊA CHỈ (ĐÃ SỬA)
      * Xử lý GET /user/addresses
      */
     @GetMapping
-    public String showAddressList(Model model) {
+    public String showAddressList(Model model, HttpSession session) {
         try {
+        	Integer selectedShopId = getSelectedShopId(session);
             User user = getCurrentAuthenticatedUser(); // Lấy User
             // *** SỬA: Gọi repository với User ID ***
             List<Address> addresses = addressRepository.findByUserId(user.getId());
             model.addAttribute("addresses", addresses);
             model.addAttribute("cartItemCount", getCurrentCartItemCount()); // Đã sửa
             model.addAttribute("categories", categoryService.findAll());
+            model.addAttribute("shops", storeService.findAllActiveShops());
+            model.addAttribute("selectedShopName", storeService.getShopNameById(selectedShopId));
             return "user/address_list";
         } catch (ResponseStatusException | UsernameNotFoundException e) {
             return "redirect:/login";
@@ -426,8 +436,9 @@ public class CustomerAddressController { // Tên class có thể giữ nguyên h
      * Xử lý GET /user/addresses/new
      */
     @GetMapping("/new")
-    public String showAddAddressForm(Model model, @RequestParam(name = "origin", required = false, defaultValue = "address_list") String origin) {
+    public String showAddAddressForm(Model model, @RequestParam(name = "origin", required = false, defaultValue = "address_list") String origin, HttpSession session) {
         try {
+        	Integer selectedShopId = getSelectedShopId(session);
             getCurrentAuthenticatedUser(); // Chỉ cần kiểm tra đăng nhập
             Address newAddress = new Address();
             model.addAttribute("address", newAddress);
@@ -437,6 +448,8 @@ public class CustomerAddressController { // Tên class có thể giữ nguyên h
             model.addAttribute("origin", origin);
             model.addAttribute("cartItemCount", getCurrentCartItemCount());
             model.addAttribute("categories", categoryService.findAll());
+            model.addAttribute("shops", storeService.findAllActiveShops());
+            model.addAttribute("selectedShopName", storeService.getShopNameById(selectedShopId));
             return "user/address_form";
         } catch (ResponseStatusException | UsernameNotFoundException e) {
             return "redirect:/login";
@@ -585,8 +598,9 @@ public class CustomerAddressController { // Tên class có thể giữ nguyên h
      * Xử lý GET /user/addresses/edit/{id}
      */
     @GetMapping("/edit/{id}")
-    public String showEditAddressForm(@PathVariable("id") Integer addressId, Model model) {
+    public String showEditAddressForm(@PathVariable("id") Integer addressId, Model model, HttpSession session) {
         try {
+        	Integer selectedShopId = getSelectedShopId(session);
             User user = getCurrentAuthenticatedUser(); // Lấy User
             Address addressToEdit = addressRepository.findById(addressId)
                     .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy địa chỉ."));
@@ -603,6 +617,8 @@ public class CustomerAddressController { // Tên class có thể giữ nguyên h
             model.addAttribute("originUrl", "/user/addresses");
             model.addAttribute("cartItemCount", getCurrentCartItemCount());
             model.addAttribute("categories", categoryService.findAll());
+            model.addAttribute("shops", storeService.findAllActiveShops());
+            model.addAttribute("selectedShopName", storeService.getShopNameById(selectedShopId));
 
             return "user/address_form"; // Vẫn dùng chung form
 

@@ -102,6 +102,10 @@ public class MyUserDetails implements UserDetails {
         this.user = user;
         this.shopId = shopId;
     }
+    
+    public Integer getId() {
+        return user.getId(); // hoặc user.getId() tùy theo tên cột trong entity
+    }
 
     // Constructor cũ (nếu không có shopId)
     public MyUserDetails(User user) {

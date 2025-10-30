@@ -5,8 +5,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 
+import com.alotra.entity.common.MessageEntity;
 import com.alotra.entity.shop.Shop;
 
 @Data
@@ -60,12 +62,20 @@ public class User {
 	@Column(name = "LastLoginAt", columnDefinition = "DATETIME2")
 	private LocalDateTime lastLoginAt;
 
-	@ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
-	@JoinTable(name = "UserRoles", joinColumns = @JoinColumn(name = "UserID", referencedColumnName = "UserID"), inverseJoinColumns = @JoinColumn(name = "RoleID", referencedColumnName = "RoleID"))
-	private Set<Role> roles;
-
-	@OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
-	private Shop shop;
+    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
+    @JoinTable(
+        name = "UserRoles",
+        joinColumns = @JoinColumn(name = "UserID", referencedColumnName = "UserID"),
+        inverseJoinColumns = @JoinColumn(name = "RoleID", referencedColumnName = "RoleID")
+    )
+    private Set<Role> roles;
+    
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
+    private Shop shop;
+    
+    @OneToMany(mappedBy = "customer")
+    private List<MessageEntity> messages;
+    
 
 	@PrePersist
 	protected void onCreate() {

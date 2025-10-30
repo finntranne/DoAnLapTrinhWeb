@@ -18,12 +18,12 @@ public interface NotificationRepository extends JpaRepository<Notification, Inte
     
     Page<Notification> findByUser_IdOrderByCreatedAtDesc(Integer userId, Pageable pageable);
     
-    @Query("SELECT n FROM Notification n " +
-           "WHERE n.user.id = :userId AND n.isRead = false " +
-           "ORDER BY n.createdAt DESC")
-    List<Notification> findUnreadNotifications(@Param("userId") Integer userId);
-    
-    @Query("SELECT COUNT(n) FROM Notification n " +
-           "WHERE n.user.id = :userId AND n.isRead = false")
-    Long countUnreadByUser_Id(@Param("userId") Integer userId);
+    @Query("SELECT n FROM Notification n WHERE n.user.id = :userId AND n.isRead = false")
+    List<Notification> findUnreadNotificationsByUserId(@Param("userId") Integer userId, Pageable pageable);
+
+
+    @Query("SELECT count(n) FROM Notification n WHERE n.user.id = :userId AND n.isRead = false")
+    long countByUser_IdAndIsReadFalse(@Param("userId") Integer userId);
+
+
 }

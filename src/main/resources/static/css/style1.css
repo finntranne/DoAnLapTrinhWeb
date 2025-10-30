@@ -1956,3 +1956,69 @@
     box-shadow: 0 4px 12px rgba(115, 165, 128, 0.3); /* Đổ bóng màu matcha */
     transform: translateY(-2px);
 }
+
+/* Ẩn các input radio mặc định */
+       .star-rating {
+    direction: rtl; /* Hiển thị từ phải sang trái */
+    display: inline-flex;
+}
+
+.star-rating input {
+    display: none;
+}
+
+/* Hình sao */
+.star-rating label {
+    font-size: 2rem;
+    color: #ccc;
+    cursor: pointer;
+    padding: 0 0.1rem;
+    transition: color 0.2s;
+}
+
+/* Dùng Font Awesome */
+.star-rating label:before {
+    content: "\f005";
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+}
+
+/* Hover và Checked */
+.star-rating label:hover,
+.star-rating label:hover ~ label,
+.star-rating input:checked ~ label {
+    color: #ffc107; /* Vàng */
+}
+
+/* === CSS cho Media Đánh giá trong Tab Reviews === */
+
+    /* Container của các ảnh/video review */
+    .media-gallery {
+        /* d-flex và flex-wrap đã có trong HTML, đây là tùy chỉnh thêm */
+        margin-bottom: 15px;
+    }
+
+    /* Khối bao bọc từng ảnh/video (Thẻ <a>) */
+    .media-thumbnail {
+        display: block;
+        width: 80px;
+        height: 80px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        overflow: hidden;
+        transition: transform 0.2s ease-in-out, border-color 0.2s;
+        position: relative; /* Quan trọng cho icon play video */
+    }
+
+    /* Ảnh/Video bên trong thumbnail */
+    .media-thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* Hiệu ứng khi di chuột qua thumbnail */
+    .media-thumbnail:hover {
+        border-color: #dc3545; /* Màu đỏ nổi bật khi hover */
+        transform: scale(1.05); /* Phóng to nhẹ */
+    }

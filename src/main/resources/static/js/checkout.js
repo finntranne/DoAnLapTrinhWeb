@@ -3,54 +3,100 @@
  * Xử lý form validation, address selection, và UI interactions
  */
 
+function getSelectedItemIdsFromDOM() {
+    const ids = [];
+    // Lấy tất cả input hidden có name="selectedItemIds"
+    document.querySelectorAll('#checkoutForm input[name="selectedItemIds"]').forEach(input => {
+        // Đảm bảo giá trị được thêm vào mảng (dù giá trị đó là string)
+        if (input.value) {
+             ids.push(input.value);
+        }
+    });
+    return ids;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     initCheckoutForm();
     initAddressCards();
     initPaymentMethodCards();
     animateOrderItems(); // Chạy animation sau khi DOM sẵn sàng
+	initCouponLogic();
 });
 
 /**
  * Khởi tạo form checkout và validation
  */
+/**
+ * Khởi tạo form checkout và validation
+ */
 function initCheckoutForm() {
     const checkoutForm = document.getElementById('checkoutForm');
-    const submitBtn = checkoutForm ? checkoutForm.querySelector('button[type="submit"]') : null; // Lấy nút submit
+    const submitBtn = checkoutForm ? checkoutForm.querySelector('button[type="submit"]') : null;
+    const confirmModal = new bootstrap.Modal(document.getElementById('confirmPlaceOrderModal')); // ✅ KHỞI TẠO MODAL
 
     if (!checkoutForm || !submitBtn) return;
 
     checkoutForm.addEventListener('submit', function(e) {
-        // --- Validation ---
+        e.preventDefault(); // ❌ NGĂN CHẶN SUBMIT TRÌNH DUYỆT MẶC ĐỊNH
+
+        // --- 1. Validation ---
         const addressSelected = document.querySelector('input[name="addressId"]:checked');
         if (!addressSelected) {
-            e.preventDefault(); // Ngăn submit KHI CÓ LỖI
             showAlert('Vui lòng chọn địa chỉ giao hàng.', 'warning');
             scrollToElement(document.getElementById('addressListContainer'));
-            // Kích hoạt lại nút nếu trước đó bị disable
             enableSubmitButton(submitBtn);
             return false;
         }
 
         const paymentSelected = document.querySelector('input[name="paymentMethod"]:checked');
         if (!paymentSelected) {
-            e.preventDefault(); // Ngăn submit KHI CÓ LỖI
             showAlert('Vui lòng chọn phương thức thanh toán.', 'warning');
             scrollToElement(document.querySelector('.card-body:has(input[name="paymentMethod"])'));
-            // Kích hoạt lại nút nếu trước đó bị disable
             enableSubmitButton(submitBtn);
             return false;
         }
 
-        // --- Validation thành công ---
-        // Chỉ disable nút submit để tránh double click
-        disableSubmitButton(submitBtn);
+        // --- 2. Validation thành công: Hiển thị Modal ---
+        
+        // Lấy tổng tiền để hiển thị trong modal
+        const grandTotalText = document.querySelector('.price-highlight.fs-5.fw-bold')?.textContent || 'N/A';
+        
+        // Cập nhật nội dung Modal
+        document.getElementById('modalGrandTotal').textContent = grandTotalText;
+        
+        // Hiển thị Modal
+        confirmModal.show();
+        
+        // --- 3. Xử lý khi người dùng xác nhận trong Modal ---
+        const confirmBtn = document.getElementById('confirmPlaceOrderBtn');
+        
+        // Gán sự kiện click cho nút xác nhận
+        confirmBtn.onclick = function() {
+            confirmModal.hide();
+            
+            // Chỉ disable nút submit khi xác nhận thành công
+            disableSubmitButton(submitBtn); 
 
-        // KHÔNG gọi e.preventDefault() ở đây.
-        // Để trình duyệt tự động submit form với đầy đủ dữ liệu.
-        // Các input khác KHÔNG bị disable.
+            // Loại bỏ tất cả các sự kiện submit trước đó để tránh lặp
+            checkoutForm.removeEventListener('submit', arguments.callee);
+            
+            // ✅ GỬI FORM LÊN SERVER
+            checkoutForm.submit();
+        };
+
+        // Quan trọng: Trả về false để đảm bảo ngăn chặn submit lần đầu
+        return false;
     });
+    
+    // Đảm bảo nút submit được kích hoạt lại nếu người dùng hủy Modal
+    const modalElement = document.getElementById('confirmPlaceOrderModal');
+    if (modalElement) {
+        modalElement.addEventListener('hide.bs.modal', function () {
+            enableSubmitButton(submitBtn);
+        });
+    }
 }
-
+// ... (Phần còn lại của checkout.js giữ nguyên) ...
 /**
  * Khởi tạo address cards với hover và selection effects
  */
@@ -287,4 +333,182 @@ function animateOrderItems() {
             item.style.transform = 'translateY(0)';
         }, index * 50);
     });
+}
+
+/**
+ * Logic MÃ GIẢM GIÁ
+ */
+
+// Hàm gửi request áp dụng mã giảm giá
+async function applyCoupon() {
+    const couponInput = document.getElementById('couponInput');
+    const code = couponInput.value.trim().toUpperCase();
+    const applyBtn = document.getElementById('applyCouponBtn');
+    
+    if (code === '') {
+        showAlert('Vui lòng nhập mã giảm giá.', 'warning');
+        return;
+    }
+	
+	const itemIds = getSelectedItemIdsFromDOM();
+	    if (itemIds.length === 0) {
+	        showAlert('Không tìm thấy sản phẩm nào trong form.', 'danger');
+	        return;
+	    }
+
+    const formData = new URLSearchParams();
+    formData.append('couponCode', code);
+	
+	itemIds.forEach(id => {
+	        formData.append('selectedItemIds', id);
+	    });
+
+    const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+    if (csrfToken && csrfHeader) {
+        headers[csrfHeader] = csrfToken;
+    }
+    
+    applyBtn.disabled = true;
+
+    try {
+        const response = await fetch('/apply-coupon', {
+            method: 'POST',
+            headers: headers,
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            // Cập nhật UI thành công
+            updateSummaryUI(result.discountAmount, result.grandTotal, result.couponCode);
+            showAlert(result.success, 'success');
+			setTimeout(() => {
+			                window.location.reload(); 
+			            }, 500); // Chờ 0.5 giây để người dùng thấy thông báo
+        } else {
+            // Xử lý lỗi từ Controller
+            showAlert(result.error || 'Mã giảm giá không hợp lệ.', 'danger');
+            removeCouponUiOnly();
+        }
+    } catch (error) {
+        console.error('AJAX Error:', error);
+        showAlert('Lỗi kết nối khi áp dụng mã giảm giá.', 'danger');
+    } finally {
+        applyBtn.disabled = false;
+    }
+}
+
+// Hàm gửi request xóa mã giảm giá
+async function removeCoupon() {
+    const removeBtn = document.getElementById('removeCouponBtn');
+    
+    const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+    if (csrfToken && csrfHeader) {
+        headers[csrfHeader] = csrfToken;
+    }
+    
+    removeBtn.disabled = true;
+
+    try {
+        // Gọi endpoint xóa mã giảm giá
+        const response = await fetch('/remove-coupon', {
+            method: 'POST',
+            headers: headers
+        });
+
+        if (response.ok) {
+            // Xóa UI và Tải lại trang để tổng tiền reset chính xác
+            removeCouponUiOnly();
+            showAlert('Đã xóa mã giảm giá thành công!', 'success');
+            // Tải lại trang để đồng bộ tổng tiền
+            window.location.reload(); 
+        } else {
+             const result = await response.json();
+             showAlert(result.error || 'Lỗi khi xóa mã giảm giá.', 'danger');
+        }
+    } catch (error) {
+        console.error('AJAX Error:', error);
+        showAlert('Lỗi mạng khi xóa mã giảm giá.', 'danger');
+    } finally {
+        removeBtn.disabled = false;
+    }
+}
+
+// Hàm cập nhật giao diện tổng tiền
+function updateSummaryUI(discountAmount, grandTotal, couponCode) {
+    // 1. Cập nhật Tổng cộng
+    const totalElement = document.querySelector('.price-highlight.fs-5.fw-bold');
+    if (totalElement) {
+        totalElement.textContent = formatCurrency(parseFloat(grandTotal));
+        totalElement.style.transition = 'all 0.3s ease';
+        totalElement.style.color = 'var(--bs-red)'; // Hiệu ứng nhấp nháy
+        setTimeout(() => totalElement.style.color = '', 500);
+    }
+    
+    // 2. Cập nhật dòng Giảm giá
+    const discountRow = document.querySelector('li[th\\:if*="discount"]');
+    const discountElement = discountRow ? discountRow.querySelector('span.fw-semibold.text-success') : null;
+
+    if (discountRow && discountElement) {
+        discountElement.innerHTML = `-${formatCurrency(parseFloat(discountAmount))}`;
+        discountRow.style.display = (parseFloat(discountAmount) > 0) ? 'flex' : 'none';
+    }
+
+    // 3. Cập nhật hộp thông báo coupon
+    const couponMessage = document.getElementById('coupon-message');
+    const couponInput = document.getElementById('couponInput');
+    
+    if (couponMessage) {
+         couponMessage.className = 'alert alert-success py-2 mb-2';
+         couponMessage.innerHTML = `<i class="fa-solid fa-check-circle me-1"></i> Đã áp dụng: <span>${couponCode}</span>`;
+         couponMessage.style.display = 'block';
+    }
+    
+    // 4. Cập nhật input và nút xóa
+    if (couponInput) couponInput.value = couponCode;
+    document.getElementById('applyCouponBtn').style.display = 'none';
+    document.getElementById('removeCouponBtn').style.display = 'block';
+}
+
+// Hàm reset UI nếu có lỗi hoặc xóa thành công
+function removeCouponUiOnly() {
+    const couponInput = document.getElementById('couponInput');
+    const couponMessage = document.getElementById('coupon-message');
+    const discountRow = document.querySelector('li[th\\:if*="discount"]');
+    
+    if (couponMessage) couponMessage.style.display = 'none';
+    if (couponInput) couponInput.value = '';
+    if (discountRow) discountRow.style.display = 'none';
+    
+    document.getElementById('applyCouponBtn').style.display = 'block';
+    document.getElementById('removeCouponBtn').style.display = 'none';
+}
+
+// Hàm khởi tạo logic Coupon
+function initCouponLogic() {
+    const applyBtn = document.getElementById('applyCouponBtn');
+    const removeBtn = document.getElementById('removeCouponBtn');
+    const couponMessage = document.getElementById('coupon-message');
+    const couponInput = document.getElementById('couponInput');
+    
+    if (applyBtn) {
+        applyBtn.addEventListener('click', applyCoupon);
+    }
+    if (removeBtn) {
+        removeBtn.addEventListener('click', removeCoupon);
+    }
+    
+    // Khởi tạo trạng thái nút và message khi tải trang
+    if (couponMessage && couponInput && couponInput.value.trim() !== '') {
+        // Mã đã tồn tại trong session khi trang tải
+        document.getElementById('applyCouponBtn').style.display = 'none';
+        document.getElementById('removeCouponBtn').style.display = 'block';
+        couponMessage.style.display = 'block';
+    } else {
+        // Không có mã
+        document.getElementById('applyCouponBtn').style.display = 'block';
+        document.getElementById('removeCouponBtn').style.display = 'none';
+        if (couponMessage) couponMessage.style.display = 'none';
+    }
 }

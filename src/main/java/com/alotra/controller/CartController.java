@@ -9,6 +9,7 @@ import com.alotra.entity.user.User;
 import com.alotra.repository.cart.CartRepository;
 import com.alotra.service.cart.CartService;
 import com.alotra.service.product.CategoryService;
+import com.alotra.service.shop.StoreService;
 import com.alotra.service.user.UserService;
 import com.alotra.repository.cart.CartItemRepository; // *** THÊM IMPORT NÀY ***
 
@@ -49,7 +50,8 @@ public class CartController {
     @Autowired private CartService cartService;
     @Autowired private UserService userService; 
     @Autowired private CartRepository cartRepository; 
-    @Autowired private CategoryService categoryService; 
+    @Autowired private CategoryService categoryService;
+    @Autowired private StoreService storeService;
 
     // *** THÊM: Inject CartItemRepository để lấy item chi tiết ***
     @Autowired
@@ -70,6 +72,11 @@ public class CartController {
     private int getCurrentCartItemCount(User user) {
         if (user == null) return 0;
         return cartService.getCartItemCount(user);
+    }
+    
+    private Integer getSelectedShopId(HttpSession session) {
+        Integer selectedShopId = (Integer) session.getAttribute("selectedShopId");
+        return (selectedShopId == null) ? 0 : selectedShopId; // Mặc định là 0 (Xem tất cả)
     }
 
     // --- Thêm vào giỏ (Giữ nguyên) ---
@@ -94,14 +101,15 @@ public class CartController {
 
     // --- SỬA HÀM NÀY: Xem giỏ hàng (ĐÃ SỬA ĐỂ TÍNH GIÁ ĐÚNG) ---
     @GetMapping("/cart")
-    public String viewCart(Model model) {
+    public String viewCart(Model model, HttpSession session) {
         User currentUser;
         try {
             currentUser = getCurrentAuthenticatedUser(); // Lấy User
         } catch (ResponseStatusException | UsernameNotFoundException e) {
             return "redirect:/login"; // Chưa đăng nhập thì về login
         }
-
+        Integer selectedShopId = getSelectedShopId(session);
+        
         Optional<Cart> cartOpt = cartRepository.findByUser_Id(currentUser.getId());
 
         // *** THAY ĐỔI: Tạo ViewModel để gửi giá đúng sang view ***
@@ -130,7 +138,8 @@ public class CartController {
         model.addAttribute("subtotal", subtotal);
         model.addAttribute("cartItemCount", getCurrentCartItemCount(currentUser)); 
         model.addAttribute("categories", categoryService.findAll()); 
-
+        model.addAttribute("shops", storeService.findAllActiveShops());
+        model.addAttribute("selectedShopName", storeService.getShopNameById(selectedShopId));
         return "cart/cart"; // View cart.html
     }
 
