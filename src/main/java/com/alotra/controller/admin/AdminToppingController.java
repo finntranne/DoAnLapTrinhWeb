@@ -243,5 +243,26 @@ public class AdminToppingController {
 
 	    return "redirect:/admin/toppings/pending";
 	}
+	
+	@GetMapping("/delete/{id}")
+	public String delete(@PathVariable("id") Integer id,
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            RedirectAttributes redirectAttributes) {
+	    try {
+	    	Topping topping = toppingService.findById(id)
+	                .orElseThrow(() -> new RuntimeException("Topping not found"));
+
+	        topping.setStatus((byte) 0); 
+	        toppingService.save(topping);
+
+	        redirectAttributes.addFlashAttribute("successMessage", 
+	            "Hủy topping thành công: " + topping.getToppingName());
+	    } catch (Exception e) {
+	        redirectAttributes.addFlashAttribute("errorMessage", 
+	            "Có lỗi xảy ra khi hủy topping: " + e.getMessage());
+	    }
+
+	    return "redirect:/admin/toppings";
+	}
 
 }

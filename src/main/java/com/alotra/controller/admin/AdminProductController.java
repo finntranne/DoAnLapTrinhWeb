@@ -25,6 +25,7 @@ import com.alotra.entity.product.ProductApproval;
 import com.alotra.entity.product.ProductImage;
 import com.alotra.entity.product.ProductVariant;
 import com.alotra.entity.product.Topping;
+import com.alotra.entity.promotion.Promotion;
 import com.alotra.security.CustomUserDetailsService;
 import com.alotra.service.product.ProductApprovalService;
 import com.alotra.service.product.ProductService;
@@ -167,6 +168,27 @@ public class AdminProductController {
 	    }
 
 	    return "redirect:/admin/products/pending";
+	}
+	
+	@GetMapping("/delete/{id}")
+	public String delete(@PathVariable("id") Integer id,
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            RedirectAttributes redirectAttributes) {
+	    try {
+	        Product product = productService.findById(id)
+	                .orElseThrow(() -> new RuntimeException("Product not found"));
+
+	        product.setStatus((byte) 0); 
+	        productService.save(product);
+
+	        redirectAttributes.addFlashAttribute("successMessage", 
+	            "Hủy sản phẩm thành công: " + product.getProductName());
+	    } catch (Exception e) {
+	        redirectAttributes.addFlashAttribute("errorMessage", 
+	            "Có lỗi xảy ra khi hủy sản phẩm: " + e.getMessage());
+	    }
+
+	    return "redirect:/admin/products";
 	}
 
 

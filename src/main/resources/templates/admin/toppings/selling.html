@@ -72,7 +72,7 @@
 											class="btn btn-outline-warning btn-sm "> <i
 											class="bi bi-eye"></i>
 										</a> <a
-											th:href="@{'/admin/toppings/delete/' + ${topping.toppingID}(page=${currentPage})}"
+											th:href="@{'/admin/toppings/delete/' + ${topping.toppingID} + '?page=' + ${currentPage} + ''}"
 											class="btn btn-outline-danger btn-sm"> <i
 											class="bi bi-trash3"></i>
 										</a>

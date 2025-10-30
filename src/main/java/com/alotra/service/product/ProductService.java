@@ -57,4 +57,8 @@ public class ProductService {
 	public List<Integer> findProductIdsByShopIds(List<Integer> applicableShopIds) {
 		return productRepository.findProductIdsByShopIds(applicableShopIds);
 	}
+	
+	public void save(Product product) {
+		productRepository.save(product);
+	}
 }
