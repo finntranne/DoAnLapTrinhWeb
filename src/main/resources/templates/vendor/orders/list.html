@@ -11,6 +11,62 @@
 	font-size: 0.85rem;
 	padding: 0.4em 0.8em;
 }
+
+.nav-tabs .nav-link {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.count-badge {
+	font-size: 0.75rem;
+	padding: 0.25em 0.6em;
+	border-radius: 10px;
+	font-weight: 600;
+	min-width: 24px;
+	text-align: center;
+}
+
+.nav-link.active .count-badge {
+	background-color: rgba(255, 255, 255, 0.9) !important;
+	color: #0d6efd !important;
+}
+
+.nav-link:not(.active) .count-badge {
+	opacity: 0.85;
+}
+
+/* Màu sắc cho từng trạng thái */
+.count-badge.badge-all {
+	background-color: #6c757d;
+	color: white;
+}
+
+.count-badge.badge-pending {
+	background-color: #ffc107;
+	color: #000;
+}
+
+.count-badge.badge-confirmed {
+	background-color: #17a2b8;
+	color: white;
+}
+
+.count-badge.badge-delivering {
+	background-color: #0d6efd;
+	color: white;
+}
+
+.count-badge.badge-completed {
+	background-color: #28a745;
+	color: white;
+}
+
+.count-badge.badge-cancelled {
+	background-color: #dc3545;
+	color: white;
+}
 </style>
 </head>
 <body>
@@ -39,27 +95,40 @@
 		<ul class="nav nav-tabs mb-3">
 			<li class="nav-item"><a class="nav-link"
 				th:classappend="${status == null ? 'active' : ''}"
-				th:href="@{/vendor/orders(searchQuery=${searchQuery})}">Tất cả</a></li>
+				th:href="@{/vendor/orders(searchQuery=${searchQuery})}"> <span>Tất
+						cả</span> <span class="count-badge badge-all"
+					th:text="${statusCounts != null ? (statusCounts['ALL'] != null ? statusCounts['ALL'] : 0) : 0}">0</span>
+			</a></li>
 			<li class="nav-item"><a class="nav-link"
 				th:classappend="${status == 'Pending' ? 'active' : ''}"
-				th:href="@{/vendor/orders(status='Pending', searchQuery=${searchQuery})}">Chờ
-					xác nhận</a></li>
+				th:href="@{/vendor/orders(status='Pending', searchQuery=${searchQuery})}">
+					<span>Chờ xác nhận</span> <span class="count-badge badge-pending"
+					th:text="${statusCounts != null ? (statusCounts['Pending'] != null ? statusCounts['Pending'] : 0) : 0}">0</span>
+			</a></li>
 			<li class="nav-item"><a class="nav-link"
 				th:classappend="${status == 'Confirmed' ? 'active' : ''}"
-				th:href="@{/vendor/orders(status='Confirmed', searchQuery=${searchQuery})}">Đã
-					xác nhận</a></li>
+				th:href="@{/vendor/orders(status='Confirmed', searchQuery=${searchQuery})}">
+					<span>Đã xác nhận</span> <span class="count-badge badge-confirmed"
+					th:text="${statusCounts != null ? (statusCounts['Confirmed'] != null ? statusCounts['Confirmed'] : 0) : 0}">0</span>
+			</a></li>
 			<li class="nav-item"><a class="nav-link"
 				th:classappend="${status == 'Delivering' ? 'active' : ''}"
-				th:href="@{/vendor/orders(status='Delivering', searchQuery=${searchQuery})}">Đang
-					giao</a></li>
+				th:href="@{/vendor/orders(status='Delivering', searchQuery=${searchQuery})}">
+					<span>Đang giao</span> <span class="count-badge badge-delivering"
+					th:text="${statusCounts != null ? (statusCounts['Delivering'] != null ? statusCounts['Delivering'] : 0) : 0}">0</span>
+			</a></li>
 			<li class="nav-item"><a class="nav-link"
 				th:classappend="${status == 'Completed' ? 'active' : ''}"
-				th:href="@{/vendor/orders(status='Completed', searchQuery=${searchQuery})}">Hoàn
-					thành</a></li>
+				th:href="@{/vendor/orders(status='Completed', searchQuery=${searchQuery})}">
+					<span>Hoàn thành</span> <span class="count-badge badge-completed"
+					th:text="${statusCounts != null ? (statusCounts['Completed'] != null ? statusCounts['Completed'] : 0) : 0}">0</span>
+			</a></li>
 			<li class="nav-item"><a class="nav-link"
 				th:classappend="${status == 'Cancelled' ? 'active' : ''}"
-				th:href="@{/vendor/orders(status='Cancelled', searchQuery=${searchQuery})}">Đã
-					hủy</a></li>
+				th:href="@{/vendor/orders(status='Cancelled', searchQuery=${searchQuery})}">
+					<span>Đã hủy</span> <span class="count-badge badge-cancelled"
+					th:text="${statusCounts != null ? (statusCounts['Cancelled'] != null ? statusCounts['Cancelled'] : 0) : 0}">0</span>
+			</a></li>
 		</ul>
 
 		<div class="card mb-4">
@@ -69,9 +138,9 @@
 					<input type="hidden" name="status" th:if="${status != null}"
 						th:value="${status}" />
 					<div class="col-md-8">
-						<label for="searchQuery" class="form-label ">Tìm
-							kiếm</label> <input type="text" class="form-control form-control-sm"
-							id="searchQuery" name="searchQuery" th:value="${searchQuery}"
+						<label for="searchQuery" class="form-label">Tìm kiếm</label> <input
+							type="text" class="form-control form-control-sm" id="searchQuery"
+							name="searchQuery" th:value="${searchQuery}"
 							placeholder="Tên khách hàng, SĐT khách, SĐT nhận...">
 					</div>
 					<div class="col-md-4 d-flex">
@@ -110,7 +179,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							<tr th:if="${orders.isEmpty()}">
+							<tr th:if="${orders == null || orders.isEmpty()}">
 								<td colspan="8" class="text-center text-muted py-5"><i
 									class="bi bi-inbox" style="font-size: 3rem;"></i>
 									<p class="mt-2">Chưa có đơn hàng nào</p></td>
@@ -150,10 +219,9 @@
 									</div> <span class="badge status-badge"
 									th:classappend="${order.paymentStatus == 'Paid' ? 'bg-success' : (order.paymentStatus == 'Unpaid' ? 'bg-warning text-dark' : 'bg-danger')}"
 									th:switch="${order.paymentStatus}"> <span
-										th:case="'Paid'">Đã thanh toán </span> <span
-										th:case="'Unpaid'">Chưa thanh toán </span> <span
-										th:case="'Refunded'">Đã hoàn tiền </span> <span th:case="*"
-										th:text="${order.paymentStatus}"> </span>
+										th:case="'Paid'">Đã thanh toán</span> <span th:case="'Unpaid'">Chưa
+											thanh toán</span> <span th:case="'Refunded'">Đã hoàn tiền</span> <span
+										th:case="*" th:text="${order.paymentStatus}"></span>
 								</span>
 								</td>
 								<td><span class="badge status-badge"
@@ -162,12 +230,12 @@
                                                            (order.orderStatus == 'Delivering' ? 'bg-primary' :
                                                            (order.orderStatus == 'Completed' ? 'bg-success' : 'bg-danger')))}"
 									th:switch="${order.orderStatus}"> <span
-										th:case="'Pending'">Chờ xác nhận </span> <span
-										th:case="'Confirmed'">Đã xác nhận </span> <span
-										th:case="'Delivering'">Đang giao </span> <span
-										th:case="'Completed'">Hoàn thành </span> <span
-										th:case="'Cancelled'">Đã hủy </span> <span th:case="*"
-										th:text="${order.orderStatus}"> </span>
+										th:case="'Pending'">Chờ xác nhận</span> <span
+										th:case="'Confirmed'">Đã xác nhận</span> <span
+										th:case="'Delivering'">Đang giao</span> <span
+										th:case="'Completed'">Hoàn thành</span> <span
+										th:case="'Cancelled'">Đã hủy</span> <span th:case="*"
+										th:text="${order.orderStatus}"></span>
 								</span>
 									<div th:if="${order.shipperName != null}" class="mt-1">
 										<small class="text-muted"> <i class="bi bi-person"></i>
@@ -184,7 +252,8 @@
 					</table>
 				</div>
 
-				<nav th:if="${totalPages > 1}" aria-label="Page navigation">
+				<nav th:if="${totalPages != null && totalPages > 1}"
+					aria-label="Page navigation">
 					<ul class="pagination justify-content-center">
 						<li class="page-item"
 							th:classappend="${currentPage == 0 ? 'disabled' : ''}"><a

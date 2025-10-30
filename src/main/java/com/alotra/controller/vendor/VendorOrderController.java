@@ -1,6 +1,7 @@
 package com.alotra.controller.vendor;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -66,9 +67,9 @@ public class VendorOrderController {
 
 	@GetMapping("/orders")
 	public String listOrders(@AuthenticationPrincipal MyUserDetails userDetails,
-			@RequestParam(required = false) String status, // Nhận status như cũ
-			@RequestParam(required = false) String searchQuery, @RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "5") int size, Model model, RedirectAttributes redirectAttributes) {
+			@RequestParam(required = false) String status, @RequestParam(required = false) String searchQuery,
+			@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "5") int size, Model model,
+			RedirectAttributes redirectAttributes) {
 
 		try {
 			Integer shopId = getShopIdOrThrow(userDetails);
@@ -78,11 +79,15 @@ public class VendorOrderController {
 
 			Page<ShopOrderDTO> orders = vendorService.getShopOrders(shopId, effectiveStatus, searchQuery, pageable);
 
+			// Lấy số lượng đơn hàng theo trạng thái
+			Map<String, Long> statusCounts = vendorService.getOrderStatusCounts(shopId);
+
 			model.addAttribute("orders", orders);
 			model.addAttribute("currentPage", page);
 			model.addAttribute("totalPages", orders.getTotalPages());
 			model.addAttribute("status", effectiveStatus);
 			model.addAttribute("searchQuery", searchQuery);
+			model.addAttribute("statusCounts", statusCounts);
 
 			return "vendor/orders/list";
 

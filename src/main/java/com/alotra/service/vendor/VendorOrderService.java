@@ -43,7 +43,7 @@ public class VendorOrderService {
 	private final ShipperOrderService shipperOrderService;
 	private final OrderHistoryRepository orderHistoryRepository;
 
-	@PersistenceContext // Inject EntityManager for JPQL
+	@PersistenceContext
 	private EntityManager entityManager;
 
 	// ==================== ORDER MANAGEMENT ====================
@@ -51,7 +51,6 @@ public class VendorOrderService {
 
 		Page<Order> orders = orderRepository.findShopOrdersFiltered(shopId, status, searchQuery, pageable);
 
-		// Mapping logic remains the same
 		return orders.map(order -> {
 			ShopOrderDTO dto = new ShopOrderDTO();
 			dto.setOrderId(order.getOrderID());
@@ -60,12 +59,11 @@ public class VendorOrderService {
 			dto.setPaymentMethod(order.getPaymentMethod());
 			dto.setPaymentStatus(order.getPaymentStatus());
 			dto.setGrandTotal(order.getGrandTotal());
-			// Use associated User entity for customer info
 			if (order.getUser() != null) {
 				dto.setCustomerName(order.getUser().getFullName());
-				dto.setCustomerPhone(order.getUser().getPhoneNumber()); // Assuming User has phoneNumber
+				dto.setCustomerPhone(order.getUser().getPhoneNumber());
 			} else {
-				dto.setCustomerName("N/A"); // Handle case where user might be null?
+				dto.setCustomerName("N/A");
 				dto.setCustomerPhone("N/A");
 			}
 			dto.setRecipientName(order.getRecipientName());
@@ -76,11 +74,29 @@ public class VendorOrderService {
 				dto.setShipperName(order.getShipper().getFullName());
 			}
 
-			// Calculate total items (safer way)
 			dto.setTotalItems(order.getOrderDetails() != null ? order.getOrderDetails().size() : 0);
 
 			return dto;
 		});
+	}
+
+	/**
+	 * Lấy số lượng đơn hàng theo từng trạng thái
+	 */
+	public Map<String, Long> getOrderStatusCounts(Integer shopId) {
+		Map<String, Long> counts = new HashMap<>();
+		
+		// Đếm tổng số đơn hàng
+		counts.put("ALL", orderRepository.countByShopId(shopId));
+		
+		// Đếm theo từng trạng thái
+		counts.put("Pending", orderRepository.countByShopIdAndStatus(shopId, "Pending"));
+		counts.put("Confirmed", orderRepository.countByShopIdAndStatus(shopId, "Confirmed"));
+		counts.put("Delivering", orderRepository.countByShopIdAndStatus(shopId, "Delivering"));
+		counts.put("Completed", orderRepository.countByShopIdAndStatus(shopId, "Completed"));
+		counts.put("Cancelled", orderRepository.countByShopIdAndStatus(shopId, "Cancelled"));
+		
+		return counts;
 	}
 
 	public Order getOrderDetail(Integer shopId, Integer orderId) {
@@ -100,7 +116,6 @@ public class VendorOrderService {
 			throw new RuntimeException("Unauthorized: Order does not belong to this shop");
 		}
 
-		// Validate status transition
 		validateOrderStatusTransition(order.getOrderStatus(), newStatus);
 
 		String oldStatus = order.getOrderStatus();
@@ -112,7 +127,6 @@ public class VendorOrderService {
 
 		orderRepository.save(order);
 
-		// Gửi thông báo cho khách hàng
 		notificationService.notifyCustomerAboutOrderStatus(order.getUser().getId(), orderId, newStatus);
 
 		log.info("Order status updated - Order ID: {}, Old Status: {}, New Status: {}", orderId, oldStatus, newStatus);
@@ -132,7 +146,6 @@ public class VendorOrderService {
 
 	@Transactional
 	public void assignShipperToOrder(Integer shopId, Integer orderId, Integer shipperId, Integer userId) {
-		// 1. Kiểm tra đơn hàng thuộc về shop
 		Order order = orderRepository.findById(orderId)
 				.orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
 
@@ -140,17 +153,10 @@ public class VendorOrderService {
 			throw new RuntimeException("Đơn hàng không thuộc về shop của bạn");
 		}
 
-//		    // 2. Kiểm tra trạng thái đơn hàng
-//		    if (!"Confirmed".equals(order.getOrderStatus())) {
-//		        throw new RuntimeException("Chỉ có thể gán shipper cho đơn hàng đã xác nhận");
-//		    }
-
-		// 3. Kiểm tra đơn hàng chưa có shipper
 		if (order.getShipper() != null) {
 			throw new RuntimeException("Đơn hàng đã được gán cho shipper: " + order.getShipper().getFullName());
 		}
 
-		// 4. Kiểm tra shipper là employee của shop
 		ShopEmployee shipperEmployee = shopEmployeeRepository.findByShop_ShopIdAndUser_Id(shopId, shipperId)
 				.orElseThrow(() -> new RuntimeException("Shipper không phải là nhân viên của shop"));
 
@@ -158,7 +164,6 @@ public class VendorOrderService {
 			throw new RuntimeException("Shipper không còn hoạt động");
 		}
 
-		// 5. Kiểm tra user có role SHIPPER không
 		boolean isShipper = shipperEmployee.getUser().getRoles().stream()
 				.anyMatch(role -> "SHIPPER".equals(role.getRoleName()));
 
@@ -166,20 +171,15 @@ public class VendorOrderService {
 			throw new RuntimeException("Nhân viên này không phải là shipper");
 		}
 
-		// 6. Gán shipper cho đơn hàng
 		order.setShipper(shipperEmployee.getUser());
-		order.setOrderStatus("Delivering"); // Chuyển sang trạng thái đang giao
+		order.setOrderStatus("Delivering");
 		orderRepository.save(order);
 
-		// 7. Tạo lịch sử giao hàng ban đầu
 		shipperOrderService.createInitialShippingHistory(orderId, shipperId,
 				"Đơn hàng đã được gán cho shipper: " + shipperEmployee.getUser().getFullName());
 
-		// 8. Lưu lịch sử thay đổi đơn hàng
 		OrderHistory history = new OrderHistory();
 		history.setOrder(order);
-//		    history.setOldStatus("Confirmed");
-//		    history.setNewStatus("Delivering");
 		history.setChangedByUser(userRepository.findById(userId).orElse(null));
 		history.setNotes("Gán shipper: " + shipperEmployee.getUser().getFullName());
 		history.setTimestamp(LocalDateTime.now());
@@ -188,9 +188,6 @@ public class VendorOrderService {
 		log.info("Assigned shipper {} to order {}", shipperId, orderId);
 	}
 
-	/**
-	 * Lấy danh sách shipper có thể gán
-	 */
 	@Transactional(readOnly = true)
 	public List<ShopEmployeeDTO> getAvailableShippers(Integer shopId) {
 		List<ShopEmployee> activeEmployees = shopEmployeeRepository.findByShop_ShopIdAndStatus(shopId, "Active");
@@ -211,9 +208,6 @@ public class VendorOrderService {
 				}).collect(Collectors.toList());
 	}
 
-	/**
-	 * Thay đổi shipper cho đơn hàng
-	 */
 	@Transactional
 	public void reassignShipper(Integer shopId, Integer orderId, Integer newShipperId, Integer userId, String reason) {
 		Order order = orderRepository.findById(orderId)

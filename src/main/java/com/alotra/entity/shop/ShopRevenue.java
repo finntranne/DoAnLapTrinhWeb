@@ -53,6 +53,6 @@ public class ShopRevenue {
     @Column(name = "NetRevenue", nullable = false, precision = 12, scale = 2)
     private BigDecimal netRevenue;
     
-    @Column(name = "RecordedAt", nullable = false)
+    @Column(name = "RecordedAt")
     private LocalDateTime recordedAt = LocalDateTime.now();
 }

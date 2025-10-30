@@ -676,7 +676,7 @@ GO
 -- Purpose: Product discount now managed at product level, not promotion level
 -- ================================================================
 
-USE MilkTeaShopDB;
+USE MilkTeaShopDB_1;
 GO
 
 -- ================================================================
@@ -1339,6 +1339,33 @@ BEGIN
     BEGIN
         RAISERROR('Approval request not found or already processed', 16, 1);
         RETURN;
+    END;
+END;
+GO
+
+-- Trigger to record shop revenue when order is completed
+CREATE OR ALTER TRIGGER trg_RecordShopRevenue
+ON dbo.Orders
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    IF UPDATE(OrderStatus)
+    BEGIN
+        INSERT INTO dbo.ShopRevenue (ShopID, OrderID, OrderAmount, CommissionAmount, NetRevenue, RecordedAt)
+        SELECT 
+            i.ShopID,
+            i.OrderID,
+            i.GrandTotal,
+            i.GrandTotal * s.CommissionRate / 100,
+            i.GrandTotal * (100 - s.CommissionRate) / 100,
+			GETDATE()
+        FROM inserted i
+        JOIN deleted d ON i.OrderID = d.OrderID
+        JOIN dbo.Shops s ON i.ShopID = s.ShopID
+        WHERE i.OrderStatus = 'Completed' 
+        AND d.OrderStatus <> 'Completed';
     END;
 END;
 GO
