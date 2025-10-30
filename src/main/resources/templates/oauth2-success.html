@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập thành công</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .container {
+            text-align: center;
+            background: white;
+            padding: 50px 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 450px;
+            width: 90%;
+        }
+        
+        .icon-success {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            animation: scaleIn 0.5s ease-out;
+        }
+        
+        .icon-success svg {
+            width: 50px;
+            height: 50px;
+            stroke: white;
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+            animation: checkmark 0.8s ease-in-out 0.2s both;
+        }
+        
+        @keyframes scaleIn {
+            from {
+                transform: scale(0);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes checkmark {
+            0% {
+                stroke-dasharray: 0, 100;
+            }
+            100% {
+                stroke-dasharray: 100, 0;
+            }
+        }
+        
+        h2 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 25px;
+        }
+        
+        .user-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 25px 0;
+        }
+        
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            border: 3px solid #667eea;
+        }
+        
+        .user-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .user-email {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .countdown {
+            color: #667eea;
+            font-size: 14px;
+            font-weight: 500;
+            margin-top: 20px;
+        }
+        
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon-success">
+            <svg viewBox="0 0 52 52">
+                <polyline points="14 27 22 35 38 19"/>
+            </svg>
+        </div>
+        
+        <h2>Đăng nhập thành công!</h2>
+        <p class="subtitle">Đang xử lý thông tin của bạn...</p>
+        
+        <div id="user-info" class="user-info" style="display: none;">
+            <img id="user-avatar" class="user-avatar" src="" alt="Avatar">
+            <div class="user-name" id="user-name"></div>
+            <div class="user-email" id="user-email"></div>
+        </div>
+        
+        <div class="spinner"></div>
+        
+        <p class="countdown">Chuyển hướng trong <span id="countdown">3</span> giây...</p>
+        
+        <div id="error-message" class="error" style="display: none;"></div>
+    </div>
+
+    <script>
+        // Lấy token từ URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+
+        if (token) {
+            try {
+                // Lưu token vào localStorage
+                localStorage.setItem('jwt_token', token);
+                
+                // Decode JWT để lấy thông tin user
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(
+                    atob(base64).split('').map(c => {
+                        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                    }).join('')
+                );
+                
+                const payload = JSON.parse(jsonPayload);
+                console.log('User info:', payload);
+                
+                // Lưu thông tin user
+                localStorage.setItem('user', JSON.stringify({
+                    id: payload.userId,
+                    email: payload.sub,
+                    fullName: payload.fullName,
+                    roles: payload.roles,
+                    avatar: payload.avatar,
+                    authProvider: payload.authProvider
+                }));
+                
+                // Hiển thị thông tin user
+                const userInfoDiv = document.getElementById('user-info');
+                const userName = document.getElementById('user-name');
+                const userEmail = document.getElementById('user-email');
+                const userAvatar = document.getElementById('user-avatar');
+                
+                userName.textContent = payload.fullName || 'User';
+                userEmail.textContent = payload.sub;
+                
+                if (payload.avatar) {
+                    userAvatar.src = payload.avatar;
+                    userAvatar.style.display = 'block';
+                } else {
+                    userAvatar.style.display = 'none';
+                }
+                
+                userInfoDiv.style.display = 'block';
+                
+                // Countdown và redirect
+                let countdown = 3;
+                const countdownElement = document.getElementById('countdown');
+                
+                const countdownInterval = setInterval(() => {
+                    countdown--;
+                    countdownElement.textContent = countdown;
+                    
+                    if (countdown <= 0) {
+                        clearInterval(countdownInterval);
+                        // Redirect về trang chủ (bạn có thể đổi thành '/dashboard')
+                        window.location.href = '/';
+                    }
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Error processing token:', error);
+                document.querySelector('.spinner').style.display = 'none';
+                document.querySelector('.countdown').style.display = 'none';
+                
+                const errorDiv = document.getElementById('error-message');
+                errorDiv.textContent = 'Có lỗi xảy ra khi xử lý token. Đang chuyển về trang đăng nhập...';
+                errorDiv.style.display = 'block';
+                
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 3000);
+            }
+        } else {
+            // Không có token
+            document.querySelector('.icon-success').style.display = 'none';
+            document.querySelector('h2').textContent = 'Đăng nhập thất bại';
+            document.querySelector('.subtitle').textContent = 'Không tìm thấy token xác thực';
+            document.querySelector('.spinner').style.display = 'none';
+            document.querySelector('.countdown').style.display = 'none';
+            
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = 'Vui lòng thử đăng nhập lại.';
+            errorDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

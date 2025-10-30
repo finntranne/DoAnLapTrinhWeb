@@ -15,6 +15,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.alotra.security.CustomOAuth2UserService;
+import com.alotra.security.OAuth2SuccessHandler;
 import com.alotra.security.jwt.AuthEntryPointJwt;
 import com.alotra.security.jwt.JwtAuthenticationFilter;
 import com.alotra.service.user.impl.UserServiceImpl;
@@ -34,6 +36,12 @@ public class WebSecurityConfig {
 
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+    
+    @Autowired
+    private CustomOAuth2UserService customOAuth2UserService;
+    
+    @Autowired
+    private OAuth2SuccessHandler oAuth2SuccessHandler;
 
 	@Bean
 	public BCryptPasswordEncoder passwordEncoder() {
@@ -136,7 +144,7 @@ public class WebSecurityConfig {
                             "/api/auth/**", // API đăng nhập/đăng ký
                             "/api/debug/**",
                             "/css/**", "/js/**", "/images/**", "/assets/**","/ws/**",
-                            "/favicon.ico", "/error", "/categories/**", "/search/**"
+                            "/favicon.ico", "/error", "/categories/**", "/search/**", "/oauth2/**"
                         ).permitAll()
                         
                         // --- PHÂN QUYỀN CHO CÁC VAI TRÒ CỤ THỂ ---
@@ -188,6 +196,10 @@ public class WebSecurityConfig {
                         }
                     })
                 )
+                .oauth2Login(oauth -> oauth
+                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                        .successHandler(oAuth2SuccessHandler)
+                    )
                 .build();
     }
 	
