@@ -5,6 +5,7 @@
 <title th:text="'Chi Tiết Đơn Hàng #' + ${order.orderID}">Chi
 	Tiết Đơn Hàng</title>
 <style>
+/* Timeline Styles - Giống detail.html của Shipper */
 .timeline {
 	position: relative;
 	padding: 20px 0;
@@ -51,6 +52,7 @@
 	z-index: 1;
 }
 
+/* Timeline icon colors by status */
 .timeline-item.assigned .timeline-icon {
 	background: #ffc107;
 }
@@ -71,13 +73,20 @@
 	background: #dc3545;
 }
 
+.timeline-item.attempt .timeline-icon {
+	background: #fd7e14;
+}
+
 .timeline-content {
 	background: #f8f9fa;
 	padding: 15px;
 	border-radius: 8px;
 	border-left: 3px solid #dee2e6;
+	word-wrap: break-word;
+	overflow-wrap: break-word;
 }
 
+/* Timeline content colors by status */
 .timeline-item.assigned .timeline-content {
 	border-left-color: #ffc107;
 	background: #fff9e6;
@@ -101,6 +110,11 @@
 .timeline-item.danger .timeline-content {
 	border-left-color: #dc3545;
 	background: #fde7e9;
+}
+
+.timeline-item.attempt .timeline-content {
+	border-left-color: #fd7e14;
+	background: #fff4e6;
 }
 
 .timeline-content h6 {
@@ -137,6 +151,7 @@
 				</ol>
 			</div>
 		</nav>
+
 		<div class="container my-5" th:if="${order != null}">
 
 			<div th:if="${errorMessage}"
@@ -156,21 +171,26 @@
 				<h1 class="fw-bold"
 					th:text="'Chi Tiết Đơn Hàng #' + ${order.orderID}"></h1>
 				<span class="badge fs-6"
-					th:classappend="${order.orderStatus == 'Completed'} ? 'bg-success' : 'bg-info'"
+					th:classappend="${order.orderStatus == 'Completed'} ? 'bg-success' : 
+									(order.orderStatus == 'Cancelled' ? 'bg-danger' : 
+									(order.orderStatus == 'Pending' ? 'bg-warning' : 'bg-info'))"
 					th:text="${order.orderStatus}"> </span>
 			</div>
 
 			<div class="row g-4">
+				<!-- *** CỘT TRÁI: Sản phẩm + Lịch sử giao hàng *** -->
 				<div class="col-lg-8">
-					<div class="card shadow-sm border-0 rounded-3">
+					<!-- Các sản phẩm đã mua -->
+					<div class="card shadow-sm border-0 rounded-3 mb-4">
 						<div class="card-header bg-white border-0 py-3">
-							<h5 class="mb-0 fw-bold">Các sản phẩm đã mua</h5>
+							<h5 class="mb-0 fw-bold">
+								<i class="bi bi-bag-check-fill"></i> Các sản phẩm đã mua
+							</h5>
 						</div>
 						<div class="card-body p-0">
 							<div th:each="item : ${order.orderDetails}"
 								class="p-4 border-bottom">
 								<div class="row align-items-center g-3">
-
 									<div class="col-md-2 col-3">
 										<img
 											th:if="${item.variant.product.images != null and not #lists.isEmpty(item.variant.product.images)}"
@@ -208,10 +228,10 @@
 									<div class="col-md-4 col-5 text-start">
 										<div class="d-flex flex-column">
 											<small class="text-muted">Đơn giá: <span
-												th:text="${#numbers.formatDecimal(item.unitPrice, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span></small>
-											<small class="text-muted">Số lượng: <span
-												th:text="'x' + ${item.quantity}"></span></small> <span
-												class="fw-bold fs-6 mt-1 text-danger"
+												th:text="${#numbers.formatDecimal(item.unitPrice, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+											</small> <small class="text-muted">Số lượng: <span
+												th:text="'x' + ${item.quantity}"></span>
+											</small> <span class="fw-bold fs-6 mt-1 text-danger"
 												th:text="${#numbers.formatDecimal(item.subtotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
 										</div>
 									</div>
@@ -219,7 +239,6 @@
 									<div class="col-md-3 col-4 text-end">
 										<div th:if="${order.orderStatus == 'Completed'}"
 											class="d-flex flex-column align-items-end gap-2">
-
 											<th:block
 												th:with="isReviewed=${reviewStatusMap != null and reviewStatusMap.get(item.orderDetailID)}">
 												<a th:if="${!isReviewed}"
@@ -246,7 +265,6 @@
 													class="fa-solid fa-heart me-1"></i> Đã yêu thích
 												</a>
 											</th:block>
-
 										</div>
 										<div th:unless="${order.orderStatus == 'Completed'}">
 											<small class="text-muted">Không có hành động</small>
@@ -256,167 +274,151 @@
 							</div>
 						</div>
 					</div>
-				</div>
 
-				<div th:if="${item.toppings != null and !item.toppings.isEmpty()}"
-					class="mt-2">
-					<small class="text-muted"> <i
-						class="fa-solid fa-plus-circle me-1"></i> <span
-						th:each="toppingItem, iterStat : ${item.toppings}"> <span
-							th:text="${toppingItem.topping.toppingName}"></span> <span
-							th:if="!${iterStat.last}">, </span>
-					</span>
-					</small>
-				</div>
-			</div>
-		</div>
-		<div class="col-md-2 col-4">
-			<small class="text-muted d-block">Đơn giá</small> <span
-				th:text="${#numbers.formatDecimal(item.unitPrice, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
-		</div>
-		<div class="col-md-1 col-3">
-			<small class="text-muted d-block">SL</small> <span
-				th:text="'x' + ${item.quantity}"></span>
-		</div>
-		<div class="col-md-2 col-5 text-end">
-			<small class="text-muted d-block">Tổng</small> <span
-				class="fw-bold fs-6"
-				th:text="${#numbers.formatDecimal(item.subtotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
-		</div>
+					<!-- *** Lịch sử giao hàng *** -->
+					<div class="card shadow-sm border-0 rounded-3 mb-4">
+						<div class="card-header bg-white border-0 py-3">
+							<h5 class="mb-0 fw-bold">
+								<i class="bi bi-clock-history"></i> Lịch sử giao hàng
+							</h5>
+						</div>
+						<div class="card-body">
+							<div class="timeline"
+								th:if="${shippingHistory != null and !shippingHistory.isEmpty()}">
+								<div class="timeline-item"
+									th:each="history : ${shippingHistory}"
+									th:classappend="${history.status == 'Delivered' ? 'success' : 
+													 (history.status == 'Failed_Delivery' ? 'danger' : 
+													 (history.status == 'Assigned' ? 'assigned' :
+													 (history.status == 'Picking_Up' ? 'picking' :
+													 (history.status == 'Delivering' ? 'delivering' :
+													 (history.status == 'Delivery_Attempt' ? 'attempt' : '')))))}">
+									<div class="timeline-icon"></div>
+									<div class="timeline-content">
+										<h6 th:switch="${history.status}">
+											<span th:case="'Assigned'"> <i
+												class="bi bi-check-circle-fill text-warning"></i> Đã nhận
+												đơn hàng
+											</span> <span th:case="'Picking_Up'"> <i
+												class="bi bi-box-arrow-up text-info"></i> Đang lấy hàng
+											</span> <span th:case="'Delivering'"> <i
+												class="bi bi-truck text-primary"></i> Đang giao hàng
+											</span> <span th:case="'Delivery_Attempt'"> <i
+												class="bi bi-arrow-repeat text-warning"></i> Đã giao hàng
+												(thử lại)
+											</span> <span th:case="'Delivered'"> <i
+												class="bi bi-check-circle-fill text-success"></i> Giao hàng
+												thành công
+											</span> <span th:case="'Failed_Delivery'"> <i
+												class="bi bi-x-circle-fill text-danger"></i> Giao hàng thất
+												bại
+											</span> <span th:case="*" th:text="${history.status}"></span>
+										</h6>
 
-		<!-- *** THÊM: Lịch sử giao hàng *** -->
-		<div class="card shadow-sm border-0 rounded-3 mb-4">
-			<div class="card-header bg-white border-0 py-3">
-				<h5 class="mb-0 fw-bold">
-					<i class="bi bi-clock-history"></i> Lịch sử giao hàng
-				</h5>
-			</div>
-			<div class="card-body">
-				<div class="timeline"
-					th:if="${shippingHistory != null and !shippingHistory.isEmpty()}">
-					<div class="timeline-item" th:each="history : ${shippingHistory}"
-						th:classappend="${history.status == 'Delivered' ? 'success' : 
-                                                 (history.status == 'Failed_Delivery' ? 'danger' : 
-                                                 (history.status == 'Assigned' ? 'assigned' :
-                                                 (history.status == 'Picking_Up' ? 'picking' :
-                                                 (history.status == 'Delivering' ? 'delivering' :
-                                                 (history.status == 'Delivery_Attempt' ? 'delivering' : '')))))}">
-						<div class="timeline-icon"></div>
-						<div class="timeline-content">
-							<h6 th:switch="${history.status}">
-								<span th:case="'Assigned'"> <i
-									class="bi bi-check-circle-fill text-warning"></i> Đã nhận đơn
-									hàng
-								</span> <span th:case="'Picking_Up'"> <i
-									class="bi bi-box-arrow-up text-info"></i> Đang lấy hàng
-								</span> <span th:case="'Delivering'"> <i
-									class="bi bi-truck text-primary"></i> Đang giao hàng
-								</span> <span th:case="'Delivery_Attempt'"> <i
-									class="bi bi-arrow-repeat text-warning"></i> Đã giao hàng (thử
-									lại)
-								</span> <span th:case="'Delivered'"> <i
-									class="bi bi-check-circle-fill text-success"></i> Giao hàng
-									thành công
-								</span> <span th:case="'Failed_Delivery'"> <i
-									class="bi bi-x-circle-fill text-danger"></i> Giao hàng thất bại
-								</span> <span th:case="*" th:text="${history.status}"></span>
-							</h6>
+										<div class="timeline-time">
+											<i class="bi bi-clock"></i> <span
+												th:text="${#temporals.format(history.timestamp, 'dd/MM/yyyy HH:mm:ss')}"></span>
+										</div>
 
-							<div class="timeline-time">
-								<i class="bi bi-clock"></i> <span
-									th:text="${#temporals.format(history.timestamp, 'dd/MM/yyyy HH:mm:ss')}"></span>
+										<div class="timeline-notes"
+											th:if="${history.notes != null and !#strings.isEmpty(history.notes)}"
+											th:text="${history.notes}"></div>
+
+										<div th:if="${history.imageURL != null}" class="mt-2">
+											<img th:src="${history.imageURL}" class="img-thumbnail"
+												style="max-width: 200px; max-height: 200px; object-fit: cover;"
+												alt="Ảnh chứng minh">
+										</div>
+									</div>
+								</div>
 							</div>
-
-							<div class="timeline-notes"
-								th:if="${history.notes != null and !#strings.isEmpty(history.notes)}"
-								th:text="${history.notes}"></div>
-
-							<div th:if="${history.imageURL != null}" class="mt-2">
-								<img th:src="${history.imageURL}" class="img-thumbnail"
-									style="max-width: 200px; max-height: 200px; object-fit: cover;"
-									alt="Ảnh chứng minh">
+							<div class="text-center py-4"
+								th:if="${shippingHistory == null or shippingHistory.isEmpty()}">
+								<i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+								<p class="text-muted mb-0 mt-2">Chưa có lịch sử giao hàng</p>
 							</div>
 						</div>
 					</div>
 				</div>
-				<div class="text-center py-4"
-					th:if="${shippingHistory == null or shippingHistory.isEmpty()}">
-					<i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
-					<p class="text-muted mb-0 mt-2">Chưa có lịch sử giao hàng</p>
-				</div>
-			</div>
-		</div>
-		</div>
 
-		<div class="col-lg-4">
-			<!-- Thông tin giao hàng -->
-			<div class="card shadow-sm border-0 rounded-3 mb-4">
-				<div class="card-body p-4">
-					<h5 class="card-title mb-3 fw-bold">Thông tin giao hàng</h5>
-					<ul class="list-unstyled">
-						<li class="mb-2"><strong class="d-block text-muted">Người
-								nhận:</strong> <span th:text="${order.recipientName}"></span></li>
-						<li class="mb-2"><strong class="d-block text-muted">Số
-								điện thoại:</strong> <span th:text="${order.recipientPhone}"></span></li>
-						<li><strong class="d-block text-muted">Địa chỉ:</strong> <span
-							th:text="${order.shippingAddress}"></span></li>
-						<li th:if="${order.notes != null and !order.notes.isEmpty()}"
-							class="mt-2"><strong class="d-block text-muted">Ghi
-								chú:</strong> <span class="fst-italic" th:text="${order.notes}"></span></li>
-					</ul>
-				</div>
-			</div>
+				<!-- *** CỘT PHẢI: Thông tin giao hàng + Tổng kết *** -->
+				<div class="col-lg-4">
+					<!-- Thông tin giao hàng -->
+					<div class="card shadow-sm border-0 rounded-3 mb-4">
+						<div class="card-body p-4">
+							<h5 class="card-title mb-3 fw-bold">
+								<i class="bi bi-geo-alt-fill"></i> Thông tin giao hàng
+							</h5>
+							<ul class="list-unstyled">
+								<li class="mb-2"><strong class="d-block text-muted">Người
+										nhận:</strong> <span th:text="${order.recipientName}"></span></li>
+								<li class="mb-2"><strong class="d-block text-muted">Số
+										điện thoại:</strong> <span th:text="${order.recipientPhone}"></span></li>
+								<li><strong class="d-block text-muted">Địa chỉ:</strong> <span
+									th:text="${order.shippingAddress}"></span></li>
+								<li th:if="${order.notes != null and !order.notes.isEmpty()}"
+									class="mt-2"><strong class="d-block text-muted">Ghi
+										chú:</strong> <span class="fst-italic" th:text="${order.notes}"></span>
+								</li>
+							</ul>
+						</div>
+					</div>
 
-			<!-- Tổng kết đơn hàng -->
-			<div
-				class="summary-card card shadow-sm border-0 rounded-3 position-sticky"
-				style="top: 20px;">
-				<div class="card-body p-4">
-					<h5 class="card-title mb-4 fw-bold">Tổng kết đơn hàng</h5>
+					<!-- Tổng kết đơn hàng -->
+					<div
+						class="summary-card card shadow-sm border-0 rounded-3 position-sticky"
+						style="top: 20px;">
+						<div class="card-body p-4">
+							<h5 class="card-title mb-4 fw-bold">
+								<i class="bi bi-receipt"></i> Tổng kết đơn hàng
+							</h5>
 
-					<ul class="list-group list-group-flush mb-4">
-						<li
-							class="list-group-item d-flex justify-content-between align-items-center py-3">
-							<span class="text-muted">Tạm tính</span> <span
-							class="fw-semibold"
-							th:text="${#numbers.formatDecimal(order.subtotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
-						</li>
-						<li
-							class="list-group-item d-flex justify-content-between align-items-center py-3">
-							<span class="text-muted">Phí vận chuyển</span> <span
-							class="fw-semibold"
-							th:text="${#numbers.formatDecimal(order.shippingFee, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
-						</li>
-						<li
-							class="list-group-item d-flex justify-content-between align-items-center py-3">
-							<span class="text-muted">Giảm giá</span> <span
-							class="fw-semibold"
-							th:text="'-' + ${#numbers.formatDecimal(order.discountAmount, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
-						</li>
-						<li
-							class="list-group-item d-flex justify-content-between align-items-center py-3 border-top">
-							<span class="fs-5 fw-bold">Tổng cộng</span> <span
-							class="fs-4 fw-bold text-danger"
-							th:text="${#numbers.formatDecimal(order.grandTotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
-						</li>
-					</ul>
+							<ul class="list-group list-group-flush mb-4">
+								<li
+									class="list-group-item d-flex justify-content-between align-items-center py-3 bg-transparent border-bottom">
+									<span class="text-muted">Tạm tính</span> <span
+									class="fw-semibold"
+									th:text="${#numbers.formatDecimal(order.subtotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+								</li>
+								<li
+									class="list-group-item d-flex justify-content-between align-items-center py-3 bg-transparent border-bottom">
+									<span class="text-muted">Phí vận chuyển</span> <span
+									class="fw-semibold"
+									th:text="${#numbers.formatDecimal(order.shippingFee, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+								</li>
+								<li
+									class="list-group-item d-flex justify-content-between align-items-center py-3 bg-transparent border-bottom">
+									<span class="text-muted">Giảm giá</span> <span
+									class="fw-semibold text-danger"
+									th:text="'-' + ${#numbers.formatDecimal(order.discountAmount, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+								</li>
+								<li
+									class="list-group-item d-flex justify-content-between align-items-center py-3 bg-transparent border-top border-2">
+									<span class="fs-5 fw-bold">Tổng cộng</span> <span
+									class="fs-4 fw-bold text-danger"
+									th:text="${#numbers.formatDecimal(order.grandTotal, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+								</li>
+							</ul>
 
-					<div class="border-top pt-3">
-						<p class="mb-1">
-							<span class="text-muted me-2">P.thức thanh toán:</span> <strong
-								th:text="${order.paymentMethod}"></strong>
-						</p>
-						<p class="mb-0">
-							<span class="text-muted me-2">Trạng thái TT:</span> <strong
-								th:classappend="${order.paymentStatus == 'Paid'} ? 'text-success' : 'text-warning'"
-								th:text="${order.paymentStatus == 'Paid'} ? 'Đã thanh toán' : 'Chưa thanh toán'">
-							</strong>
-						</p>
+							<div class="border-top pt-3">
+								<p class="mb-2">
+									<span class="text-muted me-2"> <i
+										class="bi bi-credit-card"></i> P.thức thanh toán:
+									</span> <strong th:text="${order.paymentMethod}"></strong>
+								</p>
+								<p class="mb-0">
+									<span class="text-muted me-2"> <i
+										class="bi bi-cash-coin"></i> Trạng thái TT:
+									</span> <strong
+										th:classappend="${order.paymentStatus == 'Paid'} ? 'text-success' : 'text-warning'"
+										th:text="${order.paymentStatus == 'Paid'} ? 'Đã thanh toán' : 'Chưa thanh toán'">
+									</strong>
+								</p>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>
-		</div>
-		</div>
 		</div>
 	</section>
 </body>
