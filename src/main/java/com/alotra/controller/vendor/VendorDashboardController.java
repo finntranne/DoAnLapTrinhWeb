@@ -30,9 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 public class VendorDashboardController {
 	private final VendorShopDashboardService vendorShopService;
 	private final VendorApprovalService vendorApprovalService;
-	
-	@Autowired
-	ChatService chatService;
+
 
 	// ==================== HELPER METHOD ====================
 
@@ -55,8 +53,6 @@ public class VendorDashboardController {
 
 	// ==================== DASHBOARD ====================
 
-	
-	
 	@GetMapping("/dashboard")
 	public String dashboard(@AuthenticationPrincipal MyUserDetails userDetails, Model model,
 			RedirectAttributes redirectAttributes) {
@@ -70,13 +66,8 @@ public class VendorDashboardController {
 			List<ApprovalResponseDTO> pendingApprovals = vendorApprovalService.getPendingApprovals(shopId, null, null);
 
 			model.addAttribute("pendingApprovals", pendingApprovals);
-			
-			List<MessageEntity> recentMessages = chatService.findRecentMessagesForShop(shopId, 5);
-		    int unreadCount = chatService.countUnreadMessages(shopId);
 
-		    model.addAttribute("recentMessages", recentMessages);
-		    model.addAttribute("unreadCount", unreadCount);
-		    model.addAttribute("shopId", shopId);
+			model.addAttribute("shopId", shopId);
 
 			return "vendor/dashboard";
 
