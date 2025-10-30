@@ -2,6 +2,7 @@ package com.alotra.controller.vendor;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -12,7 +13,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.alotra.dto.response.ApprovalResponseDTO;
 import com.alotra.dto.shop.ShopDashboardDTO;
+import com.alotra.entity.common.MessageEntity;
 import com.alotra.security.MyUserDetails;
+import com.alotra.service.chat.ChatService;
 import com.alotra.service.vendor.VendorApprovalService;
 import com.alotra.service.vendor.VendorShopDashboardService;
 
@@ -27,6 +30,9 @@ import lombok.extern.slf4j.Slf4j;
 public class VendorDashboardController {
 	private final VendorShopDashboardService vendorShopService;
 	private final VendorApprovalService vendorApprovalService;
+	
+	@Autowired
+	ChatService chatService;
 
 	// ==================== HELPER METHOD ====================
 
@@ -49,6 +55,8 @@ public class VendorDashboardController {
 
 	// ==================== DASHBOARD ====================
 
+	
+	
 	@GetMapping("/dashboard")
 	public String dashboard(@AuthenticationPrincipal MyUserDetails userDetails, Model model,
 			RedirectAttributes redirectAttributes) {
@@ -62,6 +70,13 @@ public class VendorDashboardController {
 			List<ApprovalResponseDTO> pendingApprovals = vendorApprovalService.getPendingApprovals(shopId, null, null);
 
 			model.addAttribute("pendingApprovals", pendingApprovals);
+			
+			List<MessageEntity> recentMessages = chatService.findRecentMessagesForShop(shopId, 5);
+		    int unreadCount = chatService.countUnreadMessages(shopId);
+
+		    model.addAttribute("recentMessages", recentMessages);
+		    model.addAttribute("unreadCount", unreadCount);
+		    model.addAttribute("shopId", shopId);
 
 			return "vendor/dashboard";
 
