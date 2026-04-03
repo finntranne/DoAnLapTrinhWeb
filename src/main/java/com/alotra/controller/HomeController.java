@@ -112,11 +112,10 @@ public class HomeController {
         banners.add(new Banner("https://gongcha.com.vn/wp-content/uploads/2025/08/cover-web-warabi-scaled.jpg", "Banner Trà"));
         model.addAttribute("banners", banners);
 
-        Sort topSellingSort = Sort.by(Sort.Direction.DESC, "soldCount");
-        Sort newestSort = Sort.by(Sort.Direction.DESC, "createdAt");
-        Sort topRatedSort = Sort.by(Sort.Direction.DESC, "averageRating")
-                                .and(Sort.by(Sort.Direction.DESC, "totalReviews"));
-        Sort topLikedSort = Sort.by(Sort.Direction.DESC, "totalLikes");
+        Sort topSellingSort = Sort.unsorted();
+        Sort newestSort = Sort.by(Sort.Direction.DESC, "productID");
+        Sort topRatedSort = Sort.by(Sort.Direction.DESC, "productID");
+        Sort topLikedSort = Sort.by(Sort.Direction.DESC, "productID");
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         boolean isAuthenticated = authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getPrincipal());
@@ -303,23 +302,22 @@ public class HomeController {
         if (sortType == null) sortType = "newest"; 
         switch (sortType) {
             case "priceAsc":
-                return Sort.by(Sort.Direction.ASC, "basePrice");
+                return Sort.by(Sort.Direction.ASC, "productName");
             case "priceDesc":
-                return Sort.by(Sort.Direction.DESC, "basePrice"); 
+                return Sort.by(Sort.Direction.DESC, "productID"); 
             case "nameAsc":
                 return Sort.by(Sort.Direction.ASC, "productName");
             case "nameDesc":
                 return Sort.by(Sort.Direction.DESC, "productName");
             case "bestSelling":
-                return Sort.by(Sort.Direction.DESC, "soldCount");
+                return Sort.unsorted();
             case "topRated":
-                return Sort.by(Sort.Direction.DESC, "averageRating")
-                           .and(Sort.by(Sort.Direction.DESC, "totalReviews"));
+                return Sort.by(Sort.Direction.DESC, "productID");
             case "topLiked":
-                return Sort.by(Sort.Direction.DESC, "totalLikes");
+                return Sort.by(Sort.Direction.DESC, "productID");
             case "newest":
             default:
-                return Sort.by(Sort.Direction.DESC, "createdAt");
+                return Sort.by(Sort.Direction.DESC, "productID");
         }
     }
 }

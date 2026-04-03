@@ -20,8 +20,10 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.alotra.dto.shop.ShopEmployeeDTO;
 import com.alotra.dto.shop.ShopOrderDTO;
 import com.alotra.entity.order.Order;
+import com.alotra.repository.order.PaymentRepository;
 import com.alotra.security.MyUserDetails;
 import com.alotra.service.vendor.VendorOrderService;
+import com.alotra.view.order.OrderView;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class VendorOrderController {
 	private final VendorOrderService vendorService;
+	private final PaymentRepository paymentRepository;
 
 	// ==================== HELPER METHOD ====================
 
@@ -109,7 +112,7 @@ public class VendorOrderController {
 			Integer shopId = getShopIdOrThrow(userDetails);
 			Order order = vendorService.getOrderDetail(shopId, id);
 
-			model.addAttribute("order", order);
+			model.addAttribute("order", OrderView.from(order, paymentRepository.findByOrder_OrderID(id).orElse(null)));
 
 			// Cần tải danh sách shipper nếu đơn hàng 'Đã xác nhận' (để gán)
 			// HOẶC 'Đang giao' (để có thể thay đổi)

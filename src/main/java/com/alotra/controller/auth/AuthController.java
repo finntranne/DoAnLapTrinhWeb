@@ -184,14 +184,15 @@ public class AuthController {
 			user.setFullName(signUpDto.getFullname());
 			user.setPassword(passwordEncoder.encode(signUpDto.getPassword()));
 			user.setStatus((byte) 0);
+			user.setCreatedAt(LocalDateTime.now());
+			user.setUpdatedAt(LocalDateTime.now());
 
 			String otp = generateOtp();
 			user.setOtpCode(otp);
 			user.setOtpExpiryTime(LocalDateTime.now().plusMinutes(5));
 			user.setOtpPurpose("REGISTER");
 
-			Role customerRole = roleRepository.findByRoleName("CUSTOMER")
-					.orElseThrow(() -> new RuntimeException("Customer role not found"));
+			Role customerRole = resolveCustomerRole();
 			user.setRoles(new HashSet<>(Collections.singletonList(customerRole)));
 
 			user = userRepository.save(user);
@@ -530,5 +531,20 @@ public class AuthController {
 		}
 
 		return "/";
+	}
+
+	private Role resolveCustomerRole() {
+		return roleRepository.findByRoleNameIgnoreCase("CUSTOMER")
+				.or(() -> roleRepository.findByRoleNameIgnoreCase("ROLE_CUSTOMER"))
+				.orElseGet(() -> {
+					logger.warn("Customer role missing, creating fallback CUSTOMER role");
+					Integer nextRoleId = roleRepository.findFirstByOrderByIdDesc()
+							.map(role -> role.getId() + 1)
+							.orElse(1);
+					Role role = new Role();
+					role.setId(nextRoleId);
+					role.setRoleName("CUSTOMER");
+					return roleRepository.save(role);
+				});
 	}
 }

@@ -1,22 +1,32 @@
 package com.alotra.controller;
 
-import com.alotra.entity.order.Order;
-import com.alotra.repository.order.OrderRepository;
-import com.alotra.service.cart.CartService;
-import com.alotra.util.VNPayUtil;
-import jakarta.servlet.http.HttpServletRequest;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import com.alotra.entity.order.Order;
+import com.alotra.entity.order.Payment;
+import com.alotra.enums.PaymentStatus;
+import com.alotra.repository.order.OrderRepository;
+import com.alotra.repository.order.PaymentRepository;
+import com.alotra.util.OrderPricingUtils;
+import com.alotra.util.VNPayUtil;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @Controller
 public class PaymentCallbackController {
@@ -24,17 +34,14 @@ public class PaymentCallbackController {
     @Autowired
     private OrderRepository orderRepository;
 
-    @Autowired(required = false)
-    private CartService cartService;
+    @Autowired
+    private PaymentRepository paymentRepository;
 
     @Value("${vnpay.hashSecret}")
     private String hashSecret;
 
     private static final DateTimeFormatter LOG_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
 
-    /**
-     * DÀNH CHO USER: Trang VNPay trả về sau khi người dùng thanh toán.
-     */
     @GetMapping("/vnpay-return")
     public String vnpayReturn(HttpServletRequest request) {
         String responseCode = request.getParameter("vnp_ResponseCode");
@@ -43,15 +50,12 @@ public class PaymentCallbackController {
         if ("00".equals(responseCode)) {
             println("INFO", "User payment success - redirect to success page. OrderId: " + orderId);
             return "redirect:/order-success?orderId=" + orderId;
-        } else {
-            println("WARN", "User payment failed. ResponseCode: " + responseCode + ", OrderId: " + orderId);
-            return "redirect:/order-failed?code=" + responseCode;
         }
+
+        println("WARN", "User payment failed. ResponseCode: " + responseCode + ", OrderId: " + orderId);
+        return "redirect:/order-failed?code=" + responseCode;
     }
 
-    /**
-     * DÀNH CHO VNPAY SERVER: IPN - Xác nhận thanh toán
-     */
     @GetMapping("/vnpay-ipn")
     public ResponseEntity<String> vnpayIpn(HttpServletRequest request) {
         println("INFO", "Received VNPay IPN callback");
@@ -62,31 +66,25 @@ public class PaymentCallbackController {
                 return errorResponse("99", "Empty parameters");
             }
 
-            String vnp_SecureHash = params.remove("vnp_SecureHash");
-            if (vnp_SecureHash == null || vnp_SecureHash.isEmpty()) {
+            String secureHash = params.remove("vnp_SecureHash");
+            if (secureHash == null || secureHash.isEmpty()) {
                 return errorResponse("97", "Missing vnp_SecureHash");
             }
 
-            // === 1. XÁC THỰC CHỮ KÝ ===
-            if (!verifySignature(params, vnp_SecureHash)) {
+            if (!verifySignature(params, secureHash)) {
                 println("WARN", "Invalid checksum from VNPay. IP: " + getClientIp(request));
                 return errorResponse("97", "Invalid Checksum");
             }
 
-            // === 2. LẤY DỮ LIỆU ===
             String txnRef = params.get("vnp_TxnRef");
             String responseCode = params.get("vnp_ResponseCode");
             String amountStr = params.get("vnp_Amount");
             String transactionNo = params.get("vnp_TransactionNo");
 
-            if (isEmpty(txnRef)) {
-                return errorResponse("01", "Missing vnp_TxnRef");
-            }
-            if (isEmpty(responseCode) || isEmpty(amountStr)) {
+            if (isEmpty(txnRef) || isEmpty(responseCode) || isEmpty(amountStr)) {
                 return errorResponse("99", "Missing required params");
             }
 
-            // === 3. PARSE ===
             Integer orderId;
             long vnpAmount;
             try {
@@ -94,71 +92,55 @@ public class PaymentCallbackController {
                 vnpAmount = Long.parseLong(amountStr) / 100;
             } catch (NumberFormatException e) {
                 println("ERROR", "Invalid number format - TxnRef: " + txnRef + ", Amount: " + amountStr);
-                e.printStackTrace();
                 return errorResponse("99", "Invalid number format");
             }
 
-            // === 4. TÌM ĐƠN HÀNG ===
-            Order order;
-            try {
-                Optional<Order> orderOpt = orderRepository.findById(orderId);
-                if (orderOpt.isEmpty()) {
-                    println("WARN", "Order not found for IPN. OrderId: " + orderId);
-                    return errorResponse("01", "Order not found");
-                }
-                order = orderOpt.get();
-            } catch (Exception e) {
-                println("ERROR", "Database error while fetching order ID: " + orderId);
-                e.printStackTrace();
-                return errorResponse("99", "System error");
+            Order order = orderRepository.findById(orderId)
+                    .orElse(null);
+            if (order == null) {
+                println("WARN", "Order not found for IPN. OrderId: " + orderId);
+                return errorResponse("01", "Order not found");
             }
 
-            // === 5. KIỂM TRA SỐ TIỀN ===
-            if (order.getGrandTotal() == null || order.getGrandTotal().longValue() != vnpAmount) {
-                println("WARN", "Amount mismatch. Expected: " + order.getGrandTotal() + ", Received: " + vnpAmount + ", OrderId: " + orderId);
+            Payment payment = paymentRepository.findByOrder_OrderID(orderId).orElse(null);
+            if (payment == null) {
+                println("WARN", "Payment not found for order. OrderId: " + orderId);
+                return errorResponse("01", "Payment not found");
+            }
+
+            long expectedAmount = OrderPricingUtils.calculateOrderTotal(order).longValue();
+            if (expectedAmount != vnpAmount) {
+                println("WARN", "Amount mismatch. Expected: " + expectedAmount + ", Received: " + vnpAmount
+                        + ", OrderId: " + orderId);
                 return errorResponse("04", "Invalid Amount");
             }
 
-            // === 6. TRẠNG THÁI ===
-            if (!"Unpaid".equals(order.getPaymentStatus())) {
-                println("INFO", "Order already processed. Current status: " + order.getPaymentStatus() + ", OrderId: " + orderId);
+            if (payment.getStatus() == PaymentStatus.PAID) {
+                println("INFO", "Order already processed. OrderId: " + orderId);
                 return successResponse();
             }
 
-            // === 7. CẬP NHẬT ===
             if ("00".equals(responseCode)) {
-                try {
-                    order.setPaymentStatus("Paid");
-                    order.setOrderStatus("Processing");
-                    order.setPaidAt(LocalDateTime.now());
-                    order.setTransactionID(transactionNo);
+                payment.setStatus(PaymentStatus.PAID);
+                payment.setPaidAt(LocalDateTime.now());
+                payment.setTransactionCode(transactionNo);
+                paymentRepository.save(payment);
 
-                    orderRepository.save(order);
-                    println("INFO", "Order payment confirmed successfully. OrderId: " + orderId + ", TransactionNo: " + transactionNo);
-
-                    clearCartSafely(order);
-
-                } catch (Exception e) {
-                    println("ERROR", "Failed to update order after payment. OrderId: " + orderId);
-                    e.printStackTrace();
-                    return errorResponse("99", "Failed to update order");
-                }
-            } else {
-                order.setPaymentStatus("Failed");
+                order.setOrderStatus("Confirmed");
                 orderRepository.save(order);
-                println("WARN", "Payment failed from VNPay. ResponseCode: " + responseCode + ", OrderId: " + orderId);
+            } else {
+                payment.setStatus(PaymentStatus.UNPAID);
+                paymentRepository.save(payment);
+                order.setOrderStatus("PaymentFailed");
+                orderRepository.save(order);
             }
 
             return successResponse();
-
         } catch (Exception e) {
-            println("ERROR", "Unexpected error in VNPay IPN");
-            e.printStackTrace();
+            println("ERROR", "Unexpected error in VNPay IPN: " + e.getMessage());
             return errorResponse("99", "System error");
         }
     }
-
-    // === HELPER METHODS ===
 
     private Map<String, String> extractParams(HttpServletRequest request) throws UnsupportedEncodingException {
         Map<String, String> params = new HashMap<>();
@@ -167,7 +149,7 @@ public class PaymentCallbackController {
             String fieldName = paramNames.nextElement();
             String fieldValue = request.getParameter(fieldName);
             if (fieldValue != null && !fieldValue.isEmpty()) {
-                params.put(fieldName, URLDecoder.decode(fieldValue, StandardCharsets.UTF_8.name()));
+                params.put(fieldName, URLDecoder.decode(fieldValue, StandardCharsets.UTF_8));
             }
         }
         println("DEBUG", "IPN Params: " + params);
@@ -193,26 +175,14 @@ public class PaymentCallbackController {
         return calculatedHash.equals(secureHash);
     }
 
-    private void clearCartSafely(Order order) {
-        if (cartService != null && order.getUser() != null) {
-            try {
-                cartService.clearCart(order.getUser());
-                println("INFO", "Cart cleared for user: " + order.getUser().getId());
-            } catch (Exception e) {
-                println("ERROR", "Failed to clear cart for user: " + order.getUser().getId());
-                e.printStackTrace();
-            }
-        }
-    }
-
-    private boolean isEmpty(String s) {
-        return s == null || s.trim().isEmpty();
+    private boolean isEmpty(String value) {
+        return value == null || value.trim().isEmpty();
     }
 
     private String getClientIp(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            return xForwardedFor.split(",")[0].trim();
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isEmpty()) {
+            return forwarded.split(",")[0].trim();
         }
         return request.getRemoteAddr();
     }
@@ -226,7 +196,6 @@ public class PaymentCallbackController {
         return ResponseEntity.ok(String.format("{\"RspCode\":\"%s\",\"Message\":\"%s\"}", code, message));
     }
 
-    // === HÀM IN LOG RA CONSOLE ===
     private void println(String level, String message) {
         String timestamp = LocalDateTime.now().format(LOG_TIME);
         System.out.println(timestamp + " " + level + " --- " + message);

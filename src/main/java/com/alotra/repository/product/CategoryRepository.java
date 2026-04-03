@@ -62,7 +62,7 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> { /
     List<Category> findAllActiveCategories();
 
     // Bỏ findAllWithProducts từ HEAD (có thể gây N+1 hoặc tải quá nhiều data)
-     @Query("SELECT c FROM Category c JOIN FETCH c.products")
+     @Query("SELECT c FROM Category c ORDER BY c.categoryName")
      List<Category> findAllWithProducts();
      
      Page<Category> findByCategoryNameContaining(String keyword, Pageable pageable);

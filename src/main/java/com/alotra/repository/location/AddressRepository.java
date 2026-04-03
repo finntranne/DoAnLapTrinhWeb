@@ -14,19 +14,25 @@ import com.alotra.entity.user.User;
 @Repository
 public interface AddressRepository extends JpaRepository<Address, Integer> {
 
-	List<Address> findByUser_IdOrderByIsDefaultDescCreatedAtDesc(Integer userId);
+    @Query("SELECT a FROM Address a ORDER BY a.isDefault DESC, a.addressID DESC")
+    List<Address> findByUser_IdOrderByIsDefaultDescCreatedAtDesc(Integer userId);
 
-	Optional<Address> findByUser_IdAndIsDefault(Integer userId, Boolean isDefault);
+    @Query("SELECT a FROM Address a WHERE a.isDefault = :isDefault ORDER BY a.addressID DESC")
+    Optional<Address> findByUser_IdAndIsDefault(@Param("userId") Integer userId,
+            @Param("isDefault") Boolean isDefault);
 
-	@Query("SELECT a FROM Address a WHERE a.user.id = :userId AND a.isDefault = true")
-	Optional<Address> findDefaultAddressByUser_Id(@Param("userId") Integer userId);
-	
-	// *** SỬA: Tìm theo User thay vì Customer ***
+    @Query("SELECT a FROM Address a WHERE a.isDefault = true ORDER BY a.addressID DESC")
+    Optional<Address> findDefaultAddressByUser_Id(@Param("userId") Integer userId);
+
+    @Query("SELECT a FROM Address a ORDER BY a.isDefault DESC, a.addressID DESC")
     List<Address> findByUser(User user);
 
-    // *** THÊM: Tìm theo User ID (thường hữu ích hơn) ***
-    List<Address> findByUserId(Integer userId);
+    @Query("SELECT a FROM Address a ORDER BY a.isDefault DESC, a.addressID DESC")
+    List<Address> findByUserId(@Param("userId") Integer userId);
 
-    // *** THÊM: Tìm địa chỉ mặc định của User ***
-    Optional<Address> findByUserIdAndIsDefaultTrue(Integer userId);
+    @Query("SELECT a FROM Address a WHERE a.isDefault = true ORDER BY a.addressID DESC")
+    Optional<Address> findByUserIdAndIsDefaultTrue(@Param("userId") Integer userId);
+
+    @Query("SELECT a FROM Address a ORDER BY a.isDefault DESC, a.addressID DESC")
+    List<Address> findAllByOrderByIsDefaultDescAddressIDDesc();
 }

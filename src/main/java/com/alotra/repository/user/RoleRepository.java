@@ -41,6 +41,8 @@ public interface RoleRepository extends JpaRepository<Role, Integer> {
 
     // Giữ lại phương thức chuẩn từ nhánh lam
     Optional<Role> findByRoleName(String roleName);
+    Optional<Role> findByRoleNameIgnoreCase(String roleName);
+    Optional<Role> findFirstByOrderByIdDesc();
 
     // Bỏ @Query getUserByRolename từ HEAD vì findByRoleName đã đủ
     

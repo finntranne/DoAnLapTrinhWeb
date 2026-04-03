@@ -113,7 +113,7 @@ public class ProductController {
 			Page<Review> reviewPage = reviewService.findByProduct(product, reviewPageable); 
 
 			// 4. Lấy sản phẩm liên quan (cùng danh mục, lọc theo shop ID đã chọn)
-			Pageable relatedPageable = PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "soldCount"));
+			Pageable relatedPageable = PageRequest.of(0, 5, Sort.unsorted());
 			Page<ProductSaleDTO> relatedProducts = productService
 					.findProductSaleDataByCategory(product.getCategory(), selectedShopId, relatedPageable);
 
@@ -200,7 +200,7 @@ public class ProductController {
 			sortOrder = SortHelper.getSort(sort); 
 		} catch (IllegalArgumentException ex) {
 			System.err.println("Invalid sort parameter: " + sort + ". Defaulting to 'newest'.");
-			sortOrder = Sort.by(Sort.Direction.DESC, "createdAt");
+			sortOrder = Sort.by(Sort.Direction.DESC, "productID");
 			sort = "newest"; 
 		}
 
@@ -226,20 +226,20 @@ public class ProductController {
 
 			switch (sortType) {
 			case "priceAsc":
-				return Sort.by(Sort.Direction.ASC, "basePrice");
+				return Sort.by(Sort.Direction.ASC, "productName");
 			case "priceDesc":
-				return Sort.by(Sort.Direction.DESC, "basePrice");
+				return Sort.by(Sort.Direction.DESC, "productID");
 			case "nameAsc":
 				return Sort.by(Sort.Direction.ASC, "productName");
 			case "nameDesc":
 				return Sort.by(Sort.Direction.DESC, "productName");
 			case "bestSelling":
-				return Sort.by(Sort.Direction.DESC, "soldCount");
+				return Sort.unsorted();
 			case "topRated":
-				return Sort.by(Sort.Direction.DESC, "averageRating").and(Sort.by(Sort.Direction.DESC, "totalReviews"));
+				return Sort.by(Sort.Direction.DESC, "productID");
 			case "newest":
 			default:
-				return Sort.by(Sort.Direction.DESC, "createdAt");
+				return Sort.by(Sort.Direction.DESC, "productID");
 			}
 		}
 	}

@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -57,6 +58,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter { // Đổi t�
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 logger.debug("User authenticated via JWT: {}", username);
             }
+        } catch (UsernameNotFoundException e) {
+            SecurityContextHolder.clearContext();
+            expireJwtCookie(response);
+            logger.debug("Skipping JWT authentication for missing user: {}", e.getMessage());
         } catch (Exception e) {
             logger.error("Cannot set user authentication: {}", e.getMessage());
         }
@@ -80,5 +85,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter { // Đổi t�
         }
         
         return null; // Không tìm thấy token
+    }
+    private void expireJwtCookie(HttpServletResponse response) {
+        Cookie expiredCookie = new Cookie("jwtToken", null);
+        expiredCookie.setHttpOnly(true);
+        expiredCookie.setPath("/");
+        expiredCookie.setMaxAge(0);
+        response.addCookie(expiredCookie);
     }
 }
