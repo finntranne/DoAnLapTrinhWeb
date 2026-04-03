@@ -27,7 +27,7 @@ public interface ReviewRepository extends JpaRepository<Review, Integer> {
 
 	Optional<Review> findByOrderDetail_OrderDetailID(Integer orderDetailId);
 
-	Boolean existsByOrderDetail_OrderDetailID(Integer orderDetailId);
+	Boolean existsByOrderItem_OrderItemID(Integer orderItemId);
 
 	@Query("SELECT AVG(r.rating) FROM Review r WHERE r.product.productID = :productId")
 	Double calculateAverageRating(@Param("productId") Integer productId);

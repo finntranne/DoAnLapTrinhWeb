@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{admin/layouts/admin-layout.html}">
+<head>
+<title>Chỉnh sửa Topping</title>
+</head>
+
+<body>
+	<main class="app-main">
+		<div layout:fragment="content">
+			<div class="d-flex justify-content-between align-items-center mb-4">
+				<h2 class="mb-0">
+					<i class="bi bi-pencil-square me-2"></i> Chỉnh sửa Topping
+				</h2>
+				<a th:href="@{/admin/toppings/selling}"
+					class="btn btn-outline-secondary"> <i
+					class="bi bi-arrow-left me-1"></i>Quay lại danh sách
+				</a>
+			</div>
+
+			<form th:action="@{'/admin/toppings/edit/' + ${topping.toppingID}}" th:object="${topping}" 
+			      method="post" enctype="multipart/form-data">
+				
+				<input type="hidden" th:field="*{toppingID}" />
+				
+				<div class="row g-4">
+					<div class="col-lg-4">
+						<div class="card shadow-sm h-100">
+							<div class="card-header bg-light">
+								<h5 class="mb-0">
+									<i class="bi bi-image me-2"></i>Hình ảnh Topping
+								</h5>
+							</div>
+							<div class="card-body">
+								<div class="text-center mb-4">
+									<div
+										style="width: 150px; height: 150px; overflow: hidden; border-radius: 15px; margin: auto;">
+										<img id="imagePreview"
+											th:src="${topping.imageURL != null && !#strings.isEmpty(topping.imageURL)} ? ${topping.imageURL} : '/assets/img/default_topping.png'"
+											alt="Topping Image"
+											style="width: 100%; height: 100%; object-fit: cover; border: 1px solid #ddd;">
+									</div>
+									<div class="mt-2">
+										<label for="imageFile" class="btn btn-outline-secondary btn-sm">
+											<i class="bi bi-upload"></i> Chọn ảnh mới
+										</label> 
+										<input type="file" id="imageFile" name="imageFile" accept="image/*"
+											hidden onchange="previewImage(this)">
+									</div>
+								</div>
+								</div>
+						</div>
+					</div>
+
+					<div class="col-lg-8">
+						<div class="card shadow-sm h-100">
+							<div class="card-header bg-light">
+								<h5 class="mb-0">
+									<i class="bi bi-info-circle me-2"></i>Thông tin Topping
+								</h5>
+							</div>
+							<div class="card-body">
+
+								<div class="mb-3">
+									<label for="toppingName" class="form-label">Tên topping</label>
+									<input type="text" class="form-control" id="toppingName"
+										th:field="*{toppingName}"
+										th:classappend="${#fields.hasErrors('toppingName')} ? 'is-invalid' : ''">
+									<div class="invalid-feedback"
+										th:if="${#fields.hasErrors('toppingName')}"
+										th:errors="*{toppingName}"></div>
+								</div>
+
+								<div class="mb-3">
+									<label for="additionalPrice" class="form-label">Giá thêm</label>
+									<input type="number" class="form-control" id="additionalPrice"
+										th:field="*{additionalPrice}"
+										th:classappend="${#fields.hasErrors('additionalPrice')} ? 'is-invalid' : ''">
+									<div class="invalid-feedback"
+										th:if="${#fields.hasErrors('additionalPrice')}"
+										th:errors="*{additionalPrice}"></div>
+								</div>
+
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="mt-4">
+					<button type="submit" class="btn btn-primary">
+						<i class="bi bi-save me-1"></i> Lưu thay đổi
+					</button>
+				</div>
+
+			</form>
+			
+			<script>
+				function previewImage(input) {
+				    if (input.files && input.files[0]) {
+				        var reader = new FileReader();
+				        
+				        reader.onload = function (e) {
+				            document.getElementById('imagePreview').setAttribute('src', e.target.result);
+				        }
+				        
+				        reader.readAsDataURL(input.files[0]);
+				    }
+				}
+			</script>
+
+		</div>
+	</main>
+</body>
+</html>

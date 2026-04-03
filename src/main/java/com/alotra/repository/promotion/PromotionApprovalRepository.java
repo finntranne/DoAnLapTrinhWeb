@@ -12,7 +12,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.alotra.entity.product.ProductApproval;
 import com.alotra.entity.promotion.PromotionApproval;
 
 @Repository

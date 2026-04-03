@@ -2,7 +2,7 @@ package com.alotra.entity.product;
 
 import java.time.LocalDateTime;
 
-import com.alotra.entity.order.OrderDetail;
+import com.alotra.entity.order.OrderItem;
 import com.alotra.entity.user.User;
 
 import jakarta.persistence.Column;
@@ -41,8 +41,8 @@ public class Review {
 	private Product product;
 
 	@OneToOne
-	@JoinColumn(name = "OrderDetailID", nullable = false, unique = true)
-	private OrderDetail orderDetail;
+	@JoinColumn(name = "OrderItemID", nullable = false, unique = true)
+	private OrderItem orderItem;
 
 	@Column(name = "Rating", nullable = false)
 	private Integer rating;

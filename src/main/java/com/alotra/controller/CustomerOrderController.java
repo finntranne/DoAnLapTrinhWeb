@@ -5,7 +5,8 @@ import com.alotra.entity.order.OrderShippingHistory;
 import com.alotra.entity.user.User;
 import com.alotra.repository.order.OrderRepository;
 import com.alotra.repository.order.OrderShippingHistoryRepository;
-import com.alotra.entity.order.OrderDetail;
+
+import com.alotra.entity.order.OrderItem;
 import com.alotra.entity.user.User;
 import com.alotra.repository.order.OrderRepository;
 import com.alotra.repository.product.FavoriteRepository;
@@ -141,120 +142,122 @@ public class CustomerOrderController {
 	/**
 	 * XEM CHI TIẾT ĐƠN HÀNG (ĐÃ SỬA + THÊM LỊCH SỬ GIAO HÀNG)
 	 */
-	@GetMapping("/orders/{id}")
-	public String showOrderDetail(@PathVariable("id") Integer orderId, Model model,
-			RedirectAttributes redirectAttributes, HttpSession session) {
-		try {
-			Integer selectedShopId = getSelectedShopId(session);
-			User user = getCurrentAuthenticatedUser();
-			Order order = orderRepository.findById(orderId)
-					.orElseThrow(() -> new EntityNotFoundException("Không tìm thấy đơn hàng #" + orderId));
+    @GetMapping("/orders/{id}")
+    public String showOrderDetail(@PathVariable("id") Integer orderId,
+                                  Model model,
+                                  RedirectAttributes redirectAttributes,
+                                  HttpSession session) {
+        try {
+            Integer selectedShopId = getSelectedShopId(session);
+            User user = getCurrentAuthenticatedUser();
 
-			if (!order.getUser().getId().equals(user.getId())) {
-				throw new AccessDeniedException("Bạn không có quyền xem đơn hàng này.");
-			}
+            Order order = orderRepository.findById(orderId)
+                    .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy đơn hàng #" + orderId));
 
-			// === BỔ SUNG LOGIC CHO REVIEW VÀ FAVORITE ===
-			if ("Completed".equalsIgnoreCase(order.getOrderStatus())) {
-				// Map: OrderDetailID -> Boolean (true nếu đã đánh giá)
-				Map<Integer, Boolean> reviewStatusMap = new HashMap<>();
-				// Map: ProductID -> Boolean (true nếu đã yêu thích)
-				Map<Integer, Boolean> favoriteStatusMap = new HashMap<>();
+            if (!order.getUser().getId().equals(user.getId())) {
+                throw new AccessDeniedException("Bạn không có quyền xem đơn hàng này.");
+            }
 
-				for (OrderDetail detail : order.getOrderDetails()) {
-					Integer orderDetailId = detail.getOrderDetailID();
-					Integer productId = detail.getVariant().getProduct().getProductID();
+            // === LOGIC REVIEW & FAVORITE ===
+            if ("Completed".equalsIgnoreCase(order.getOrderStatus())) {
+                // Map: OrderItemID -> Boolean (true nếu đã đánh giá)
+                Map<Integer, Boolean> reviewStatusMap = new HashMap<>();
 
-					// 1. Kiểm tra trạng thái Review
-					// Dùng phương thức đã có trong ReviewRepository
-					boolean isReviewed = reviewRepository.existsByOrderDetail_OrderDetailID(orderDetailId);
-					reviewStatusMap.put(orderDetailId, isReviewed);
+                // Map: ProductID -> Boolean (true nếu đã yêu thích)
+                Map<Integer, Boolean> favoriteStatusMap = new HashMap<>();
 
-					// 2. Kiểm tra trạng thái Favorite
-					if (!favoriteStatusMap.containsKey(productId)) {
-						// Dùng phương thức đã có trong FavoriteRepository
-						boolean isFavorited = favoriteRepository.existsByUser_IdAndProduct_ProductID(user.getId(),
-								productId);
-						favoriteStatusMap.put(productId, isFavorited);
-					}
-				}
+                for (OrderItem item : order.getItems()) {
+                    Integer orderItemId = item.getOrderItemId();
+                    Integer productId = item.getVariant().getProduct().getProductID();
 
-				model.addAttribute("reviewStatusMap", reviewStatusMap);
-				model.addAttribute("favoriteStatusMap", favoriteStatusMap);
-			}
-			// === KẾT THÚC BỔ SUNG ===
+                    // 1. Kiểm tra trạng thái Review
+                    boolean isReviewed = reviewRepository.existsByOrderItem_OrderItemID(orderItemId);
+                    reviewStatusMap.put(orderItemId, isReviewed);
 
-			// *** THÊM: Lấy lịch sử giao hàng ***
-			List<OrderShippingHistory> shippingHistory = orderShippingHistoryRepository
-					.findByOrder_OrderIDOrderByTimestampDesc(orderId);
+                    // 2. Kiểm tra trạng thái Favorite
+                    if (!favoriteStatusMap.containsKey(productId)) {
+                        boolean isFavorited = favoriteRepository.existsByUser_IdAndProduct_ProductID(
+                                user.getId(), productId);
+                        favoriteStatusMap.put(productId, isFavorited);
+                    }
+                }
 
-			model.addAttribute("order", order);
-			model.addAttribute("shippingHistory", shippingHistory); // *** THÊM ***
-			model.addAttribute("cartItemCount", getCurrentCartItemCount());
-			model.addAttribute("categories", categoryService.findAll());
-			model.addAttribute("shops", storeService.findAllActiveShops());
-			model.addAttribute("selectedShopName", storeService.getShopNameById(selectedShopId));
+                model.addAttribute("reviewStatusMap", reviewStatusMap);
+                model.addAttribute("favoriteStatusMap", favoriteStatusMap);
+            }
+            // === END REVIEW & FAVORITE ===
 
-			return "user/order_detail";
+            // Lịch sử giao hàng
+            List<OrderShippingHistory> shippingHistory =
+                    orderShippingHistoryRepository.findByOrder_OrderIDOrderByTimestampDesc(orderId);
 
-		} catch (ResponseStatusException | UsernameNotFoundException e) {
-			return "redirect:/login";
-		} catch (EntityNotFoundException | AccessDeniedException e) {
-			redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-			return "redirect:/user/orders";
-		} catch (Exception e) {
-			System.err.println("Error loading order detail: " + e.getMessage());
-			redirectAttributes.addFlashAttribute("errorMessage", "Lỗi khi tải chi tiết đơn hàng.");
-			return "redirect:/user/orders";
-		}
-	}
+            model.addAttribute("order", order);
+            model.addAttribute("shippingHistory", shippingHistory);
+            model.addAttribute("cartItemCount", getCurrentCartItemCount());
+            model.addAttribute("categories", categoryService.findAll());
+            model.addAttribute("shops", storeService.findAllActiveShops());
+            model.addAttribute("selectedShopName", storeService.getShopNameById(selectedShopId));
+
+            return "user/order_detail";
+
+        } catch (ResponseStatusException | UsernameNotFoundException e) {
+            return "redirect:/login";
+        } catch (EntityNotFoundException | AccessDeniedException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/user/orders";
+        } catch (Exception e) {
+            System.err.println("Error loading order detail: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "Lỗi khi tải chi tiết đơn hàng.");
+            return "redirect:/user/orders";
+        }
+    }
 
 	/**
 	 * XỬ LÝ HỦY ĐƠN HÀNG (ĐÃ SỬA)
 	 */
-	@PostMapping("/orders/cancel/{id}")
-	public String cancelOrder(@PathVariable("id") Integer orderId, RedirectAttributes redirectAttributes) {
-		try {
-			User user = getCurrentAuthenticatedUser();
-			Order order = orderRepository.findById(orderId)
-					.orElseThrow(() -> new EntityNotFoundException("Không tìm thấy đơn hàng #" + orderId));
-
-			// *** SỬA: Kiểm tra User ID ***
-			if (!order.getUser().getId().equals(user.getId())) {
-				throw new AccessDeniedException("Bạn không có quyền hủy đơn hàng này.");
-			}
-
-			// *** SỬA: Kiểm tra các trạng thái có thể hủy (dùng equalsIgnoreCase) ***
-			String currentStatus = order.getOrderStatus();
-			if ("Pending".equalsIgnoreCase(currentStatus) || "Confirmed".equalsIgnoreCase(currentStatus)) { // Giả sử
-																											// Confirmed
-																											// là trạng
-																											// thái sau
-																											// COD chờ
-																											// duyệt
-				order.setOrderStatus("Cancelled");
-
-				if ("Paid".equalsIgnoreCase(order.getPaymentStatus())) {
-					order.setPaymentStatus("Refunded");
-					// TODO: Thêm logic gọi API hoàn tiền nếu cần
-				}
-
-				orderRepository.save(order);
-				redirectAttributes.addFlashAttribute("successMessage", "Đã hủy đơn hàng #" + orderId + " thành công.");
-			} else {
-				redirectAttributes.addFlashAttribute("errorMessage",
-						"Không thể hủy đơn hàng ở trạng thái '" + currentStatus + "'.");
-			}
-
-		} catch (ResponseStatusException | UsernameNotFoundException e) {
-			return "redirect:/login";
-		} catch (EntityNotFoundException | AccessDeniedException e) {
-			redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-		} catch (Exception e) {
-			System.err.println("Error cancelling order: " + e.getMessage());
-			redirectAttributes.addFlashAttribute("errorMessage", "Lỗi khi hủy đơn hàng.");
-		}
-
-		return "redirect:/user/orders"; // Quay lại trang lịch sử
-	}
+//	@PostMapping("/orders/cancel/{id}")
+//	public String cancelOrder(@PathVariable("id") Integer orderId, RedirectAttributes redirectAttributes) {
+//		try {
+//			User user = getCurrentAuthenticatedUser();
+//			Order order = orderRepository.findById(orderId)
+//					.orElseThrow(() -> new EntityNotFoundException("Không tìm thấy đơn hàng #" + orderId));
+//
+//			// *** SỬA: Kiểm tra User ID ***
+//			if (!order.getUser().getId().equals(user.getId())) {
+//				throw new AccessDeniedException("Bạn không có quyền hủy đơn hàng này.");
+//			}
+//
+//			// *** SỬA: Kiểm tra các trạng thái có thể hủy (dùng equalsIgnoreCase) ***
+//			String currentStatus = order.getOrderStatus();
+//			if ("Pending".equalsIgnoreCase(currentStatus) || "Confirmed".equalsIgnoreCase(currentStatus)) { // Giả sử
+//																											// Confirmed
+//																											// là trạng
+//																											// thái sau
+//																											// COD chờ
+//																											// duyệt
+//				order.setOrderStatus("Cancelled");
+//
+//				if ("Paid".equalsIgnoreCase(order.getPaymentStatus())) {
+//					order.setPaymentStatus("Refunded");
+//					// TODO: Thêm logic gọi API hoàn tiền nếu cần
+//				}
+//
+//				orderRepository.save(order);
+//				redirectAttributes.addFlashAttribute("successMessage", "Đã hủy đơn hàng #" + orderId + " thành công.");
+//			} else {
+//				redirectAttributes.addFlashAttribute("errorMessage",
+//						"Không thể hủy đơn hàng ở trạng thái '" + currentStatus + "'.");
+//			}
+//
+//		} catch (ResponseStatusException | UsernameNotFoundException e) {
+//			return "redirect:/login";
+//		} catch (EntityNotFoundException | AccessDeniedException e) {
+//			redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+//		} catch (Exception e) {
+//			System.err.println("Error cancelling order: " + e.getMessage());
+//			redirectAttributes.addFlashAttribute("errorMessage", "Lỗi khi hủy đơn hàng.");
+//		}
+//
+//		return "redirect:/user/orders"; // Quay lại trang lịch sử
+//	}
 }

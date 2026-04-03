@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/main :: layout(~{::title}, ~{::section})}">
+<head>
+    <title>Quét Mã VietQR - Đặt hàng thành công</title>
+</head>
+<body>
+<section>
+    <div class="container my-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card shadow-lg border-0 rounded-3 text-center p-4">
+                    
+                    <i class="fa-solid fa-qrcode fa-4x text-info mb-4"></i>
+                    <h1 class="fw-bold mb-3 text-success">Đơn hàng đã được tạo!</h1>
+                    <p class="lead">Vui lòng quét mã VietQR dưới đây để hoàn tất thanh toán.</p>
+                    
+                    <div class="mb-4 p-3 border rounded bg-light">
+                        <p class="mb-1 fw-semibold">Mã đơn hàng: <span class="text-primary" th:text="'#' + ${orderId}">#12345</span></p>
+                        <p class="mb-0 fw-semibold">Tổng tiền: <span class="text-danger fs-5" 
+                               th:text="${#numbers.formatDecimal(amount, 0, 'POINT', 0, 'COMMA')} + 'đ'">100.000đ</span></p>
+                    </div>
+
+                    <div class="qr-container mb-4 d-inline-block p-3 border rounded-3 mx-auto">
+                        <img th:src="${qrUrl}" 
+                             alt="VietQR Code" 
+                             class="img-fluid" 
+                             style="max-width: 300px;">
+                    </div>
+                    
+                    <p class="small text-muted">Nội dung chuyển khoản (Tự động): <code th:text="${description}"></code></p>
+                    <p class="small text-danger fw-bold">QUAN TRỌNG: Mã đơn hàng đã được tạo. Vui lòng chuyển khoản trong vòng 15 phút.</p>
+                    
+                    <a th:href="@{/user/orders/{id}(id=${orderId})}" class="btn btn-outline-primary mt-3">
+                        <i class="fa-solid fa-clock-rotate-left me-2"></i>Xem trạng thái đơn hàng
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
+</section>
+</body>
+</html>

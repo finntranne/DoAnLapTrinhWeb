@@ -2,7 +2,9 @@
 package com.alotra.entity.cart; // Giữ package này
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet; // Import HashSet
+import java.util.List;
 import java.util.Set;    // Import Set
 
 import com.alotra.entity.product.ProductVariant;
@@ -24,42 +26,30 @@ public class CartItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "CartItemID") // Khớp DB và nhánh lam
+    @Column(name = "CartItemID") 
     private Integer cartItemID;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CartID", nullable = false)
-    @EqualsAndHashCode.Exclude // Thêm Exclude
-    @ToString.Exclude // Thêm Exclude
+    @EqualsAndHashCode.Exclude 
+    @ToString.Exclude 
     private Cart cart;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "VariantID", nullable = false)
-    @EqualsAndHashCode.Exclude // Thêm Exclude
-    @ToString.Exclude // Thêm Exclude
+    @EqualsAndHashCode.Exclude 
+    @ToString.Exclude 
     private ProductVariant variant;
+    
+    @ManyToMany
+    @JoinTable(
+            name = "CartItemToppings",
+            joinColumns = @JoinColumn(name = "CartItemID"),
+            inverseJoinColumns = @JoinColumn(name = "ToppingID")
+    )
+    private List<Topping> toppings = new ArrayList<>();
 
     @Column(name = "Quantity", nullable = false)
     private Integer quantity;
 
-    @Column(name = "AddedAt", nullable = false, updatable = false) // Giữ lại AddedAt từ nhánh lam, khớp DB, thêm updatable=false
-    private LocalDateTime addedAt;
-
-    // === Lấy quan hệ Topping từ nhánh HEAD, khớp bảng CartItem_Toppings ===
-    @ManyToMany(fetch = FetchType.EAGER) // EAGER fetch might be acceptable for toppings in a cart item, adjust if needed
-    @JoinTable(
-        name = "CartItem_Toppings", // Tên bảng trung gian khớp DB
-        joinColumns = @JoinColumn(name = "CartItemID"), // Khớp DB
-        inverseJoinColumns = @JoinColumn(name = "ToppingID") // Khớp DB
-    )
-    @EqualsAndHashCode.Exclude // Thêm Exclude
-    @ToString.Exclude // Thêm Exclude (Mặc dù Topping có thể không có back-ref, vẫn nên thêm)
-    private Set<Topping> selectedToppings = new HashSet<>();
-    // ===================================================================
-
-    // Tự động gán AddedAt khi tạo mới
-    @PrePersist
-    protected void onCreate() {
-        addedAt = LocalDateTime.now();
-    }
 }

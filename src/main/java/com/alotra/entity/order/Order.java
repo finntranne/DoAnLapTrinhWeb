@@ -6,12 +6,12 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List; // Sử dụng List thay vì Set cho orderDetails
 
-import com.alotra.entity.location.ShippingProvider; // Import ShippingProvider
+import com.alotra.entity.location.Address;
 import com.alotra.entity.promotion.Promotion;
 import com.alotra.entity.shop.Shop;
 import com.alotra.entity.user.User;
 
-import jakarta.persistence.*; // Import đầy đủ JPA annotations
+import jakarta.persistence.*; 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode; // Import Exclude
@@ -19,114 +19,48 @@ import lombok.NoArgsConstructor;
 import lombok.ToString; // Import Exclude
 
 @Entity
-@Table(name = "Orders", indexes = { // Giữ lại indexes từ nhánh lam, khớp DB
-    @Index(name = "IX_Orders_UserID", columnList = "UserID"),
-    @Index(name = "IX_Orders_ShopID", columnList = "ShopID"),
-    @Index(name = "IX_Orders_OrderStatus", columnList = "OrderStatus"),
-    @Index(name = "IX_Orders_ShipperID", columnList = "ShipperID") // Thêm index cho ShipperID nếu cần
-})
+@Table(name = "Orders")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-// Thêm Excludes cho các quan hệ LAZY
-@ToString(exclude = { "user", "shop", "promotion", "shippingProvider", "shipper", "orderDetails" })
-@EqualsAndHashCode(exclude = { "user", "shop", "promotion", "shippingProvider", "shipper", "orderDetails" }) // Exclude để tránh lỗi vòng lặp
+
 public class Order {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "OrderID") // Khớp DB
+    @Column(name = "OrderID") 
     private Integer orderID;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "UserID", nullable = false) // Khớp DB
+    @JoinColumn(name = "UserID", nullable = false) 
     private User user; // Khách hàng
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ShopID", nullable = false) // Khớp DB
-    private Shop shop; // Cửa hàng xử lý đơn
-
+    @JoinColumn(name = "ShopID", nullable = false) 
+    private Shop shop; 
+    
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "PromotionID") // Khớp DB
-    private Promotion promotion; // Khuyến mãi áp dụng (nếu có)
+    @JoinColumn(name = "AddressID", nullable = false)
+    private Address address;
 
-    @Column(name = "OrderDate", nullable = false, updatable = false) // Khớp DB, thêm updatable=false
+    @Column(name = "OrderDate", nullable = false, updatable = false) 
     private LocalDateTime orderDate;
 
-    @Column(name = "OrderStatus", nullable = false, length = 30) // Khớp DB
-    private String orderStatus; // Giá trị mặc định 'Pending' sẽ tốt hơn nếu set ở @PrePersist hoặc Service
-
-    @Column(name = "PaymentMethod", nullable = false, length = 50) // Khớp DB
-    private String paymentMethod;
-
-    @Column(name = "PaymentStatus", nullable = false, length = 30) // Khớp DB
-    private String paymentStatus; // Giá trị mặc định 'Unpaid' sẽ tốt hơn nếu set ở @PrePersist hoặc Service
-
-    @Column(name = "PaidAt") // Khớp DB
-    private LocalDateTime paidAt;
-
-    @Column(name = "TransactionID", length = 255) // Khớp DB
-    private String transactionID; // ID giao dịch từ cổng thanh toán
+    @Column(name = "OrderStatus", nullable = false, length = 30) 
+    private String orderStatus; 
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ShippingProviderID") // Khớp DB
-    private ShippingProvider shippingProvider; // Đơn vị vận chuyển
+    @JoinColumn(name = "ShipperID") 
+    private User shipper; 
 
-    @Column(name = "ShippingAddress", nullable = false, length = 500, columnDefinition = "NVARCHAR(500)") // Khớp DB
-    private String shippingAddress;
+    @Column(name = "ShippingFee", nullable = false, precision = 12, scale = 2) 
+    private BigDecimal shippingFee = BigDecimal.ZERO; 
 
-    @Column(name = "RecipientName", nullable = false, length = 255, columnDefinition = "NVARCHAR(255)") // Khớp DB
-    private String recipientName;
+    @Column(name = "Notes", length = 500, columnDefinition = "NVARCHAR(500)") 
+    private String notes; 
 
-    @Column(name = "RecipientPhone", nullable = false, length = 20) // Khớp DB
-    private String recipientPhone;
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY) 
+    private List<OrderItem> items = new ArrayList<>();
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ShipperID") // Khớp DB
-    private User shipper; // Nhân viên giao hàng (cũng là User)
-
-    @Column(name = "Subtotal", nullable = false, precision = 12, scale = 2) // Khớp DB
-    private BigDecimal subtotal; // Tổng tiền hàng (chưa gồm ship, giảm giá)
-
-    @Column(name = "ShippingFee", nullable = false, precision = 12, scale = 2) // Khớp DB
-    private BigDecimal shippingFee = BigDecimal.ZERO; // Phí vận chuyển
-
-    @Column(name = "DiscountAmount", nullable = false, precision = 12, scale = 2) // Khớp DB
-    private BigDecimal discountAmount = BigDecimal.ZERO; // Số tiền giảm giá
-
-    @Column(name = "GrandTotal", nullable = false, precision = 12, scale = 2) // Khớp DB
-    private BigDecimal grandTotal; // Tổng tiền cuối cùng khách phải trả
-
-    @Column(name = "Notes", length = 500, columnDefinition = "NVARCHAR(500)") // Khớp DB
-    private String notes; // Ghi chú của khách hàng
-
-    @Column(name = "CancellationReason", length = 500, columnDefinition = "NVARCHAR(500)") // Khớp DB
-    private String cancellationReason; // Lý do hủy đơn (nếu có)
-
-    @Column(name = "CompletedAt") // Khớp DB
-    private LocalDateTime completedAt; // Thời gian hoàn thành đơn
-
-    // Sử dụng List và OrderDetail từ nhánh lam, khớp DB
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY) // Thêm LAZY
-    private List<OrderDetail> orderDetails = new ArrayList<>();
-
-    // Tự động gán giá trị mặc định khi tạo mới
-    @PrePersist
-    protected void onCreate() {
-        if (orderDate == null) {
-            orderDate = LocalDateTime.now();
-        }
-        if (orderStatus == null) {
-            orderStatus = "Pending";
-        }
-        if (paymentStatus == null) {
-            paymentStatus = "Unpaid";
-        }
-        if (shippingFee == null) {
-            shippingFee = BigDecimal.ZERO;
-        }
-        if (discountAmount == null) {
-            discountAmount = BigDecimal.ZERO;
-        }
-    }
+   
 }

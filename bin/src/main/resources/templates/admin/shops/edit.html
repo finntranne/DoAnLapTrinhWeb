@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layouts/admin-layout.html}">
+
+<head>
+    <title>Chỉnh sửa chiết khấu & trạng thái cửa hàng</title>
+</head>
+
+<body>
+<main class="app-main">
+    <div layout:fragment="content" class="container mt-4">
+
+        <!-- Tiêu đề -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold mb-0">
+                <i class="bi bi-gear text-primary me-2"></i> Cập nhật cửa hàng
+            </h3>
+            <a th:href="@{/admin/shops}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Quay lại
+            </a>
+        </div>
+
+        <!-- Thông tin shop -->
+        <div class="card mb-4 shadow-sm border-0 rounded-3">
+            <div class="card-body">
+                <p class="mb-1">
+                    <strong>Tên cửa hàng:</strong> <span th:text="${shop.shopName}"></span>
+                </p>
+                <p class="mb-1">
+                    <strong>Địa chỉ:</strong> <span th:text="${shop.address}"></span>
+                </p>
+                <p class="mb-1">
+                    <strong>SĐT:</strong> <span th:text="${shop.phoneNumber}"></span>
+                </p>
+                <p class="mb-1">
+                    <strong>Chủ cửa hàng:</strong> <span th:text="${shop.user.username}"></span>
+                </p>
+                <p>
+                    <strong>Ngày tạo:</strong>
+                    <span th:text="${#temporals.format(shop.createdAt, 'dd/MM/yyyy HH:mm')}"></span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Form chỉnh sửa -->
+        <form th:action="@{'/admin/shops/edit/' + ${shop.shopId}}"
+              th:object="${shop}"
+              method="post"
+              class="card border-0 shadow-sm p-4 rounded-3">
+
+            <!-- Chiết khấu -->
+            <div class="mb-3">
+                <label class="form-label fw-semibold">
+                    <i class="bi bi-percent me-1"></i> Chiết khấu (%)
+                </label>
+                <input type="number"
+                       th:field="*{commissionRate}"
+                       class="form-control"
+                       step="0.01"
+                       min="0"
+                       max="100"
+                       required>
+                <div class="form-text">Ví dụ: nhập 10 cho 10%</div>
+            </div>
+
+            <!-- Trạng thái -->
+            <div class="mb-3">
+                <label class="form-label fw-semibold">
+                    <i class="bi bi-flag me-1"></i> Trạng thái cửa hàng
+                </label>
+                <select th:field="*{status}" class="form-select" required>
+                    <option value="0">Chờ duyệt</option>
+                    <option value="1">Hoạt động</option>
+                    <option value="2">Tạm khóa</option>
+                </select>
+            </div>
+
+            <!-- Nút lưu -->
+            <div class="mt-4 text-end">
+                <button type="submit" class="btn btn-success px-4">
+                    <i class="bi bi-save me-1"></i> Lưu thay đổi
+                </button>
+            </div>
+        </form>
+    </div>
+</main>
+</body>
+</html>

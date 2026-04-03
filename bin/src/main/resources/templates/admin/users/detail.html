@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{admin/layouts/admin-layout.html}">
+
+<head>
+<title>Chi tiết người dùng</title>
+</head>
+
+<body>
+	<main class="app-main">
+		<div layout:fragment="content">
+			<div class="container mt-4">
+				<div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+
+					<!-- Header -->
+					<div
+						class="card-header bg-gradient-primary text-white d-flex justify-content-between align-items-center">
+						<h5 class="mb-0 fw-semibold">
+							<i class="bi bi-person-lines-fill me-2"></i>Thông tin người dùng
+						</h5>
+						<a th:href="@{/admin/users}"
+							class="btn btn-light btn-sm rounded-pill"> <i
+							class="bi bi-arrow-left"></i> Quay lại danh sách
+						</a>
+					</div>
+
+					<!-- Nội dung -->
+					<div class="card-body p-4">
+						<div class="row g-4">
+
+							<!-- Avatar + tên -->
+							<div class="col-md-4 text-center border-end">
+								<div class="p-3">
+									<div class="mx-auto"
+										style="width: 250px; height: 250px; border-radius: 15px; overflow: hidden; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);">
+										<img
+											th:src="${user.avatarURL != null && !#strings.isEmpty(user.avatarURL)} ? 
+                                        @{${user.avatarURL}} : @{/assets/img/default_user_avatar.png}"
+											alt="Avatar"
+											style="object-fit: cover; width: 100%; height: 100%;">
+									</div>
+									<h4 class="mt-3 mb-0 fw-semibold" th:text="${user.fullName}"></h4>
+									<p class="text-muted">
+										@<span th:text="${user.username}">username</span>
+									</p>
+
+									<div class="mt-2">
+										<span th:if="${#lists.isEmpty(user.roles)}">—</span> <span
+											th:unless="${#lists.isEmpty(user.roles)}"
+											th:text="${user.roles.iterator().next().roleName}"
+											th:classappend="${
+									            user.roles.iterator().next().roleName == 'VENDOR' ? 'badge bg-danger' :
+									            user.roles.iterator().next().roleName == 'CUSTOMER' ? 'badge bg-primary' :
+									            user.roles.iterator().next().roleName == 'SHIPPER' ? 'badge bg-success' :
+									            'badge bg-secondary'
+									        }">
+										</span>
+									</div>
+
+									<td></td>
+								</div>
+							</div>
+
+							<!-- Thông tin chi tiết -->
+							<div class="col-md-8">
+								<div class="card shadow-sm border-0 rounded-3">
+									<div class="card-body">
+										<h5 class="fw-bold mb-4 text-primary">
+											<i class="bi bi-person-lines-fill me-2"></i>Thông tin người
+											dùng
+										</h5>
+
+										<div class="row mb-3">
+											<div class="col-sm-5 text-muted fw-semibold">Mã người
+												dùng</div>
+											<div class="col-sm-7" th:text="${user.id}"></div>
+										</div>
+
+										<div class="row mb-3">
+											<div class="col-sm-5 text-muted fw-semibold">Tên đăng
+												nhập</div>
+											<div class="col-sm-7" th:text="${user.username}"></div>
+										</div>
+
+										<div class="row mb-3">
+											<div class="col-sm-5 text-muted fw-semibold">Họ và tên</div>
+											<div class="col-sm-7" th:text="${user.fullName}"></div>
+										</div>
+
+										<div class="row mb-3">
+											<div class="col-sm-5 text-muted fw-semibold">Email</div>
+											<div class="col-sm-7" th:text="${user.email}"></div>
+										</div>
+
+										<div class="row mb-3">
+											<div class="col-sm-5 text-muted fw-semibold">Số điện
+												thoại</div>
+											<div class="col-sm-7" th:text="${user.phoneNumber}"></div>
+										</div>
+
+
+										<div class="row mb-3">
+											<div class="col-sm-5 text-muted fw-semibold">Trạng thái</div>
+											<div class="col-sm-7">
+												<span
+													th:text="${user.status == 1 ? 'Hoạt động' : 'Tạm khóa'}"
+													th:classappend="${user.status == 1} ? 'badge bg-success' : 'badge bg-secondary'">
+												</span>
+											</div>
+										</div>
+
+										<hr class="my-4">
+
+										<div class="row mb-3">
+											<div class="col-sm-5 text-muted fw-semibold">Ngày tạo</div>
+											<div class="col-sm-7"
+												th:text="${#temporals.format(user.createdAt, 'dd/MM/yyyy HH:mm')}"></div>
+										</div>
+
+										<div class="row mb-3">
+											<div class="col-sm-5 text-muted fw-semibold">Lần đăng
+												nhập gần nhất</div>
+											<div class="col-sm-7"
+												th:text="${user.lastLoginAt != null ? #temporals.format(user.lastLoginAt, 'dd/MM/yyyy HH:mm') : '—'}">
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+
+						</div>
+
+						<!-- Nút hành động -->
+						<div class="d-flex justify-content-end border-top pt-3 mt-4">
+							<a th:href="@{'/admin/users/edit/' + ${user.id}}"
+								class="btn btn-primary me-2 rounded-pill"> <i
+								class="bi bi-pencil-square"></i> Chỉnh sửa
+							</a> 
+						</div>
+					</div>
+
+				</div>
+			</div>
+		</div>
+	</main>
+</body>
+</html>

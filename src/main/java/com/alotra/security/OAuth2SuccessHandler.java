@@ -105,10 +105,10 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         
 
         user.setUsername(email);
-        user.setAvatarURL(avatar);
+//        user.setAvatarURL(avatar);
         user.setStatus((byte) 1); // Active
-        user.setCreatedAt(LocalDateTime.now());
-        user.setUpdatedAt(LocalDateTime.now());
+//        user.setCreatedAt(LocalDateTime.now());
+//        user.setUpdatedAt(LocalDateTime.now());
         
         String randomPassword = UUID.randomUUID().toString();
    
@@ -135,7 +135,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                 .claim("roles", roles)
                 .claim("userId", user.getId())
                 .claim("fullName", user.getFullName())
-                .claim("avatar", user.getAvatarURL())
+//                .claim("avatar", user.getAvatarURL())
                 .claim("authProvider", "GOOGLE")
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + jwtTokenProvider.getJwtExpirationMs()))

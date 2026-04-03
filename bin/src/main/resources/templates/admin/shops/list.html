@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layouts/admin-layout.html}">
+
+<head>
+    <title>Quản lý cửa hàng</title>
+</head>
+
+<body>
+<main class="app-main">
+    <div layout:fragment="content">
+        <div class="container mt-4">
+            
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="fw-bold mb-0">Danh sách cửa hàng</h3>
+            </div>
+
+            <!-- Form tìm kiếm -->
+            <div class="card shadow-sm border-0 mb-4">
+			    <div class="card-body">
+			        <form th:action="@{/admin/shops/search}" method="get">
+			            <div class="row g-3 align-items-end">
+			                
+			                <!-- Tên shop -->
+			                <div class="col-md-3">
+			                    <label class="form-label small fw-semibold text-muted">
+			                        <i class="bi bi-shop me-1"></i>Tên cửa hàng
+			                    </label>
+			                    <input type="text" name="shopName" th:value="${shopName}"
+			                        class="form-control form-control-sm" placeholder="Nhập tên cửa hàng...">
+			                </div>
+
+			                <!-- Số điện thoại -->
+			                <div class="col-md-3">
+			                    <label class="form-label small fw-semibold text-muted">
+			                        <i class="bi bi-telephone me-1"></i>Số điện thoại
+			                    </label>
+			                    <input type="text" name="phoneNumber" th:value="${phoneNumber}"
+			                        class="form-control form-control-sm" placeholder="Nhập số điện thoại...">
+			                </div>
+
+			                <!-- Địa chỉ -->
+			                <div class="col-md-4">
+			                    <label class="form-label small fw-semibold text-muted">
+			                        <i class="bi bi-geo-alt-fill me-1"></i>Địa chỉ
+			                    </label>
+			                    <input type="text" name="address" th:value="${address}"
+			                        class="form-control form-control-sm" placeholder="Nhập địa chỉ...">
+			                </div>
+
+			                <!-- Trạng thái -->
+			                <div class="col-md-2">
+			                    <label class="form-label small fw-semibold text-muted">
+			                        <i class="bi bi-flag-fill me-1"></i>Trạng thái
+			                    </label>
+			                    <select name="status" class="form-select form-select-sm">
+			                        <option value="">Tất cả</option>
+			                        <option value="0" th:selected="${status == 0}">Chờ duyệt</option>
+			                        <option value="1" th:selected="${status == 1}">Hoạt động</option>
+			                        <option value="2" th:selected="${status == 2}">Bị khóa</option>
+			                    </select>
+			                </div>
+
+			                <!-- Nút tìm kiếm / xóa -->
+			                <div class="col-md-3 d-flex gap-2 mt-2">
+			                    <button type="submit" class="btn btn-success btn-sm flex-fill">
+			                        <i class="bi bi-search me-1"></i>Tìm kiếm
+			                    </button>
+			                    <button type="button" onclick="clearFilters()"
+			                        class="btn btn-outline-secondary btn-sm rounded-pill">
+			                        <i class="bi bi-x-circle"></i>
+			                    </button>
+			                </div>
+			            </div>
+			        </form>
+			    </div>
+			</div>
+
+            <!-- Bảng danh sách -->
+            <div class="table-responsive shadow-sm rounded">
+                <table class="table table-hover align-middle">
+					<thead class="table-success">
+                        <tr>
+                            <th scope="col">ID</th>
+                            <th scope="col">Cửa hàng</th>
+                            <th scope="col">Chủ shop</th>
+                            <th scope="col">Số điện thoại</th>
+                            <th scope="col">Chiết khấu (%)</th>
+                            <th scope="col">Trạng thái</th>
+                            <th scope="col">Ngày tạo</th>
+                            <th scope="col">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="shop : ${shops}">
+                            <td th:text="${shop.shopId}"></td>
+                            <td>
+					            <div class="d-flex align-items-center gap-2">
+					                <div style="width:45px; height:45px; overflow:hidden; border-radius:8px; flex-shrink:0;">
+					                    <img th:src="${shop.logoURL != null && !#strings.isEmpty(shop.logoURL)} ? ${shop.logoURL} : '/assets/img/default_shop_logo.png'"
+					                         alt="Logo"
+					                         style="width:100%; height:100%; object-fit:cover;">
+					                </div>
+					                <span th:text="${shop.shopName}" class="fw-semibold text-dark"></span>
+					            </div>
+					        </td>
+
+                            <td th:text="${shop.user != null ? shop.user.username : '-'}"></td>
+                            <td th:text="${shop.phoneNumber}"></td>
+                            <td th:text="${shop.commissionRate} + '%'"></td>
+
+                            <!-- Trạng thái -->
+                            <td>
+							    <span class="badge px-3 py-2 fw-semibold"
+							          th:classappend="${
+							              shop.status == 1 ? 'bg-success-subtle text-success border border-success-subtle' :
+							              shop.status == 0 ? 'bg-warning-subtle text-warning border border-warning-subtle' :
+							              'bg-secondary-subtle text-secondary border border-secondary-subtle'
+							          }"
+							          th:text="${
+							              shop.status == 1 ? 'Hoạt động' :
+							              shop.status == 0 ? 'Chờ duyệt' :
+							              'Bị khóa'
+							          }">
+							    </span>
+							</td>
+
+                            <td th:text="${#temporals.format(shop.createdAt, 'dd/MM/yyyy HH:mm')}"></td>
+
+                            <!-- Hành động -->
+                            <td>
+                                <div class="d-flex gap-2 justify-content-start">
+                                    <a th:href="@{'/admin/shops/detail/' + ${shop.shopId}}"
+                                       class="btn btn-outline-info btn-sm" title="Chi tiết">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a th:href="@{'/admin/shops/edit/' + ${shop.shopId}}"
+                                       class="btn btn-outline-warning btn-sm" title="Chỉnh sửa">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                    
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Phân trang -->
+            <nav th:if="${totalPages > 1}" class="mt-4">
+			  <ul class="pagination justify-content-center flex-wrap">
+			
+			    <!-- Previous -->
+			    <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled'">
+			      <a class="page-link rounded-pill shadow-sm border-0"
+			         th:href="@{'/admin/shops?page=' + ${currentPage - 1}}">
+			        <i class="bi bi-chevron-double-left"></i>
+			      </a>
+			    </li>
+
+			    <!-- Các trang -->
+			    <li class="page-item mx-1"
+			        th:each="page : ${#numbers.sequence(currentPage - 1, currentPage + 1)}"
+			        th:if="${page >= 1 and page <= totalPages}"
+			        th:classappend="${page == currentPage} ? 'active'">
+			      <a class="page-link rounded-pill shadow-sm border-0 fw-semibold"
+			         th:href="@{'/admin/shops?page=' + ${page}}"
+			         th:text="${page}"></a>
+			    </li>
+
+			    <!-- Next -->
+			    <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled'">
+			      <a class="page-link rounded-pill shadow-sm border-0"
+			         th:href="@{'/admin/shops?page=' + ${currentPage + 1}}">
+			        <i class="bi bi-chevron-double-right"></i>
+			      </a>
+			    </li>
+			  </ul>
+			</nav>
+
+        </div>
+    </div>
+</main>
+
+<th:block layout:fragment="scripts">
+	<script>
+        function clearFilters() {
+            const fields = ['keyword', 'phoneNumber', 'address'];
+            fields.forEach(name => {
+                const el = document.querySelector(`input[name="${name}"]`);
+                if (el) el.value = '';
+            });
+
+            const statusSelect = document.querySelector('select[name="status"]');
+            if (statusSelect) statusSelect.value = '';
+
+            window.location.href = '/admin/shops';
+        }
+    </script>
+</th:block>
+
+</body>
+</html>

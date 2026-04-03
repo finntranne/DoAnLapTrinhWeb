@@ -41,17 +41,17 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             newUser.setFullName(name);
             newUser.setUsername(email); // bạn có thể tách username khác nếu muốn
             newUser.setPassword("GOOGLE_LOGIN"); // không dùng thật, chỉ placeholder
-            newUser.setAvatarURL(picture);
+//            newUser.setAvatarURL(picture);
             newUser.setStatus((byte) 1); // Active
-            newUser.setCreatedAt(LocalDateTime.now());
-            newUser.setUpdatedAt(LocalDateTime.now());
+//            newUser.setCreatedAt(LocalDateTime.now());
+//            newUser.setUpdatedAt(LocalDateTime.now());
             newUser.setRoles(new HashSet<>()); // có thể set ROLE_USER mặc định
 
             return userRepository.save(newUser);
         });
 
         // cập nhật thông tin nếu người dùng đã có
-        user.setLastLoginAt(LocalDateTime.now());
+ //       user.setLastLoginAt(LocalDateTime.now());
         userRepository.save(user);
 
         return oAuth2User;

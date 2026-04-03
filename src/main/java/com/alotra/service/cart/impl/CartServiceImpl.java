@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Optional;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.stream.Collectors; // Import Collectors
 
@@ -54,58 +55,81 @@ public class CartServiceImpl implements CartService { // Đảm bảo CartServic
     @Override
     @Transactional
     public CartItem addItemToCart(User user, Integer variantId, int quantity, List<Integer> toppingIds) {
-        // 1. Kiểm tra đầu vào
-        if (user == null) throw new IllegalArgumentException("Người dùng không hợp lệ.");
-        if (quantity <= 0) throw new IllegalArgumentException("Số lượng phải lớn hơn 0.");
+        // 1. Validate input
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("Người dùng không hợp lệ.");
+        }
 
-        // 2. Tìm biến thể sản phẩm (dùng Integer ID)
+        if (variantId == null) {
+            throw new IllegalArgumentException("Variant ID không hợp lệ.");
+        }
+
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("Số lượng phải lớn hơn 0.");
+        }
+
+        // 2. Tìm variant
         ProductVariant variant = variantRepository.findById(variantId)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy Size sản phẩm với ID: " + variantId));
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Không tìm thấy biến thể sản phẩm với ID: " + variantId));
 
-        // 3. Tìm hoặc tạo giỏ hàng cho User (dùng User ID)
-        Cart cart = cartRepository.findByUser_Id(user.getId()) // *** SỬA: findByUser_Id ***
+        // 3. Tìm hoặc tạo cart
+        Cart cart = cartRepository.findByUser_Id(user.getId())
                 .orElseGet(() -> {
                     Cart newCart = new Cart();
-                    newCart.setUser(user); // *** SỬA: setUser ***
+                    newCart.setUser(user);
                     return cartRepository.save(newCart);
                 });
 
-        // 4. Lấy danh sách Topping đã chọn (dùng Integer ID)
-        final Set<Topping> finalSelectedToppings;
+        // 4. Lấy danh sách topping hợp lệ
+        List<Topping> selectedToppings = new ArrayList<>();
         if (toppingIds != null && !toppingIds.isEmpty()) {
-            finalSelectedToppings = new HashSet<>(toppingRepository.findAllById(toppingIds));
-            if (finalSelectedToppings.size() != toppingIds.size()) {
-                System.err.println("Cảnh báo: Một vài ID topping không hợp lệ: " + toppingIds);
+            selectedToppings = toppingRepository.findAllById(toppingIds);
+
+            if (selectedToppings.size() != toppingIds.size()) {
+                throw new EntityNotFoundException("Một hoặc nhiều topping không tồn tại.");
             }
-        } else {
-            finalSelectedToppings = Collections.emptySet();
         }
 
-        // 5. KIỂM TRA MÓN HÀNG TỒN TẠI
+        // 5. Chuẩn hóa tập ID topping để so sánh
+        Set<Integer> selectedToppingIds = selectedToppings.stream()
+                .map(Topping::getToppingID)
+                .collect(Collectors.toSet());
+
+        // 6. Lấy các item hiện tại trong cart
         List<CartItem> currentItems = cartItemRepository.findByCart_CartID(cart.getCartID());
 
         Optional<CartItem> existingItemOpt = currentItems.stream()
-                .filter(item ->
-                    item.getVariant().getVariantID().equals(variantId) &&
-                    Objects.equals(item.getSelectedToppings().stream().map(Topping::getToppingID).collect(Collectors.toSet()),
-                                   finalSelectedToppings.stream().map(Topping::getToppingID).collect(Collectors.toSet()))
-                )
+                .filter(item -> {
+                    // So sánh variant
+                    boolean sameVariant = item.getVariant().getVariantID().equals(variantId);
+
+                    // So sánh tập topping
+                    Set<Integer> itemToppingIds = item.getToppings().stream()
+                            .map(Topping::getToppingID)
+                            .collect(Collectors.toSet());
+
+                    boolean sameToppings = itemToppingIds.equals(selectedToppingIds);
+
+                    return sameVariant && sameToppings;
+                })
                 .findFirst();
 
+        // 7. Nếu item đã tồn tại -> cộng quantity
         if (existingItemOpt.isPresent()) {
-            // 6a. Nếu có rồi -> Tăng số lượng
             CartItem existingItem = existingItemOpt.get();
             existingItem.setQuantity(existingItem.getQuantity() + quantity);
             return cartItemRepository.save(existingItem);
-        } else {
-            // 6b. Nếu chưa có -> Tạo CartItem mới
-            CartItem newItem = new CartItem();
-            newItem.setVariant(variant);
-            newItem.setQuantity(quantity);
-            newItem.setSelectedToppings(finalSelectedToppings);
-            newItem.setCart(cart); 
-            return cartItemRepository.save(newItem);
         }
+
+        // 8. Nếu chưa tồn tại -> tạo mới
+        CartItem newItem = new CartItem();
+        newItem.setCart(cart);
+        newItem.setVariant(variant);
+        newItem.setQuantity(quantity);
+        newItem.setToppings(selectedToppings);
+
+        return cartItemRepository.save(newItem);
     }
     
     // *** Giữ nguyên: removeItemFromCart ***
@@ -253,10 +277,10 @@ public class CartServiceImpl implements CartService { // Đảm bảo CartServic
         }
 
         // Cộng giá toppings (topping không giảm giá)
-        if (item.getSelectedToppings() != null) {
-            for (Topping topping : item.getSelectedToppings()) {
-                if (topping != null && topping.getAdditionalPrice() != null) {
-                    discountedPrice = discountedPrice.add(topping.getAdditionalPrice());
+        if (item.getToppings() != null) {
+            for (Topping topping : item.getToppings()) {
+                if (topping != null && topping.getPrice() != null) {
+                    discountedPrice = discountedPrice.add(topping.getPrice());
                 }
             }
         }

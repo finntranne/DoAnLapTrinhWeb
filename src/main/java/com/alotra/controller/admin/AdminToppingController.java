@@ -32,12 +32,12 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.alotra.entity.product.Product;
-import com.alotra.entity.product.ProductApproval;
+//import com.alotra.entity.product.ProductApproval;
 import com.alotra.entity.product.Topping;
-import com.alotra.entity.product.ToppingApproval;
+//import com.alotra.entity.product.ToppingApproval;
 import com.alotra.repository.product.ToppingRepository;
 import com.alotra.service.cloudinary.CloudinaryService;
-import com.alotra.service.product.ToppingApprovalService;
+//import com.alotra.service.product.ToppingApprovalService;
 import com.alotra.service.product.ToppingService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -51,8 +51,8 @@ public class AdminToppingController {
 	@Autowired
 	ToppingService toppingService;
 	
-	@Autowired
-	ToppingApprovalService toppingApprovalService;
+//	@Autowired
+//	ToppingApprovalService toppingApprovalService;
 	
 	@Autowired
 	CloudinaryService cloudinary;
@@ -152,97 +152,97 @@ public class AdminToppingController {
     }
 
 	
-	@GetMapping("/pending")
-	public String listPending(ModelMap model, @RequestParam(name = "page", defaultValue = "1") int page,
-			@RequestParam(name = "size", defaultValue = "10") int size) {
-		int actualPage = Math.max(1, page);
-		Pageable pageable = PageRequest.of(actualPage - 1, size, Sort.by("requestedAt").descending());
-		Page<ToppingApproval> approvalPage = toppingApprovalService.findByStatus("PENDING", pageable);
-		System.out.print(approvalPage.getContent());
-
-		int totalPages = approvalPage.getTotalPages();
-
-		model.addAttribute("toppings", approvalPage.getContent());
-		model.addAttribute("currentPage", page);
-		model.addAttribute("totalPages", totalPages);
-
-		model.addAttribute("activeMenu", "toppings");
-
-		return "admin/toppings/pending";
-	}
+//	@GetMapping("/pending")
+//	public String listPending(ModelMap model, @RequestParam(name = "page", defaultValue = "1") int page,
+//			@RequestParam(name = "size", defaultValue = "10") int size) {
+//		int actualPage = Math.max(1, page);
+//		Pageable pageable = PageRequest.of(actualPage - 1, size, Sort.by("requestedAt").descending());
+//		Page<ToppingApproval> approvalPage = toppingApprovalService.findByStatus("PENDING", pageable);
+//		System.out.print(approvalPage.getContent());
+//
+//		int totalPages = approvalPage.getTotalPages();
+//
+//		model.addAttribute("toppings", approvalPage.getContent());
+//		model.addAttribute("currentPage", page);
+//		model.addAttribute("totalPages", totalPages);
+//
+//		model.addAttribute("activeMenu", "toppings");
+//
+//		return "admin/toppings/pending";
+//	}
+//	
+//	@GetMapping("/pending/detail/{id}")
+//	public String showPendingApprovalDetail(@PathVariable("id") Integer approvalId, ModelMap model) {
+//
+//		Optional<ToppingApproval> approvalOpt = toppingApprovalService.findById(approvalId);
+//
+//		if (approvalOpt.isEmpty()) {
+//			model.addAttribute("errorMessage", "Không tìm thấy yêu cầu phê duyệt có ID: " + approvalId);
+//			return "error/404";
+//		}
+//
+//		ToppingApproval approval = approvalOpt.get();
+//		
+//		Map<String, Object> changeMap = new HashMap<>();
+//		if ("UPDATE".equals(approval.getActionType()) && approval.getChangeDetails() != null) {
+//		    ObjectMapper mapper = new ObjectMapper();
+//		    try {
+//		        
+//		        changeMap = mapper.readValue(
+//		            approval.getChangeDetails(),
+//		            new TypeReference<Map<String, Object>>() {}
+//		        );
+//		    } catch (JsonProcessingException e) {
+//		        e.printStackTrace(); 
+//		    }
+//		}
+//		
+//		System.out.print(changeMap);
+//
+//		model.addAttribute("approval", approval);
+//
+//		model.addAttribute("changeMap", changeMap);
+//
+//		model.addAttribute("activeMenu", "toppings");
+//		return "admin/toppings/approval-detail";
+//	}
 	
-	@GetMapping("/pending/detail/{id}")
-	public String showPendingApprovalDetail(@PathVariable("id") Integer approvalId, ModelMap model) {
-
-		Optional<ToppingApproval> approvalOpt = toppingApprovalService.findById(approvalId);
-
-		if (approvalOpt.isEmpty()) {
-			model.addAttribute("errorMessage", "Không tìm thấy yêu cầu phê duyệt có ID: " + approvalId);
-			return "error/404";
-		}
-
-		ToppingApproval approval = approvalOpt.get();
-		
-		Map<String, Object> changeMap = new HashMap<>();
-		if ("UPDATE".equals(approval.getActionType()) && approval.getChangeDetails() != null) {
-		    ObjectMapper mapper = new ObjectMapper();
-		    try {
-		        
-		        changeMap = mapper.readValue(
-		            approval.getChangeDetails(),
-		            new TypeReference<Map<String, Object>>() {}
-		        );
-		    } catch (JsonProcessingException e) {
-		        e.printStackTrace(); 
-		    }
-		}
-		
-		System.out.print(changeMap);
-
-		model.addAttribute("approval", approval);
-
-		model.addAttribute("changeMap", changeMap);
-
-		model.addAttribute("activeMenu", "toppings");
-		return "admin/toppings/approval-detail";
-	}
-	
-	@PostMapping("/approve/{id}")
-	public String approveProduct(@PathVariable("id") Integer approvalId, RedirectAttributes redirectAttributes,
-			Authentication authentication) {
-
-
-		Integer reviewedByUserId = 1;
-		
-
-		try {
-			toppingApprovalService.approveToppingChange(approvalId, reviewedByUserId);
-			redirectAttributes.addFlashAttribute("success", "Phê duyệt yêu cầu #" + approvalId + " thành công!");
-		} catch (RuntimeException e) {
-			redirectAttributes.addFlashAttribute("error", "Phê duyệt thất bại. Chi tiết: " + e.getMessage());
-		}
-
-		return "redirect:/admin/toppings/pending";
-
-	}
-	
-	@PostMapping("/reject/{id}")
-	public String rejectProduct(@PathVariable("id") Integer approvalId,
-	                            @RequestParam("reason") String rejectionReason,
-	                            RedirectAttributes redirectAttributes,
-	                            Authentication authentication) {
-
-	    Integer reviewedByUserId = 1; 
-
-	    try {
-	        toppingApprovalService.rejectToppingChange(approvalId, reviewedByUserId, rejectionReason);
-	        redirectAttributes.addFlashAttribute("success", "Từ chối yêu cầu #" + approvalId + " thành công!");
-	    } catch (RuntimeException e) {
-	        redirectAttributes.addFlashAttribute("error", "Từ chối thất bại. Chi tiết: " + e.getMessage());
-	    }
-
-	    return "redirect:/admin/toppings/pending";
-	}
+//	@PostMapping("/approve/{id}")
+//	public String approveProduct(@PathVariable("id") Integer approvalId, RedirectAttributes redirectAttributes,
+//			Authentication authentication) {
+//
+//
+//		Integer reviewedByUserId = 1;
+//		
+//
+//		try {
+//			toppingApprovalService.approveToppingChange(approvalId, reviewedByUserId);
+//			redirectAttributes.addFlashAttribute("success", "Phê duyệt yêu cầu #" + approvalId + " thành công!");
+//		} catch (RuntimeException e) {
+//			redirectAttributes.addFlashAttribute("error", "Phê duyệt thất bại. Chi tiết: " + e.getMessage());
+//		}
+//
+//		return "redirect:/admin/toppings/pending";
+//
+//	}
+//	
+//	@PostMapping("/reject/{id}")
+//	public String rejectProduct(@PathVariable("id") Integer approvalId,
+//	                            @RequestParam("reason") String rejectionReason,
+//	                            RedirectAttributes redirectAttributes,
+//	                            Authentication authentication) {
+//
+//	    Integer reviewedByUserId = 1; 
+//
+//	    try {
+//	        toppingApprovalService.rejectToppingChange(approvalId, reviewedByUserId, rejectionReason);
+//	        redirectAttributes.addFlashAttribute("success", "Từ chối yêu cầu #" + approvalId + " thành công!");
+//	    } catch (RuntimeException e) {
+//	        redirectAttributes.addFlashAttribute("error", "Từ chối thất bại. Chi tiết: " + e.getMessage());
+//	    }
+//
+//	    return "redirect:/admin/toppings/pending";
+//	}
 	
 	@GetMapping("/delete/{id}")
 	public String delete(@PathVariable("id") Integer id,

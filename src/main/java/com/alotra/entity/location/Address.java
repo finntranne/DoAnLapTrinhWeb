@@ -28,25 +28,19 @@ public class Address {
     @Column(name = "AddressID")
     private Integer addressID;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "UserID", nullable = false)
-    private User user;
-    
-    @Column(name = "AddressName", nullable = false, length = 100, columnDefinition = "NVARCHAR(100)")
-    private String addressName;
-    
-    @Column(name = "FullAddress", nullable = false, length = 500, columnDefinition = "NVARCHAR(500)")
-    private String fullAddress;
-    
-    @Column(name = "PhoneNumber", nullable = false, length = 20)
-    private String phoneNumber;
-    
-    @Column(name = "RecipientName", nullable = false, length = 255, columnDefinition = "NVARCHAR(255)")
-    private String recipientName;
+    @Column(nullable = false, columnDefinition = "NVARCHAR(500)")
+    private String province;
+
+    @Column(nullable = false, columnDefinition = "NVARCHAR(500)")
+    private String district;
+
+    @Column(nullable = false, columnDefinition = "NVARCHAR(500)")
+    private String ward;
+
+    @Column(name = "street_address", nullable = false, columnDefinition = "NVARCHAR(500)")
+    private String streetAddress;
     
     @Column(name = "IsDefault", nullable = false)
     private Boolean isDefault = false;
     
-    @Column(name = "CreatedAt", nullable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
 }

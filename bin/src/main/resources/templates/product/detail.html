@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/main :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:text="${product.productName} + ' - AloTra'">Chi tiết sản phẩm</title>
+</head>
+<body>
+<section>
+    <nav class="breadcrumb-nav">
+        <div class="container">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/}">Trang chủ</a></li>
+                <li class="breadcrumb-item">
+                    <a th:href="@{/categories/{id}(id=${product.category.categoryID})}"
+                       th:text="${product.category.categoryName}">Danh mục</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page" th:text="${product.productName}"></li>
+            </ol>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <div class="row g-5">
+            <div class="col-lg-6">
+                <div class="mb-3">
+                    <img th:if="${not #lists.isEmpty(product.images)}"
+                         th:src="${product.images[0].imageURL}"
+                         class="img-fluid rounded main-product-image"
+                         id="mainProductImage"
+                         alt="Main product image">
+                    <img th:unless="${not #lists.isEmpty(product.images)}"
+                          th:src="@{/images/placeholder.png}"
+                          class="img-fluid rounded main-product-image"
+                          id="mainProductImage"
+                          alt="Placeholder image">
+                </div>
+                </div>
+
+            <div class="col-lg-6">
+                <h1 th:text="${product.productName}">Phin Sữa Đá</h1>
+
+                <div class="mb-3">
+                    <span class="fs-2 fw-bold text-danger" id="productPrice">
+                        <span th:if="${saleDTO.discountPercentage != null and saleDTO.discountPercentage > 0}"
+                              th:text="${#numbers.formatDecimal(product.basePrice * (100 - saleDTO.discountPercentage) / 100, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                        <span th:unless="${saleDTO.discountPercentage != null and saleDTO.discountPercentage > 0}"
+                              th:text="${#numbers.formatDecimal(product.basePrice, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                    </span>
+                    <span class="fs-4 text-muted text-decoration-line-through ms-2" id="originalPrice"
+                          th:if="${saleDTO.discountPercentage != null and saleDTO.discountPercentage > 0}"
+                          th:text="${#numbers.formatDecimal(product.basePrice, 0, 'POINT', 0, 'COMMA')} + 'đ'">
+                    </span>
+                </div>
+
+                <form th:action="@{/cart/add}" method="post" id="addToCartForm">
+                    <input type="hidden" name="productId" th:value="${product.productID}">
+                    <input type="hidden" name="variantId" id="selectedVariantId" value="">
+
+                    <div class="mb-3" th:if="${not #lists.isEmpty(variants)}">
+                        <label class="form-label fw-bold">Size:</label>
+                        <div class="size-options" id="sizeOptionsContainer">
+                            <th:block th:each="variant, iter : ${variants}">
+                                <input type="radio"
+                                       class="btn-check size-option"
+                                       name="size"
+                                       th:id="'size-' + ${variant.size.sizeName}"
+                                       th:data-price="${variant.price}"
+                                       th:data-variant-id="${variant.variantID}"
+                                       th:checked="${iter.index == 0}">
+                                <label class="btn btn-outline-secondary me-2"
+                                       th:for="'size-' + ${variant.size.sizeName}"
+                                       th:text="${variant.size.sizeName}"></label>
+                            </th:block>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Số lượng:</label>
+                        <div class="input-group quantity-selector" style="max-width: 150px;">
+                            <button class="btn btn-outline-secondary" type="button" id="decreaseQty">
+                                <i class="fa-solid fa-minus"></i>
+                            </button>
+                            <input type="text"
+                                   class="form-control text-center"
+                                   name="quantity"
+                                   id="quantityInput"
+                                   value="1"
+                                   readonly>
+                            <button class="btn btn-outline-secondary" type="button" id="increaseQty">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-4" th:if="${not #lists.isEmpty(toppings)}">
+                        <label class="form-label fw-bold d-block mb-3">Chọn Topping (Tùy chọn):</label>
+                        <div class="row row-cols-2 row-cols-sm-3 g-3">
+                            <div class="col" th:each="topping : ${toppings}">
+                                <div class="topping-item">
+                                    <input class="form-check-input topping-checkbox"
+                                           type="checkbox"
+                                           name="toppingIds"
+                                           th:value="${topping.toppingID}"
+                                           th:id="'topping-' + ${topping.toppingID}"
+                                           th:data-price="${topping.additionalPrice}">
+                                    <label class="topping-label" th:for="'topping-' + ${topping.toppingID}">
+                                        <img th:if="${topping.imageURL != null}"
+                                             th:src="${topping.imageURL}"
+                                             th:alt="${topping.toppingName}"
+                                             class="topping-image">
+                                        <div class="topping-info">
+                                            <span class="topping-name" th:text="${topping.toppingName}">Topping Name</span>
+                                            <small class="topping-price"
+                                                   th:text="'+' + ${#numbers.formatDecimal(topping.additionalPrice, 0, 'POINT', 0, 'COMMA')} + 'đ'">
+                                            </small>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex">
+                        <button type="submit"
+                                class="btn btn-danger btn-lg flex-grow-1"
+                                th:formaction="@{/cart/buy-now}"> MUA NGAY
+                        </button>
+
+                        <button type="submit" class="btn btn-outline-danger btn-lg flex-grow-1">
+                            <i class="fa-solid fa-cart-plus me-2"></i>THÊM VÀO GIỎ
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+
+        <div class="row mt-5">
+            <div class="col-12">
+                <ul class="nav nav-tabs" id="productTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active"
+                                id="description-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#description"
+                                type="button"
+                                role="tab">
+                            Mô tả sản phẩm
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link"
+                                id="reviews-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#reviews"
+                                type="button"
+                                role="tab">
+                            Đánh giá <span class="badge bg-secondary" th:text="${product.totalReviews ?: 0}"></span>
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content mt-4" id="productTabsContent">
+    <div class="tab-pane fade" id="reviews" role="tabpanel">
+        <div th:if="${#lists.isEmpty(reviews)}">
+            <p>Chưa có đánh giá nào cho sản phẩm này.</p>
+        </div>
+        <div th:unless="${#lists.isEmpty(reviews)}">
+            <div th:each="review : ${reviews}" class="border-bottom pb-3 mb-3">
+                
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <strong th:text="${review.user.fullName}"></strong>
+                        
+                        <div class="mb-1 mt-1">
+                            <span th:each="i : ${#numbers.sequence(1, 5)}">
+                                <i class="fa-solid fa-star"
+                                   th:style="${i <= review.rating} ? 'color: #ffc107;' : 'color: #ccc;'"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <small class="text-muted"
+                           th:text="${#temporals.format(review.reviewDate, 'dd/MM/yyyy')}"></small>
+                </div>
+                
+                <p class="mb-2" th:text="${review.comment}"></p>
+
+                <th:block th:if="${review.mediaURLs != null and !review.mediaURLs.isEmpty()}">
+                    <div th:with="mediaUrls=${#strings.arraySplit(review.mediaURLs, ',')}"
+                         class="media-gallery d-flex flex-wrap gap-2 mb-3">
+                        
+                        <div th:each="url : ${mediaUrls}">
+                            <th:block th:with="urlTrimmed=${#strings.trim(url)}">
+                                
+                                <a th:if="${#strings.contains(urlTrimmed, '/image/upload/')}" 
+                                   th:href="${urlTrimmed}" 
+                                   target="_blank"
+                                   class="d-block media-thumbnail">
+                                    <img th:src="${urlTrimmed}" 
+                                         alt="Review Image"
+                                         class="rounded"
+                                         style="width: 80px; height: 80px; object-fit: cover; cursor: pointer;">
+                                </a>
+
+                                <a th:if="${#strings.contains(urlTrimmed, '/video/upload/')}" 
+                                   th:href="${urlTrimmed}" 
+                                   target="_blank"
+                                   class="d-block media-thumbnail position-relative">
+                                    <img th:src="@{/images/video_placeholder.png}" 
+                                         alt="Review Video"
+                                         class="rounded"
+                                         style="width: 80px; height: 80px; object-fit: cover; filter: brightness(0.7);">
+                                    <i class="fa-solid fa-play position-absolute top-50 start-50 translate-middle text-white fs-4"></i>
+                                </a>
+                                
+                            </th:block>
+                        </div>
+                    </div>
+                </th:block>
+                </div>
+        </div>
+    </div>
+</div>
+            </div>
+        </div>
+
+        <div class="my-5" th:if="${not #lists.isEmpty(relatedProducts)}">
+            <h2 class="text-center mb-4">Sản phẩm liên quan</h2>
+            <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-4">
+                <div class="col" th:each="sale : ${relatedProducts}">
+                    <div th:replace="~{fragments/product-card :: product-card(${sale})}"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="productData"
+         th:data-discount="${saleDTO.discountPercentage}"
+         style="display: none;"></div>
+
+    <script th:src="@{/js/product-detail.js}"></script>
+</section>
+</body>
+</html>

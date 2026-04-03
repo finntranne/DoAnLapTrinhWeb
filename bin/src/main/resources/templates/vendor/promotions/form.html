@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{vendor/layouts/vendor-layout}" lang="vi">
+<head>
+<meta charset="UTF-8">
+<title
+	th:text="${action == 'create' ? 'Tạo khuyến mãi mới' : 'Chỉnh sửa khuyến mãi'} + ' - Vendor | AloTra'"></title>
+<style>
+.form-label.required::after {
+	content: " *";
+	color: red;
+}
+</style>
+</head>
+<body>
+
+	<div layout:fragment="content">
+
+		<div
+			class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+			<h1 class="h2">
+				<i class="bi bi-gift"></i> <span
+					th:text="${action == 'create' ? 'Tạo khuyến mãi mới' : 'Chỉnh sửa khuyến mãi'}"></span>
+			</h1>
+			<a href="/vendor/promotions" class="btn btn-outline-secondary"> <i
+				class="bi bi-arrow-left"></i> Quay lại
+			</a>
+		</div>
+
+		<div th:if="${error}"
+			class="alert alert-danger alert-dismissible fade show" role="alert">
+			<i class="bi bi-exclamation-triangle"></i> <span th:text="${error}"></span>
+			<button type="button" class="btn-close" data-bs-dismiss="alert"
+				aria-label="Close"></button>
+		</div>
+
+		<!-- *** ALERT KHÁC NHAU TÙY THEO ACTION VÀ PROMOTION TYPE *** -->
+		<div th:if="${action == 'create'}" class="alert alert-info">
+			<i class="bi bi-info-circle me-2"></i> <strong>Lưu ý:</strong> Trang
+			này chỉ dùng để tạo <strong>Mã giảm giá cho toàn đơn hàng</strong>.
+			Nếu muốn giảm giá cho từng sản phẩm cụ thể, vui lòng vào <a
+				href="/vendor/products" class="alert-link">Quản lý sản phẩm</a> và
+			chỉnh sửa từng sản phẩm.
+		</div>
+
+		<div
+			th:if="${action == 'edit' && promotion.promotionType == 'PRODUCT'}"
+			class="alert alert-warning">
+			<i class="bi bi-exclamation-triangle me-2"></i> <strong>Khuyến
+				mãi sản phẩm:</strong> Đây là khuyến mãi được tạo tự động khi bạn thiết lập
+			giảm giá cho sản phẩm. <strong>Bạn không thể chỉnh sửa trực
+				tiếp.</strong> Để thay đổi % giảm giá, vui lòng vào <a
+				href="/vendor/products" class="alert-link">Quản lý sản phẩm</a> và
+			chỉnh sửa sản phẩm tương ứng.
+		</div>
+
+		<!-- *** FORM CHO PRODUCT TYPE (READ-ONLY) *** -->
+		<div
+			th:if="${action == 'edit' && promotion.promotionType == 'PRODUCT'}"
+			class="row">
+			<div class="col-lg-8 mx-auto">
+				<div class="card mb-4">
+					<div class="card-header bg-secondary bg-opacity-10">
+						<h5 class="mb-0">
+							<i class="bi bi-info-circle me-2"></i>Thông tin khuyến mãi (Chỉ
+							xem)
+						</h5>
+					</div>
+					<div class="card-body">
+						<div class="row g-3">
+							<div class="col-md-8">
+								<label class="form-label fw-bold">Tên khuyến mãi</label>
+								<p class="form-control-plaintext"
+									th:text="${promotion.promotionName}"></p>
+							</div>
+							<div class="col-md-4">
+								<label class="form-label fw-bold">Mã giảm giá</label>
+								<p class="form-control-plaintext">
+									<code class="fs-6" th:text="${promotion.promoCode}"></code>
+								</p>
+							</div>
+							<div class="col-12">
+								<label class="form-label fw-bold">Mô tả</label>
+								<p class="form-control-plaintext"
+									th:text="${promotion.description}"></p>
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-bold">Loại khuyến mãi</label>
+								<p class="form-control-plaintext">
+									<span class="badge bg-info">Theo sản phẩm</span>
+								</p>
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-bold">Trạng thái</label>
+								<p class="form-control-plaintext">
+									<span class="badge"
+										th:classappend="${promotion.status == 1 ? 'bg-success' : 'bg-secondary'}"
+										th:text="${promotion.status == 1 ? 'Đang hoạt động' : 'Không hoạt động'}">
+									</span>
+								</p>
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-bold">Thời gian bắt đầu</label>
+								<p class="form-control-plaintext"
+									th:text="${#temporals.format(promotion.startDate, 'dd/MM/yyyy HH:mm')}">
+								</p>
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-bold">Thời gian kết thúc</label>
+								<p class="form-control-plaintext"
+									th:text="${#temporals.format(promotion.endDate, 'dd/MM/yyyy HH:mm')}">
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="card">
+					<div class="card-body">
+						<a href="/vendor/promotions" class="btn btn-secondary w-100">
+							<i class="bi bi-arrow-left me-1"></i>Quay lại danh sách
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- *** FORM CHO ORDER TYPE (EDITABLE) *** -->
+		<form
+			th:if="${action == 'create' || (action == 'edit' && promotion.promotionType == 'ORDER')}"
+			th:action="${action == 'create' ? '/vendor/promotions/create' : '/vendor/promotions/edit/' + promotionId}"
+			method="post" th:object="${promotion}" id="promotionForm">
+
+			<!-- *** THÊM HIDDEN INPUT CHO PROMOTION TYPE *** -->
+			<input type="hidden" th:field="*{promotionType}" value="ORDER" />
+
+			<div class="row">
+				<div class="col-lg-8">
+					<div class="card mb-4">
+						<div class="card-header">
+							<h5 class="mb-0">
+								<i class="bi bi-info-circle me-2"></i>Thông tin cơ bản
+							</h5>
+						</div>
+						<div class="card-body">
+							<div class="row g-3">
+								<div class="col-md-8">
+									<label for="promotionName" class="form-label required">Tên
+										khuyến mãi</label> <input type="text" class="form-control"
+										id="promotionName" th:field="*{promotionName}"
+										placeholder="VD: Giảm giá mùa hè" required
+										th:classappend="${#fields.hasErrors('promotionName') ? 'is-invalid' : ''}">
+									<div class="invalid-feedback"
+										th:if="${#fields.hasErrors('promotionName')}"
+										th:errors="*{promotionName}"></div>
+								</div>
+
+								<div class="col-md-4">
+									<label for="promoCode" class="form-label required">Mã
+										giảm giá</label> <input type="text"
+										class="form-control text-uppercase" id="promoCode"
+										th:field="*{promoCode}" placeholder="VD: SUMMER2025"
+										maxlength="20" required style="font-family: monospace;"
+										th:classappend="${#fields.hasErrors('promoCode') ? 'is-invalid' : ''}">
+									<div class="invalid-feedback"
+										th:if="${#fields.hasErrors('promoCode')}"
+										th:errors="*{promoCode}"></div>
+								</div>
+
+								<div class="col-12">
+									<label for="description" class="form-label required">Mô
+										tả</label>
+									<textarea class="form-control" id="description"
+										th:field="*{description}" rows="3"
+										placeholder="Mô tả chi tiết về chương trình khuyến mãi..."
+										required
+										th:classappend="${#fields.hasErrors('description') ? 'is-invalid' : ''}"></textarea>
+									<div class="invalid-feedback"
+										th:if="${#fields.hasErrors('description')}"
+										th:errors="*{description}"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- *** BỎ CARD "LOẠI KHUYẾN MÃI" - CHỈ CÒN ORDER *** -->
+
+					<div class="card mb-4">
+						<div class="card-header">
+							<h5 class="mb-0">
+								<i class="bi bi-percent me-2"></i>Cài đặt Giảm giá
+							</h5>
+						</div>
+						<div class="card-body">
+							<div class="row g-3">
+								<div class="col-md-6">
+									<label for="discountType" class="form-label required">Loại
+										giảm giá</label> <select class="form-select" id="discountType"
+										th:field="*{discountType}" onchange="toggleDiscountFields()"
+										required
+										th:classappend="${#fields.hasErrors('discountType') ? 'is-invalid' : ''}">
+										<option value="">-- Chọn loại --</option>
+										<option value="PERCENTAGE">Giảm theo phần trăm (%)</option>
+										<option value="FIXED">Giảm cố định (VNĐ)</option>
+									</select>
+									<div class="invalid-feedback"
+										th:if="${#fields.hasErrors('discountType')}"
+										th:errors="*{discountType}"></div>
+								</div>
+
+								<div class="col-md-6">
+									<label for="discountValue" class="form-label required">Giá
+										trị giảm</label>
+									<div class="input-group">
+										<input type="number" class="form-control" id="discountValue"
+											th:field="*{discountValue}" placeholder="0" step="0.01"
+											min="0" required
+											th:classappend="${#fields.hasErrors('discountValue') ? 'is-invalid' : ''}">
+										<span class="input-group-text" id="discountValueUnit">%</span>
+										<div class="invalid-feedback"
+											th:if="${#fields.hasErrors('discountValue')}"
+											th:errors="*{discountValue}"></div>
+									</div>
+									<div class="form-text" id="discountValueHelp">Nhập giá
+										trị giảm giá</div>
+								</div>
+
+								<div class="col-md-6" id="maxDiscountField">
+									<label for="maxDiscountAmount" class="form-label">Giảm
+										tối đa</label>
+									<div class="input-group">
+										<input type="number" class="form-control"
+											id="maxDiscountAmount" th:field="*{maxDiscountAmount}"
+											placeholder="0" step="1000" min="0"> <span
+											class="input-group-text">VNĐ</span>
+									</div>
+									<div class="form-text">Số tiền giảm tối đa (chỉ với giảm
+										%)</div>
+								</div>
+
+								<div class="col-md-6">
+									<label for="minOrderValue" class="form-label required">Giá
+										trị đơn hàng tối thiểu</label>
+									<div class="input-group">
+										<input type="number" class="form-control" id="minOrderValue"
+											th:field="*{minOrderValue}" placeholder="0" step="1000"
+											min="0" required
+											th:classappend="${#fields.hasErrors('minOrderValue') ? 'is-invalid' : ''}">
+										<span class="input-group-text">VNĐ</span>
+										<div class="invalid-feedback"
+											th:if="${#fields.hasErrors('minOrderValue')}"
+											th:errors="*{minOrderValue}"></div>
+									</div>
+									<div class="form-text">Giá trị đơn hàng tối thiểu để áp
+										dụng</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- *** BỎ CARD "CÀI ĐẶT GIẢM GIÁ SẢN PHẨM" *** -->
+
+					<div class="card mb-4">
+						<div class="card-header">
+							<h5 class="mb-0">
+								<i class="bi bi-calendar-range me-2"></i>Thời gian áp dụng
+							</h5>
+						</div>
+						<div class="card-body">
+							<div class="row g-3">
+								<div class="col-md-6">
+									<label for="startDate" class="form-label required">Ngày
+										bắt đầu</label> <input type="datetime-local" class="form-control"
+										th:classappend="${#fields.hasErrors('startDate') ? 'is-invalid' : ''}"
+										id="startDate" name="startDate"
+										th:value="${formattedStartDate != null ? formattedStartDate : (promotion.startDate != null ? #temporals.format(promotion.startDate, 'yyyy-MM-dd''T''HH:mm') : '')}"
+										required>
+									<div class="invalid-feedback"
+										th:if="${#fields.hasErrors('startDate')}"
+										th:errors="*{startDate}"></div>
+								</div>
+
+								<div class="col-md-6">
+									<label for="endDate" class="form-label required">Ngày
+										kết thúc</label> <input type="datetime-local" class="form-control"
+										th:classappend="${#fields.hasErrors('endDate') ? 'is-invalid' : ''}"
+										id="endDate" name="endDate"
+										th:value="${formattedEndDate != null ? formattedEndDate : (promotion.endDate != null ? #temporals.format(promotion.endDate, 'yyyy-MM-dd''T''HH:mm') : '')}"
+										required>
+									<div class="invalid-feedback"
+										th:if="${#fields.hasErrors('endDate')}" th:errors="*{endDate}"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="card mb-4">
+						<div class="card-header">
+							<h5 class="mb-0">
+								<i class="bi bi-123 me-2"></i>Giới hạn sử dụng
+							</h5>
+						</div>
+						<div class="card-body">
+							<div class="row g-3">
+								<div class="col-md-12">
+									<div class="form-check form-switch mb-3">
+										<input class="form-check-input" type="checkbox"
+											id="hasUsageLimit" onchange="toggleUsageLimit()"> <label
+											class="form-check-label" for="hasUsageLimit"> <strong>Giới
+												hạn số lượt sử dụng</strong>
+										</label>
+									</div>
+								</div>
+
+								<div class="col-md-6" id="usageLimitField"
+									style="display: none;">
+									<label for="usageLimit" class="form-label">Số lượt sử
+										dụng tối đa</label> <input type="number" class="form-control" min="0"
+										id="usageLimit" th:field="*{usageLimit}" placeholder="0"
+										value="0">
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-lg-4">
+					<div class="card mb-4 sticky-top" style="top: 80px;">
+						<div class="card-header bg-light">
+							<h5 class="mb-0">
+								<i class="bi bi-eye me-2"></i>Xem trước
+							</h5>
+						</div>
+						<div class="card-body">
+							<div class="alert alert-info mb-0">
+								<div class="mb-3">
+									<h6 class="mb-1" id="previewName">Tên khuyến mãi</h6>
+									<small class="text-muted" id="previewDescription">Mô tả
+										chương trình</small>
+								</div>
+
+								<div class="border-top pt-3">
+									<div class="d-flex justify-content-between mb-2">
+										<span class="text-muted">Mã:</span>
+										<code class="fs-6" id="previewCode">---</code>
+									</div>
+									<div class="d-flex justify-content-between mb-2">
+										<span class="text-muted">Loại:</span> <span id="previewType">---</span>
+									</div>
+									<div class="d-flex justify-content-between mb-2">
+										<span class="text-muted">Giảm:</span> <strong
+											id="previewDiscount">---</strong>
+									</div>
+									<div class="d-flex justify-content-between mb-2"
+										id="previewMaxRow" style="display: none !important;">
+										<span class="text-muted">Tối đa:</span> <strong
+											id="previewMax">---</strong>
+									</div>
+									<div class="d-flex justify-content-between mb-3"
+										id="previewMinRow">
+										<span class="text-muted">Đơn tối thiểu:</span> <strong
+											id="previewMin">0đ</strong>
+									</div>
+
+									<div class="border-top pt-3">
+										<small class="text-muted d-block mb-1"> <i
+											class="bi bi-calendar-event me-1"></i> Từ: <span
+											id="previewStart">---</span>
+										</small> <small class="text-muted d-block"> <i
+											class="bi bi-calendar-x me-1"></i> Đến: <span id="previewEnd">---</span>
+										</small>
+									</div>
+
+									<div class="border-top pt-3 mt-3" id="previewLimitRow"
+										style="display: none;">
+										<small class="text-muted"> <i class="bi bi-hash me-1"></i>
+											Giới hạn: <strong id="previewLimit">Không giới hạn</strong>
+										</small>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="card">
+						<div class="card-body">
+							<button type="submit" class="btn btn-primary w-100 mb-2">
+								<i class="bi bi-check-circle me-1"></i> <span
+									th:text="${action == 'create' ? 'Tạo khuyến mãi' : 'Cập nhật khuyến mãi'}"></span>
+							</button>
+							<a href="/vendor/promotions"
+								class="btn btn-outline-secondary w-100"> <i
+								class="bi bi-x-circle me-1"></i>Hủy bỏ
+							</a>
+
+							<div class="alert alert-warning mt-3 mb-0">
+								<small> <i class="bi bi-info-circle me-1"></i> <strong>Lưu
+										ý:</strong> Yêu cầu sẽ được gửi đến admin để phê duyệt trước khi khuyến
+									mãi được kích hoạt.
+								</small>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</form>
+
+		<th:block layout:fragment="scripts">
+			<!-- Chỉ cần thay thế phần JavaScript validation trong form.html -->
+			<script th:inline="javascript">
+/*<![CDATA[*/
+
+// Format number with thousand separators
+function formatNumber(num) {
+    return new Intl.NumberFormat('vi-VN').format(num);
+}
+
+// Format datetime
+function formatDateTime(dateStr) {
+    if (!dateStr) return '---';
+    const date = new Date(dateStr);
+    return date.toLocaleString('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+// Toggle discount fields based on type
+function toggleDiscountFields() {
+    const discountType = document.getElementById('discountType').value;
+    const maxDiscountField = document.getElementById('maxDiscountField');
+    const discountValueUnit = document.getElementById('discountValueUnit');
+    const discountValueHelp = document.getElementById('discountValueHelp');
+    const discountValue = document.getElementById('discountValue');
+
+    if (discountType === 'PERCENTAGE') {
+        maxDiscountField.style.display = 'block';
+        discountValueUnit.textContent = '%';
+        discountValueHelp.textContent = 'Nhập phần trăm giảm giá (0-100)';
+        discountValue.max = 100;
+        discountValue.placeholder = '0-100';
+    } else if (discountType === 'FIXED') {
+        maxDiscountField.style.display = 'none';
+        discountValueUnit.textContent = 'VNĐ';
+        discountValueHelp.textContent = 'Nhập số tiền giảm cố định';
+        discountValue.max = '';
+        discountValue.placeholder = '0';
+        document.getElementById('maxDiscountAmount').value = '';
+    }
+
+    updatePreview();
+}
+
+// Toggle usage limit field
+function toggleUsageLimit() {
+    const hasLimit = document.getElementById('hasUsageLimit').checked;
+    const usageLimitField = document.getElementById('usageLimitField');
+    const usageLimitInput = document.getElementById('usageLimit');
+
+    console.log('toggleUsageLimit - hasLimit:', hasLimit);
+
+    if (hasLimit) {
+        usageLimitField.style.display = 'block';
+        usageLimitInput.required = false;
+        usageLimitInput.disabled = false;
+        usageLimitInput.min = '1'; // Có giới hạn: min = 1
+        usageLimitInput.classList.remove('is-invalid'); // Xóa class invalid
+    } else {
+        usageLimitField.style.display = 'none';
+        usageLimitInput.required = false;
+        usageLimitInput.disabled = false;
+        usageLimitInput.value = 0; // Set về 0
+        usageLimitInput.min = '0'; // *** FIX: Cho phép 0 khi không giới hạn ***
+        usageLimitInput.classList.remove('is-invalid'); // Xóa class invalid
+    }
+
+    console.log('After toggle - value:', usageLimitInput.value, 'disabled:', usageLimitInput.disabled, 'min:', usageLimitInput.min);
+    updatePreview();
+}
+
+// Update preview
+function updatePreview() {
+    // Name and description
+    const name = document.getElementById('promotionName').value || 'Tên khuyến mãi';
+    const description = document.getElementById('description').value || 'Mô tả chương trình';
+    document.getElementById('previewName').textContent = name;
+    document.getElementById('previewDescription').textContent = description;
+
+    // Promo code
+    const code = document.getElementById('promoCode').value || '---';
+    document.getElementById('previewCode').textContent = code.toUpperCase();
+
+    // Discount type and value
+    const discountType = document.getElementById('discountType').value;
+    
+    const typeText = discountType === 'PERCENTAGE' ? 'Phần trăm' : discountType === 'FIXED' ? 'Cố định' : '---';
+    document.getElementById('previewType').textContent = typeText;
+    
+    const value = parseFloat(document.getElementById('discountValue').value) || 0;
+    let discountText = '---';
+    if (discountType === 'PERCENTAGE') {
+        discountText = value + '%';
+    } else if (discountType === 'FIXED') {
+        discountText = formatNumber(value) + 'đ';
+    }
+    document.getElementById('previewDiscount').textContent = discountText;
+
+    // Max discount (only for percentage)
+    const maxDiscountRow = document.getElementById('previewMaxRow');
+    if (discountType === 'PERCENTAGE') {
+        const maxDiscount = parseFloat(document.getElementById('maxDiscountAmount').value) || 0;
+        document.getElementById('previewMax').textContent = formatNumber(maxDiscount) + 'đ';
+        maxDiscountRow.style.display = 'flex';
+    } else {
+        maxDiscountRow.style.display = 'none';
+    }
+
+    // Min order value
+    document.getElementById('previewMinRow').style.display = 'flex';
+    const minOrder = parseFloat(document.getElementById('minOrderValue').value) || 0;
+    document.getElementById('previewMin').textContent = formatNumber(minOrder) + 'đ';
+
+    // Dates
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    document.getElementById('previewStart').textContent = formatDateTime(startDate);
+    document.getElementById('previewEnd').textContent = formatDateTime(endDate);
+
+    // Usage limit
+    const hasLimit = document.getElementById('hasUsageLimit').checked;
+    const limitRow = document.getElementById('previewLimitRow');
+    if (hasLimit) {
+        const limit = document.getElementById('usageLimit').value || 0;
+        document.getElementById('previewLimit').textContent = limit > 0 ? formatNumber(limit) + ' lượt' : 'Không giới hạn';
+        limitRow.style.display = 'block';
+    } else {
+        document.getElementById('previewLimit').textContent = 'Không giới hạn';
+        limitRow.style.display = 'block';
+    }
+}
+
+// Form validation - KHÔNG BLOCK SUBMIT NẾU HỢP LỆ
+document.getElementById('promotionForm').addEventListener('submit', function(e) {
+    console.log('=== FORM SUBMIT EVENT ===');
+    
+    const usageLimitInput = document.getElementById('usageLimit');
+    const hasLimit = document.getElementById('hasUsageLimit').checked;
+    
+    console.log('hasUsageLimit checked:', hasLimit);
+    console.log('usageLimit value:', usageLimitInput.value);
+    console.log('usageLimit disabled:', usageLimitInput.disabled);
+    
+    const discountType = document.getElementById('discountType').value;
+    const discountValue = parseFloat(document.getElementById('discountValue').value) || 0;
+    const startDate = new Date(document.getElementById('startDate').value);
+    const endDate = new Date(document.getElementById('endDate').value);
+
+    // Validate discount type
+    if (!discountType) {
+        e.preventDefault();
+        alert('Vui lòng chọn Loại giảm giá.');
+        console.log('BLOCKED: No discount type');
+        return false;
+    }
+    
+    // Validate discount value
+    if (discountType === 'PERCENTAGE') {
+        if (discountValue < 0 || discountValue > 100) {
+            e.preventDefault();
+            alert('Giá trị giảm giá phần trăm phải từ 0-100%');
+            console.log('BLOCKED: Invalid percentage');
+            return false;
+        }
+    } else if (discountType === 'FIXED') {
+        if (discountValue <= 0) {
+            e.preventDefault();
+            alert('Giá trị giảm giá cố định phải lớn hơn 0');
+            console.log('BLOCKED: Invalid fixed amount');
+            return false;
+        }
+    }
+
+    // Validate dates
+    if (endDate <= startDate) {
+        e.preventDefault();
+        alert('Ngày kết thúc phải sau ngày bắt đầu');
+        console.log('BLOCKED: Invalid date range');
+        return false;
+    }
+
+    // Validate promo code
+    const promoCode = document.getElementById('promoCode').value;
+    if (promoCode && !/^[A-Z0-9]+$/.test(promoCode)) {
+        e.preventDefault();
+        alert('Mã giảm giá chỉ được chứa chữ cái in hoa và số');
+        console.log('BLOCKED: Invalid promo code');
+        return false;
+    }
+
+    console.log('FORM VALIDATION PASSED - Submitting...');
+    // Không preventDefault() - cho phép form submit
+    return true;
+});
+
+// Auto-uppercase promo code
+document.getElementById('promoCode').addEventListener('input', function(e) {
+    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    updatePreview();
+});
+
+// Listen to all form inputs for preview update
+document.querySelectorAll('#promotionForm input, #promotionForm select, #promotionForm textarea').forEach(element => {
+    element.addEventListener('input', updatePreview);
+    element.addEventListener('change', updatePreview);
+});
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== PAGE LOADED ===');
+    
+    const action = /*[[${action}]]*/ 'create';
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    const usageLimitInput = document.getElementById('usageLimit');
+    const hasUsageLimitCheckbox = document.getElementById('hasUsageLimit');
+    
+    console.log('Action:', action);
+    console.log('Initial usageLimit value:', usageLimitInput.value);
+    
+    // Set default dates if creating new
+    if (action === 'create') {
+        if (!startDateInput.value) {
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+            startDateInput.value = now.toISOString().slice(0, 16);
+        }
+        
+        if (!endDateInput.value) {
+            const endDate = new Date();
+            endDate.setDate(endDate.getDate() + 30);
+            endDate.setHours(23, 59, 0, 0);
+            endDateInput.value = endDate.toISOString().slice(0, 16);
+        }
+    }
+
+    // Check if editing and has usage limit
+    const usageLimit = parseInt(usageLimitInput.value) || 0;
+    console.log('Parsed usageLimit:', usageLimit);
+    
+    if (usageLimit > 0) {
+        console.log('Setting hasUsageLimit checked = true');
+        hasUsageLimitCheckbox.checked = true;
+        toggleUsageLimit();
+    } else {
+        console.log('Setting hasUsageLimit checked = false');
+        hasUsageLimitCheckbox.checked = false;
+        usageLimitInput.value = 0;
+        toggleUsageLimit();
+    }
+
+    // Initial field setup
+    toggleDiscountFields();
+    updatePreview();
+    
+    console.log('Final usageLimit value:', usageLimitInput.value);
+    console.log('Final usageLimit disabled:', usageLimitInput.disabled);
+});
+
+/*]]>*/
+</script>
+		</th:block>
+
+	</div>
+</body>
+</html>

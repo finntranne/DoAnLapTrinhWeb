@@ -1,0 +1,27 @@
+<!-- src/main/resources/static/oauth2/success.html -->
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Đăng nhập Google thành công</title>
+  <script>
+    // Lấy token từ URL
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+
+    if (token) {
+      // Lưu JWT vào localStorage hoặc cookie
+      localStorage.setItem("jwtToken", token);
+
+      // Chuyển đến trang chính
+      window.location.href = "/";
+    } else {
+      alert("Không nhận được token từ máy chủ!");
+      window.location.href = "/login";
+    }
+  </script>
+</head>
+<body>
+  <h2>Đang xử lý đăng nhập Google...</h2>
+</body>
+</html>

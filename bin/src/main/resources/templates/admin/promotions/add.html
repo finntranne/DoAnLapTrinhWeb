@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{admin/layouts/admin-layout.html}">
+
+<head>
+<title>Thêm Khuyến Mãi</title>
+</head>
+
+<body>
+	<main class="app-main">
+		<div layout:fragment="content">
+			<div class="container">
+				<!-- Header -->
+				<div class="d-flex justify-content-between align-items-center mb-4">
+					<h2 class="mb-0">
+						<i class="bi bi-gift-fill me-2"></i>Thêm Khuyến Mãi Mới
+					</h2>
+					<a th:href="@{/admin/promotions}" class="btn btn-outline-secondary">
+						<i class="bi bi-arrow-left me-1"></i>Quay lại
+					</a>
+				</div>
+
+				<!-- Error Message -->
+				<div th:if="${errorMessage}"
+					class="alert alert-danger alert-dismissible fade show" role="alert">
+					<i class="bi bi-exclamation-triangle-fill me-2"></i> <span
+						th:text="${errorMessage}"></span>
+					<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+				</div>
+
+				<!-- Form -->
+				<form th:action="@{/admin/promotions/save}" th:object="${promotion}"
+					method="post">
+
+					<!-- Thông tin cơ bản -->
+					<div class="card shadow-sm mb-4">
+						<div class="card-header bg-light">
+							<h5 class="mb-0">
+								<i class="bi bi-info-circle me-2"></i>Thông tin cơ bản
+							</h5>
+						</div>
+						<div class="card-body">
+							<div class="row">
+								<div class="col-md-6 mb-3">
+									<label class="form-label fw-semibold"> Tên khuyến mãi <span
+										class="text-danger">*</span>
+									</label> <input type="text" class="form-control"
+										th:field="*{promotionName}"
+										placeholder="VD: Giảm giá Black Friday" required>
+								</div>
+								<div class="col-md-6 mb-3">
+									<label class="form-label fw-semibold"> Mã khuyến mãi <span
+										class="text-danger">*</span>
+									</label> <input type="text" class="form-control"
+										th:field="*{promoCode}" placeholder="VD: BLACKFRIDAY2024"
+										required> <small class="text-muted">Mã phải là
+										duy nhất, viết hoa không dấu</small>
+								</div>
+							</div>
+
+							<div class="mb-3">
+								<label class="form-label fw-semibold">Mô tả</label>
+								<textarea class="form-control" th:field="*{description}"
+									rows="3" placeholder="Mô tả chi tiết về khuyến mãi..."></textarea>
+							</div>
+
+							<div class="row">
+								<div class="col-md-6 mb-3">
+									<label class="form-label fw-semibold"> Loại khuyến mãi
+										<span class="text-danger">*</span>
+									</label> <select class="form-select" th:field="*{promotionType}"
+										required>
+										<option value="">-- Chọn loại --</option>
+										<option value="ORDER">Áp dụng cho đơn hàng</option>
+										<option value="PRODUCT">Áp dụng cho sản phẩm</option>
+									</select>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Thiết lập giảm giá -->
+					<div class="card shadow-sm mb-4">
+						<div class="card-header bg-light">
+							<h5 class="mb-0">
+								<i class="bi bi-percent me-2"></i>Thiết lập giảm giá
+							</h5>
+						</div>
+						<div class="card-body">
+							<div class="row">
+								<div class="col-md-4 mb-3">
+									<label class="form-label fw-semibold"> Loại giảm giá <span
+										class="text-danger">*</span>
+									</label> <select class="form-select" th:field="*{discountType}"
+										id="discountType" required>
+										<option value="">-- Chọn loại --</option>
+										<option value="Percentage">Phần trăm (%)</option>
+										<option value="FixedAmount">Số tiền cố định (VND)</option>
+										<option value="FreeShip">Miễn phí vận chuyển</option>
+									</select>
+								</div>
+								<div class="col-md-4 mb-3">
+									<label class="form-label fw-semibold"> Giá trị giảm <span
+										class="text-danger">*</span>
+									</label> <input type="number" class="form-control"
+										th:field="*{discountValue}" id="discountValue" step="0.01"
+										placeholder="Nhập giá trị" required> <small
+										class="text-muted" id="discountHint">VD: 15 (cho 15%)
+										hoặc 50000 (cho 50k)</small>
+								</div>
+								<div class="col-md-4 mb-3">
+									<label class="form-label fw-semibold">Giảm tối đa</label> <input
+										type="number" class="form-control"
+										th:field="*{maxDiscountAmount}" step="1000"
+										placeholder="VD: 100000"> <small class="text-muted">Chỉ
+										áp dụng cho giảm theo %</small>
+								</div>
+							</div>
+
+							<div class="row">
+								<div class="col-md-6 mb-3">
+									<label class="form-label fw-semibold">Đơn hàng tối
+										thiểu</label> <input type="number" class="form-control"
+										th:field="*{minOrderValue}" step="1000"
+										placeholder="VD: 500000"> <small class="text-muted">Để
+										trống nếu không yêu cầu tối thiểu</small>
+								</div>
+								<div class="col-md-6 mb-3">
+									<label class="form-label fw-semibold">Giới hạn số lượt
+										sử dụng</label> <input type="number" class="form-control"
+										th:field="*{usageLimit}" placeholder="VD: 100"> <small
+										class="text-muted">Để trống nếu không giới hạn</small>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Thời gian áp dụng -->
+					<div class="card shadow-sm mb-4">
+						<div class="card-header bg-light">
+							<h5 class="mb-0">
+								<i class="bi bi-calendar-range me-2"></i>Thời gian áp dụng
+							</h5>
+						</div>
+						<div class="card-body">
+							<div class="row">
+								<div class="col-md-6 mb-3">
+									<label class="form-label fw-semibold"> Ngày bắt đầu <span
+										class="text-danger">*</span>
+									</label> <input type="datetime-local" class="form-control"
+										th:field="*{startDate}" required>
+								</div>
+								<div class="col-md-6 mb-3">
+									<label class="form-label fw-semibold"> Ngày kết thúc <span
+										class="text-danger">*</span>
+									</label> <input type="datetime-local" class="form-control"
+										th:field="*{endDate}" required>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Phạm vi áp dụng -->
+					<div class="card shadow-sm mb-4">
+						<div class="card-header bg-light">
+							<h5 class="mb-0">
+								<i class="bi bi-geo-alt me-2"></i>Phạm vi áp dụng
+							</h5>
+						</div>
+						<div class="card-body">
+							<!-- Nếu promotionType = ORDER -->
+							<div id="orderPromotionScope" style="display: none;">
+								<div class="alert alert-info">
+									<i class="bi bi-info-circle me-2"></i> <small>Khuyến
+										mãi đơn hàng - Bỏ trống để áp dụng cho <strong>toàn
+											sàn</strong>
+									</small>
+								</div>
+
+								<div class="mb-3">
+									<label class="form-label fw-semibold"> <i
+										class="bi bi-shop me-1"></i>Áp dụng cho cửa hàng (tùy chọn)
+									</label> <select class="form-select" name="applicableShopIds" multiple
+										size="6" id="shopSelect">
+										<option th:each="shop : ${allShops}" th:value="${shop.shopId}"
+											th:text="${shop.shopName}"></option>
+									</select> <small class="text-muted">Giữ Ctrl (hoặc Cmd) để chọn
+										nhiều. Bỏ trống = Toàn sàn</small>
+								</div>
+							</div>
+
+							<!-- Nếu promotionType = PRODUCT -->
+							<div id="productPromotionScope" style="display: none;">
+								<div class="alert alert-warning">
+									<i class="bi bi-exclamation-triangle me-2"></i> <small>Khuyến
+										mãi sản phẩm - <strong>Bắt buộc chọn ít nhất 1 sản
+											phẩm</strong>
+									</small>
+								</div>
+
+								<div class="mb-3">
+									<label class="form-label fw-semibold"> <i
+										class="bi bi-box-seam me-1"></i>Chọn sản phẩm áp dụng <span
+										class="text-danger">*</span>
+									</label> <input type="text" class="form-control mb-2"
+										id="productSearch" placeholder="🔍 Tìm kiếm sản phẩm...">
+									<select class="form-select" name="applicableProductIds"
+										multiple size="8" id="productSelect" required>
+										<option th:each="product : ${allProducts}"
+											th:value="${product.productID}"
+											th:text="${product.productName}"></option>
+									</select> <small class="text-muted">Đã chọn: <span
+										id="selectedCount">0</span> sản phẩm
+									</small>
+								</div>
+							</div>
+
+							<!-- Chưa chọn type -->
+							<div id="noTypeSelected">
+								<div class="alert alert-secondary">
+									<i class="bi bi-arrow-up-circle me-2"></i> Vui lòng chọn <strong>Loại
+										khuyến mãi</strong> ở trên để hiển thị phạm vi áp dụng
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Action Buttons -->
+					<div class="card shadow-sm">
+						<div class="card-body">
+							<div class="d-flex justify-content-end gap-2">
+								<a th:href="@{/admin/promotions}"
+									class="btn btn-outline-secondary"> <i
+									class="bi bi-x-circle me-1"></i>Hủy
+								</a>
+								<button type="submit" class="btn btn-success">
+									<i class="bi bi-check-circle me-1"></i>Tạo khuyến mãi
+								</button>
+							</div>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</main>
+</body>
+
+<th:block layout:fragment="scripts">
+    <script>
+        // Xử lý hiển thị phạm vi theo promotionType
+        document.getElementById('promotionType')?.addEventListener('change', function() {
+            const orderScope = document.getElementById('orderPromotionScope');
+            const productScope = document.getElementById('productPromotionScope');
+            const noTypeDiv = document.getElementById('noTypeSelected');
+            const productSelect = document.getElementById('productSelect');
+            const shopSelect = document.getElementById('shopSelect');
+
+            // Ẩn tất cả
+            orderScope.style.display = 'none';
+            productScope.style.display = 'none';
+            noTypeDiv.style.display = 'none';
+
+            // Reset required
+            if (productSelect) productSelect.removeAttribute('required');
+            if (shopSelect) shopSelect.removeAttribute('required');
+
+            if (this.value === 'ORDER') {
+                orderScope.style.display = 'block';
+            } else if (this.value === 'PRODUCT') {
+                productScope.style.display = 'block';
+                if (productSelect) productSelect.setAttribute('required', 'required');
+            } else {
+                noTypeDiv.style.display = 'block';
+            }
+        });
+
+        // Search sản phẩm
+        document.getElementById('productSearch')?.addEventListener('input', function() {
+            const filter = this.value.toLowerCase();
+            const options = document.querySelectorAll('#productSelect option');
+            
+            options.forEach(option => {
+                const text = option.text.toLowerCase();
+                option.style.display = text.includes(filter) ? '' : 'none';
+            });
+        });
+
+        // Đếm sản phẩm đã chọn
+        document.getElementById('productSelect')?.addEventListener('change', function() {
+            const count = this.selectedOptions.length;
+            document.getElementById('selectedCount').textContent = count;
+        });
+
+        // Validate form
+        document.querySelector('form')?.addEventListener('submit', function(e) {
+            const promotionType = document.querySelector('select[name="promotionType"]').value;
+            
+            if (promotionType === 'PRODUCT') {
+                const selectedProducts = document.querySelectorAll('#productSelect option:checked');
+                if (selectedProducts.length === 0) {
+                    e.preventDefault();
+                    alert('Vui lòng chọn ít nhất 1 sản phẩm cho khuyến mãi PRODUCT!');
+                    return false;
+                }
+            }
+
+            // Validate ngày
+            const startDate = new Date(document.querySelector('input[name="startDate"]').value);
+            const endDate = new Date(document.querySelector('input[name="endDate"]').value);
+            
+            if (endDate <= startDate) {
+                e.preventDefault();
+                alert('Ngày kết thúc phải sau ngày bắt đầu!');
+                return false;
+            }
+        });
+
+        // Trigger khi load trang (cho trường hợp edit)
+        document.addEventListener('DOMContentLoaded', function() {
+            const promotionType = document.getElementById('promotionType');
+            if (promotionType && promotionType.value) {
+                promotionType.dispatchEvent(new Event('change'));
+            }
+        });
+    </script>
+</th:block>
+</html>

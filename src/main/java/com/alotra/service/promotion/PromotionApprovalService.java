@@ -8,7 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import com.alotra.entity.product.ProductApproval;
+//import com.alotra.entity.product.ProductApproval;
 import com.alotra.entity.promotion.PromotionApproval;
 import com.alotra.repository.promotion.PromotionApprovalRepository;
 @Service

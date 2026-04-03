@@ -2,6 +2,8 @@
 package com.alotra.entity.product; // Giữ package này
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.alotra.entity.shop.Shop;
 
@@ -18,29 +20,30 @@ import lombok.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = {"shop"}) // Thêm exclude
-@EqualsAndHashCode(exclude = {"shop"}) // Thêm exclude
+@ToString(exclude = {"shop"}) 
+@EqualsAndHashCode(exclude = {"shop"}) 
 public class Topping {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ToppingID")
     private Integer toppingID;
-    
-    // *** THÊM TRƯỜNG SHOPID NÀY ***
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ShopID") // Cho phép null nếu Admin tạo
+    @JoinColumn(name = "ShopID") 
     private Shop shop;
 
     @Column(name = "ToppingName", nullable = false, length = 255, columnDefinition = "NVARCHAR(255)")
     private String toppingName;
 
-    @Column(name = "AdditionalPrice", nullable = false, precision = 10, scale = 2)
-    private BigDecimal additionalPrice;
+    @Column(name = "Price", nullable = false, precision = 10, scale = 2)
+    private BigDecimal price;
 
     @Column(name = "Status", nullable = false)
     private Byte status = 1;
 
     @Column(name = "ImageURL", length = 500)
     private String imageURL;
+    
+   
 }

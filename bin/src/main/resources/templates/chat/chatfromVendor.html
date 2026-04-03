@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat với Khách hàng</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/styles/overlayscrollbars.min.css" />
+  <link rel="stylesheet" href="/css/adminlte.css" />
+
+  <style>
+    /* RESET và CÀI ĐẶT CƠ BẢN */
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: "Source Sans 3", sans-serif;
+      background-color: #f1f2f6; 
+    }
+
+    /* CARD CHÍNH */
+    .card {
+      height: 100vh;
+      max-width: 800px;
+      width: 100%;
+      margin: 0 auto;
+      border-radius: 0; 
+      box-shadow: none; 
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* HEADER */
+    .card-header {
+      border-bottom: 1px solid #ddd;
+      padding: 15px 20px;
+      background-color: #ffc107 !important; /* Vàng cho shop */
+      color: #1a1a1a;
+    }
+
+    .card-header .btn-dark {
+      background-color: #343a40;
+      border: none;
+    }
+
+    /* BODY CHAT */
+    .card-body {
+      flex-grow: 1; 
+      padding: 0; 
+      display: flex;
+      flex-direction: column;
+      overflow: hidden; 
+    }
+
+    .direct-chat-messages {
+      flex-grow: 1;
+      height: auto;
+      overflow-y: auto;
+      background: #fdfdfd; 
+      padding: 20px;
+    }
+
+    /* CHÂN GỬI TIN NHẮN */
+    .card-footer {
+      padding: 15px 20px;
+      border-top: 1px solid #eee;
+      background-color: #fff;
+    }
+
+    /* PHONG CÁCH TIN NHẮN */
+    .direct-chat-msg {
+      margin-bottom: 15px; 
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .direct-chat-msg.end {
+      align-items: flex-end;
+    }
+
+    .direct-chat-infos {
+      font-size: 11px;
+      color: #999;
+      margin-bottom: 5px; 
+      align-self: flex-start;
+    }
+
+    .direct-chat-msg.end .direct-chat-infos {
+      align-self: flex-end;
+    }
+
+    .direct-chat-text {
+      max-width: 75%; 
+      padding: 10px 15px;
+      border-radius: 18px; 
+      word-wrap: break-word;
+      font-size: 15px;
+      line-height: 1.5;
+      position: relative;
+      box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* --- BONG BÓNG CHAT CỦA KHÁCH HÀNG (BÊN TRÁI) --- */
+    .direct-chat-msg:not(.end) .direct-chat-text {
+      background-color: #e4e6eb; /* Xám như Facebook */
+      color: #000;
+      border-top-left-radius: 5px; 
+    }
+
+    .direct-chat-msg:not(.end) .direct-chat-text::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -7px;
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 0 10px 10px 0;
+      border-color: transparent #e4e6eb transparent transparent;
+    }
+
+    /* --- BONG BÓNG CHAT CỦA SHOP (BÊN PHẢI) --- */
+    .direct-chat-msg.end .direct-chat-text {
+      background-color: #ffc107; /* Vàng shop */
+      color: #1a1a1a;
+      border-top-right-radius: 5px;
+    }
+
+    .direct-chat-msg.end .direct-chat-text::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: -7px;
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 10px 10px 0 0;
+      border-color: #ffc107 transparent transparent transparent;
+      transform: rotate(90deg);
+    }
+
+    /* NÚT GỬI */
+    #sendBtn {
+      background-color: #ffc107 !important;
+      color: #1a1a1a !important;
+      transition: background-color 0.2s;
+      font-weight: 500;
+    }
+
+    #sendBtn:hover {
+      background-color: #e0a800 !important;
+    }
+
+    /* Nút quay về */
+    .btn-back {
+      font-size: 0.9rem;
+      padding: 0.25rem 0.75rem;
+    }
+  </style>
+</head>
+
+<body class="hold-transition layout-top-nav bg-body-tertiary">
+
+<div class="d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+  <div class="card direct-chat direct-chat-warning shadow-lg bg-white">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h3 class="card-title mb-0 d-flex align-items-center">
+        <i class="bi bi-chat-dots-fill me-2"></i> 
+        Chat với Khách hàng
+      </h3>
+      <a th:href="@{/vendor/dashboard}" class="btn btn-dark btn-sm btn-back">
+        <i class="bi bi-arrow-left"></i> Quay về
+      </a>
+    </div>
+
+    <div class="card-body">
+      <div id="chatBox" class="direct-chat-messages">
+        <!-- Lịch sử chat -->
+        <div th:each="msg : ${chatHistory}"
+             th:classappend="${msg.senderType == 'SHOP'} ? 'direct-chat-msg end' : 'direct-chat-msg'">
+          <div class="direct-chat-infos">
+            <span th:text="${msg.senderType == 'SHOP'} ? 'Shop' : 'Khách hàng'"></span> •
+            <span th:text="${#temporals.format(msg.timestamp, 'HH:mm')}"></span>
+          </div>
+          <div class="direct-chat-text" th:text="${msg.content}"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-footer">
+      <div class="input-group">
+        <input id="messageInput" type="text" placeholder="Nhập tin nhắn..." class="form-control form-control-lg">
+        <span class="input-group-text" id="sendBtn" style="cursor:pointer;">
+          <i class="bi bi-send-fill"></i> Gửi
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden IDs -->
+<input type="hidden" id="shopId" th:value="${shopId}">
+<input type="hidden" id="customerId" th:value="${customerId}">
+
+<!-- WebSocket -->
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+
+<script th:inline="javascript">
+  let stompClient = null;
+  const shopId = /*[[${shopId}]]*/ 0;
+  const customerId = /*[[${customerId}]]*/ 0;
+
+  function connectWebSocket() {
+    const socket = new SockJS("/ws-chat");
+    stompClient = Stomp.over(socket);
+
+    stompClient.connect({}, function () {
+      console.log("✅ Shop connected to WebSocket");
+
+      // Nhận tin nhắn từ khách hàng
+      stompClient.subscribe(`/topic/shop/${shopId}`, function (message) {
+        const msg = JSON.parse(message.body);
+        showMessage(msg, msg.type === 'SHOP');
+      });
+
+      // Cuộn xuống cuối khi kết nối
+      setTimeout(() => {
+        const chatBox = document.getElementById("chatBox");
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }, 100);
+    });
+  }
+
+  function sendMessage() {
+    const input = document.getElementById("messageInput");
+    const content = input.value.trim();
+    if (!content) return;
+
+    const msg = {
+      from: shopId,
+      to: customerId,
+      content: content,
+      type: "SHOP"
+    };
+
+    stompClient.send("/app/shopReply", {}, JSON.stringify(msg));
+    showMessage(msg, true); // Hiển thị ngay tin nhắn của shop
+    input.value = "";
+  }
+
+  function showMessage(msg, mine) {
+    const chatBox = document.getElementById("chatBox");
+    const div = document.createElement("div");
+    div.className = mine ? "direct-chat-msg end" : "direct-chat-msg";
+    div.innerHTML = `
+      <div class="direct-chat-infos">
+        ${mine ? "Shop" : "Khách hàng"} • ${new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
+      </div>
+      <div class="direct-chat-text">${msg.content}</div>
+    `;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  // Gửi tin nhắn
+  document.getElementById("sendBtn").addEventListener("click", sendMessage);
+  document.getElementById("messageInput").addEventListener("keypress", e => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  window.onload = connectWebSocket;
+</script>
+
+</body>
+</html>

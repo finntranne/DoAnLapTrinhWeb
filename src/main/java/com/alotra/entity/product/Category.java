@@ -10,7 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "Categories") // Khớp DB
+@Table(name = "Categories") 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,24 +18,19 @@ public class Category {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "CategoryID") // Khớp DB và nhánh lam
-    private Integer categoryID; // Giữ tên theo nhánh lam
-
-    @Column(name = "CategoryName", nullable = false, unique = true, length = 255, columnDefinition = "NVARCHAR(255)") // Khớp DB và nhánh lam
+    @Column(name = "CategoryID") 
+    private Integer categoryID; 
+    
+    @Column(name = "CategoryName", nullable = false, unique = true, length = 255, columnDefinition = "NVARCHAR(255)") 
     private String categoryName;
 
-    @Column(name = "Description", columnDefinition = "NVARCHAR(MAX)") // Khớp DB và nhánh lam
+    @Column(name = "Description", columnDefinition = "NVARCHAR(MAX)") 
     private String description;
 
-    @Column(name = "ImageURL", length = 500) // Giữ lại từ nhánh lam, khớp DB
+    @Column(name = "ImageURL", length = 500) 
     private String imageURL;
 
-    @Column(name = "Status", nullable = false) // Giữ lại từ nhánh lam, khớp DB
-    private Byte status = 1; // 0: Inactive, 1: Active - Giữ giá trị mặc định
-    
-    @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
-    private List<Product> products;
+    @Column(name = "Status", nullable = false) 
+    private Byte status = 1; 
 
-
-    // Bỏ @OneToMany Set<Product> products từ HEAD vì không cần thiết và không khớp nhánh lam/DB
 }

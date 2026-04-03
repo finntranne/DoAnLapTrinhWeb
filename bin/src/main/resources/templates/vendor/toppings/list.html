@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{vendor/layouts/vendor-layout}" lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Quản lý Topping - Vendor | AloTra</title>
+</head>
+<body>
+
+	<div layout:fragment="content">
+
+		<div
+			class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+			<h1 class="h2">
+				<i class="bi bi-plus-circle-dotted"></i> Quản lý Topping
+			</h1>
+			<a th:href="@{/vendor/toppings/create}" class="btn btn-primary">
+				<i class="bi bi-plus-circle"></i> Thêm topping mới
+			</a>
+		</div>
+
+		<div th:if="${success}"
+			class="alert alert-success alert-dismissible fade show" role="alert">
+			<i class="bi bi-check-circle"></i> <span th:text="${success}"></span>
+			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+		</div>
+		<div th:if="${warning}"
+			class="alert alert-warning alert-dismissible fade show" role="alert">
+			<i class="bi bi-exclamation-triangle"></i> <span th:text="${warning}"></span>
+			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+		</div>
+		<div th:if="${error}"
+			class="alert alert-danger alert-dismissible fade show" role="alert">
+			<i class="bi bi-exclamation-triangle"></i> <span th:text="${error}"></span>
+			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+		</div>
+		<div class="card mb-4">
+			<div class="card-body">
+				<form method="get" th:action="@{/vendor/toppings}"
+					class="row g-3 align-items-end">
+					<div class="col-md-5">
+						<label class="form-label">Tìm kiếm</label> <input type="text"
+							name="search" class="form-control" th:value="${search}"
+							placeholder="Tên topping...">
+					</div>
+					<div class="col-md-3">
+						<label class="form-label">Trạng thái hoạt động</label> <select
+							name="status" class="form-select">
+							<option value="">Tất cả</option>
+							<option value="1" th:selected="${status != null and status == 1}">Đang
+								hoạt động</option>
+							<option value="0" th:selected="${status != null and status == 0}">Không
+								hoạt động</option>
+						</select>
+					</div>
+					<div class="col-md-4 d-flex">
+						<button type="submit" class="btn btn-primary me-2 flex-grow-1">
+							<i class="bi bi-search"></i> Lọc
+						</button>
+						<a th:href="@{/vendor/toppings}"
+							class="btn btn-outline-secondary flex-grow-1"> <i
+							class="bi bi-arrow-clockwise"></i> Đặt lại
+						</a>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<div class="card">
+			<div class="card-body">
+				<div class="table-responsive">
+					<table class="table table-hover align-middle">
+						<thead class="table-light">
+							<tr>
+								<th style="width: 80px;">Hình ảnh</th>
+								<th>Tên Topping</th>
+								<th>Giá thêm</th>
+								<th>Trạng thái hoạt động</th>
+								<th>Phê duyệt</th>
+								<th style="width: 150px;">Thao tác</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr th:if="${toppings.isEmpty()}">
+								<td colspan="6" class="text-center text-muted py-5"><i
+									class="bi bi-inbox" style="font-size: 3rem;"></i>
+									<p class="mt-2">Chưa có topping nào</p></td>
+							</tr>
+
+							<tr th:each="dto : ${toppings}">
+								<td><img
+									th:src="${dto.topping.imageURL != null and dto.topping.imageURL != '' ? dto.topping.imageURL : '/images/placeholder.png'}"
+									alt="Topping Image" class="img-thumbnail"
+									style="width: 60px; height: 60px; object-fit: cover;"></td>
+
+								<td><strong th:text="${dto.topping.toppingName}"></strong></td>
+
+								<td><span
+									th:text="${#numbers.formatDecimal(dto.topping.additionalPrice, 0, 'COMMA', 0, 'POINT')}"></span>đ
+								</td>
+
+								<td><span class="badge"
+									th:classappend="${dto.activityStatus == 'Đang hoạt động' ? 'bg-success' : 'bg-secondary'}"
+									th:text="${dto.activityStatus}"></span></td>
+
+								<td><span class="badge bg-warning text-dark"
+									th:if="${dto.approvalStatus != null and #strings.startsWith(dto.approvalStatus, 'Đang chờ:')}"
+									th:text="${dto.approvalStatus}"> </span> <span
+									class="badge bg-danger"
+									th:if="${dto.approvalStatus != null and #strings.startsWith(dto.approvalStatus, 'Bị từ chối:')}"
+									th:text="${dto.approvalStatus}"> </span> <span
+									class="badge bg-success" th:if="${dto.approvalStatus == null}">
+										Đã duyệt </span></td>
+
+								<td>
+									<div class="btn-group" role="group">
+										<a
+											th:href="@{/vendor/toppings/edit/{id}(id=${dto.topping.toppingID})}"
+											class="btn btn-sm btn-outline-primary" title="Chỉnh sửa">
+											<i class="bi bi-pencil"></i>
+										</a>
+										<button type="button"
+											class="btn btn-sm btn-outline-danger btn-delete-topping"
+											th:data-id="${dto.topping.toppingID}"
+											th:data-name="${dto.topping.toppingName}" title="Xóa">
+											<i class="bi bi-trash"></i>
+										</button>
+									</div>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+
+				<nav th:if="${totalPages > 1}" aria-label="Page navigation">
+					<ul class="pagination justify-content-center">
+						<li class="page-item"
+							th:classappend="${currentPage == 0 ? 'disabled' : ''}"><a
+							class="page-link"
+							th:href="@{/vendor/toppings(page=${currentPage - 1}, status=${status}, search=${search})}">
+								Trước </a></li>
+
+						<li class="page-item"
+							th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+							th:classappend="${i == currentPage ? 'active' : ''}"><a
+							class="page-link"
+							th:href="@{/vendor/toppings(page=${i}, status=${status}, search=${search})}"
+							th:text="${i + 1}"></a></li>
+
+						<li class="page-item"
+							th:classappend="${currentPage == totalPages - 1 ? 'disabled' : ''}">
+							<a class="page-link"
+							th:href="@{/vendor/toppings(page=${currentPage + 1}, status=${status}, search=${search})}">
+								Sau </a>
+						</li>
+					</ul>
+				</nav>
+			</div>
+		</div>
+
+		<div class="modal fade" id="deleteModal" tabindex="-1">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">Xác nhận xóa Topping</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+					</div>
+					<div class="modal-body">
+						<p>
+							Bạn có chắc muốn gửi yêu cầu xóa topping <strong
+								id="toppingNameToDelete"></strong>?
+						</p>
+						<p class="text-warning">
+							<i class="bi bi-exclamation-triangle"></i> Yêu cầu này cần được
+							phê duyệt bởi Admin.
+						</p>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary"
+							data-bs-dismiss="modal">Hủy</button>
+						<form id="deleteForm" method="post">
+							<button type="submit" class="btn btn-danger">Xác nhận
+								xóa</button>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<script>
+            document.addEventListener('DOMContentLoaded', function() {
+                document.querySelectorAll('.btn-delete-topping').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const toppingId = this.getAttribute('data-id');
+                        const toppingName = this.getAttribute('data-name');
+                        confirmDelete(toppingId, toppingName);
+                    });
+                });
+            });
+    
+            function confirmDelete(toppingId, toppingName) {
+                document.getElementById('toppingNameToDelete').textContent = toppingName;
+                document.getElementById('deleteForm').action = '/vendor/toppings/delete/' + toppingId;
+                new bootstrap.Modal(document.getElementById('deleteModal')).show();
+            }
+        </script>
+
+	</div>
+</body>
+</html>

@@ -25,8 +25,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import com.alotra.entity.product.ProductApproval;
+//
+//import com.alotra.entity.product.ProductApproval;
 import com.alotra.entity.product.Topping;
 import com.alotra.entity.promotion.Promotion;
 import com.alotra.entity.promotion.PromotionApproval;
@@ -36,7 +36,7 @@ import com.alotra.entity.user.User;
 import com.alotra.repository.product.ProductRepository;
 import com.alotra.repository.shop.ShopRepository;
 import com.alotra.repository.user.UserRepository;
-import com.alotra.service.product.ProductApprovalService;
+//import com.alotra.service.product.ProductApprovalService;
 import com.alotra.service.product.ProductService;
 import com.alotra.service.promotion.PromotionApprovalService;
 import com.alotra.service.promotion.PromotionProductService;

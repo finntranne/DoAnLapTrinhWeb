@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{admin/layouts/admin-layout.html}">
+
+<head>
+<title>Quản lý khuyến mãi</title>
+</head>
+
+<body>
+	<main class="app-main">
+		<div layout:fragment="content">
+			<div class="container mt-4">
+				<div class="d-flex justify-content-between align-items-center mb-3">
+					<h3 class="fw-bold mb-0">Khuyến mãi chờ phê duyệt</h3>
+				</div>
+
+				<div class="mb-3">
+			        <a th:href="@{/admin/promotions}" class="btn btn-success me-2">
+			            Khuyến mãi đã duyệt
+			        </a>
+			        <a th:href="@{/admin/promotions/pending}" class="btn btn-warning me-2">
+			            Chờ phê duyệt
+			        </a>
+			        
+			    </div>
+
+				<div class="table-responsive shadow-sm rounded">
+					<table class="table  table-hover align-middle">
+						<thead class="table-success">
+							<tr>
+								<th>ID</th>
+								<th>Hành động</th>
+								<th>Tên khuyến mãi</th>
+
+								<th>Ngày yêu cầu</th>
+								<th>Người yêu cầu</th>
+								<th>Trạng thái</th>
+								<th>Chi tiết</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr th:each="approval : ${promotions}">
+								<td th:text="${approval.approvalId}"></td>
+								<td th:text="${approval.actionType}"></td>
+								<td th:text="${approval.promotion.promotionName}"></td>
+								
+								
+								<td th:text="${#temporals.format(approval.requestedAt, 'HH:mm dd/MM/yyyy')}">10:30 25/10/2025</td>
+								<td th:text="${approval.requestedBy.username}"></td>
+								<td><span class="badge bg-warning"
+									th:text="${approval.status}"></span></td>
+								<td>
+									
+										<a
+											th:href="@{/admin/promotions/pending/detail/{id}(id=${approval.approvalId})}"
+											class="btn btn-outline-info btn-sm "> <i
+											class="bi bi-eye"></i>
+										</a> 
+
+
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+
+
+			<nav th:if="${totalPages > 1}" class="mt-4">
+				<ul class="pagination justify-content-center flex-wrap">
+					<li class="page-item"
+						th:classappend="${currentPage == 1} ? 'disabled'"><a
+						class="page-link rounded-pill shadow-sm border-0"
+						th:href="@{'/admin/products?page=' + ${currentPage - 1}}"> <i
+							class="bi bi-chevron-double-left"></i>
+					</a></li>
+
+					<li class="page-item" th:if="${currentPage > 3}"><a
+						class="page-link rounded-pill shadow-sm border-0"
+						th:href="@{'/admin/products?page=1'}">1</a></li>
+
+					<li class="page-item disabled" th:if="${currentPage > 4}"><span
+						class="page-link border-0 bg-transparent">...</span></li>
+
+					<li class="page-item mx-1"
+						th:each="page : ${#numbers.sequence(currentPage - 1, currentPage + 1)}"
+						th:if="${page >= 1 and page <= totalPages}"
+						th:classappend="${page == currentPage} ? 'active'"><a
+						class="page-link rounded-pill shadow-sm border-0 fw-semibold"
+						th:href="@{'/admin/products?page=' + ${page}}" th:text="${page}"></a>
+					</li>
+
+					<li class="page-item disabled"
+						th:if="${currentPage < totalPages - 3}"><span
+						class="page-link border-0 bg-transparent">...</span></li>
+
+					<li class="page-item" th:if="${currentPage < totalPages - 2}">
+						<a class="page-link rounded-pill shadow-sm border-0"
+						th:href="@{'/admin/products?page=' + ${totalPages}}"
+						th:text="${totalPages}"></a>
+					</li>
+
+					<li class="page-item"
+						th:classappend="${currentPage == totalPages} ? 'disabled'"><a
+						class="page-link rounded-pill shadow-sm border-0"
+						th:href="@{'/admin/products?page=' + ${currentPage + 1}}"> <i
+							class="bi bi-chevron-double-right"></i>
+					</a></li>
+				</ul>
+			</nav>
+		</div>
+
+
+	</main>
+
+
+
+</body>
+</html>

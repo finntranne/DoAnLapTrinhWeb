@@ -39,9 +39,18 @@ public class User {
 
 	@Column(name = "Status", nullable = false)
 	private Byte status = 0; // 0: Pending, 1: Active, 2: Suspended
-
+	
 	@Column(name = "AvatarURL", length = 500)
 	private String avatarURL;
+	
+	@Column(name = "CreatedAt", nullable = false, columnDefinition = "DATETIME2")
+	private LocalDateTime createdAt;
+
+	@Column(name = "UpdatedAt", nullable = false, columnDefinition = "DATETIME2")
+	private LocalDateTime updatedAt;
+	
+	@Column(name = "LastLoginAt", columnDefinition = "DATETIME2")
+	private LocalDateTime lastLoginAt;
 
 	// OTP fields
 	@Column(name = "OtpCode", columnDefinition = "VARCHAR(MAX)")
@@ -53,15 +62,6 @@ public class User {
 	@Column(name = "OtpPurpose", length = 20)
 	private String otpPurpose;
 
-	@Column(name = "CreatedAt", nullable = false, columnDefinition = "DATETIME2")
-	private LocalDateTime createdAt;
-
-	@Column(name = "UpdatedAt", nullable = false, columnDefinition = "DATETIME2")
-	private LocalDateTime updatedAt;
-
-	@Column(name = "LastLoginAt", columnDefinition = "DATETIME2")
-	private LocalDateTime lastLoginAt;
-
     @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
     @JoinTable(
         name = "UserRoles",
@@ -72,22 +72,5 @@ public class User {
     
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
     private Shop shop;
-    
-    @OneToMany(mappedBy = "customer")
-    private List<MessageEntity> messages;
-    
 
-	@PrePersist
-	protected void onCreate() {
-		createdAt = LocalDateTime.now();
-		updatedAt = LocalDateTime.now();
-		if (status == null) {
-			status = 0; // Default: Pending
-		}
-	}
-
-	@PreUpdate
-	protected void onUpdate() {
-		updatedAt = LocalDateTime.now();
-	}
 }

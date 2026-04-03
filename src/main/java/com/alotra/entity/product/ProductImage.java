@@ -9,31 +9,29 @@ import lombok.NoArgsConstructor;
 import lombok.ToString; // Import Exclude
 
 @Entity
-@Table(name = "ProductImages") // Khớp DB
+@Table(name = "ProductImages")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = "product") // Giữ Exclude từ nhánh lam
-@EqualsAndHashCode(exclude = "product") // Thêm EqualsAndHashCode Exclude
 public class ProductImage {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ImageID") // Khớp DB và nhánh lam
-    private Integer imageID; // Giữ tên theo nhánh lam
+    @Column(name = "ImageID") 
+    private Integer imageID; 
 
-    @ManyToOne(fetch = FetchType.LAZY) // Giữ LAZY fetch
-    @JoinColumn(name = "ProductID", nullable = false) // Khớp DB
+    @ManyToOne(fetch = FetchType.LAZY) 
+    @JoinColumn(name = "ProductID", nullable = false) 
     private Product product;
 
-    @Column(name = "ImageURL", nullable = false, length = 500) // Giữ lại length 500 từ nhánh lam, khớp DB
+    @Column(name = "ImageURL", nullable = false, length = 500) 
     private String imageURL;
 
-    @Column(name = "IsPrimary", nullable = false) // Khớp DB
-    private Boolean isPrimary = false; // Giữ giá trị mặc định từ nhánh lam
+    @Column(name = "IsPrimary", nullable = false) 
+    private Boolean isPrimary = false; 
 
-    @Column(name = "DisplayOrder") // Giữ lại từ nhánh lam, khớp DB
-    private Integer displayOrder = 0; // Giữ giá trị mặc định từ nhánh lam
+    @Column(name = "DisplayOrder") 
+    private Integer displayOrder = 0; 
 
-    // Bỏ trường createdAt từ HEAD vì không có trong DB schema
+    
 }

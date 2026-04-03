@@ -12,19 +12,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Role {
-
-//    @Id
-//    @Column(name = "RoleID")
-//    private Integer roleId;
+	
+	@Id
+    @Column(name = "RoleID")
+    private Integer id;
 
     @Column(name = "RoleName", nullable = false, unique = true, length = 50)
     private String roleName;
-    
-    @Column(name = "Description", length = 255)
-    private String description;
-    
-    @Id
-    @Column(name = "RoleID")
-    private Integer id;
+      
 
 }

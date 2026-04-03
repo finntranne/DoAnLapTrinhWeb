@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/main :: layout(~{::title}, ~{::section})}">
+
+<head>
+    <title th:text="${currentCategory.categoryName} + ' - AloTra'">Sản Phẩm</title>
+</head>
+
+<body>
+<section>
+    <nav class="breadcrumb-nav">
+        <div class="container">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/}">Trang chủ</a></li>
+                <li class="breadcrumb-item active" aria-current="page" th:text="${currentCategory.categoryName}">Danh mục</li>
+            </ol>
+        </div>
+    </nav>
+    
+    <div class="container my-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0" th:text="${currentCategory.categoryName}">Danh mục</h2>
+            
+            <div class="sort-options">
+                <span>Sắp xếp:</span>
+                
+                <a th:href="@{/categories/{id}(id=${categoryId}, sort='newest', shopId=${shopId})}" 
+                   th:classappend="${currentSort == 'newest'} ? 'active'">Mới nhất</a>
+                   
+                <a th:href="@{/categories/{id}(id=${categoryId}, sort='nameAsc', shopId=${shopId})}" 
+                   th:classappend="${currentSort == 'nameAsc'} ? 'active'">A → Z</a>
+                   
+                <a th:href="@{/categories/{id}(id=${categoryId}, sort='nameDesc', shopId=${shopId})}" 
+                   th:classappend="${currentSort == 'nameDesc'} ? 'active'">Z → A</a>
+                   
+                <a th:href="@{/categories/{id}(id=${categoryId}, sort='priceAsc', shopId=${shopId})}" 
+                   th:classappend="${currentSort == 'priceAsc'} ? 'active'">Giá tăng dần</a>
+                   
+                <a th:href="@{/categories/{id}(id=${categoryId}, sort='priceDesc', shopId=${shopId})}" 
+                   th:classappend="${currentSort == 'priceDesc'} ? 'active'">Giá giảm dần</a>
+            </div>
+        </div>
+
+        <div>
+            <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-4" 
+                 th:if="${productPage != null and not productPage.empty}">
+                
+                <div class="col" th:each="sale : ${productPage.content}">
+                    <div class="product-card h-100">
+                        <a th:href="@{'/products/' + ${sale.product.productID}}" class="product-card-link position-relative">
+                            <div th:if="${sale.discountPercentage != null and sale.discountPercentage > 0}" 
+                                 class="discount-badge" 
+                                 th:text="'-' + ${sale.discountPercentage} + '%'"></div>
+                            
+                            <img th:if="${not #lists.isEmpty(sale.product.images)}" 
+                                 th:src="${sale.product.images[0].imageURL}" 
+                                 class="card-img-top" 
+                                 th:alt="${sale.product.productName}">
+                            <img th:unless="${not #lists.isEmpty(sale.product.images)}" 
+                                 th:src="@{/images/placeholder.png}" 
+                                 class="card-img-top" 
+                                 th:alt="${sale.product.productName}">
+                        </a>
+                        
+                        <div class="card-body">
+                            <p class="product-brand mb-1">ALOTRA</p>
+                            <h5 class="product-title" th:text="${sale.product.productName}">Tên sản phẩm</h5>
+                            
+                            <div class="product-price" th:if="${not #lists.isEmpty(sale.product.variants)}">
+                                <th:block th:with="originalPrice=${sale.product.variants[0].price}">
+                                    <div th:if="${sale.discountPercentage != null and sale.discountPercentage > 0}">
+                                        <span class="sale-price" 
+                                              th:text="${#numbers.formatDecimal(originalPrice * (100 - sale.discountPercentage) / 100, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                                        <span class="original-price" 
+                                              th:text="${#numbers.formatDecimal(originalPrice, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                                    </div>
+                                    <div th:unless="${sale.discountPercentage != null and sale.discountPercentage > 0}">
+                                        <span class="current-price" 
+                                              th:text="${#numbers.formatDecimal(originalPrice, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                                    </div>
+                                </th:block>
+                            </div>
+                        </div>
+                        
+                        <div class="product-card-footer">
+                            <button class="btn-add-to-cart">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center" th:if="${productPage == null or productPage.empty}">
+                <p>Không tìm thấy sản phẩm nào trong danh mục này.</p>
+            </div>
+            
+            <div class="mt-5" 
+                 th:replace="~{fragments/pagination :: pagination(
+                     page=${productPage}, 
+                     keyword=${null}, 
+                     sort=${currentSort}, 
+                     categoryId=${categoryId},
+                     shopId=${shopId}
+                 )}">
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>

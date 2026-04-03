@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Hóa Đơn - AloTra</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DejaVu Sans', Arial, sans-serif;
+            font-size: 12pt;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .invoice-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #e74c3c;
+            padding-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #e74c3c;
+            font-size: 28pt;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 10pt;
+            color: #666;
+        }
+
+        .invoice-info {
+            display: table;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        .invoice-info-left,
+        .invoice-info-right {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+        }
+
+        .invoice-info-right {
+            text-align: right;
+        }
+
+        .info-block {
+            margin-bottom: 15px;
+        }
+
+        .info-block strong {
+            display: block;
+            color: #e74c3c;
+            font-size: 11pt;
+            margin-bottom: 5px;
+        }
+
+        .order-number {
+            font-size: 16pt;
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .products-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        .products-table thead {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        .products-table th,
+        .products-table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        .products-table th {
+            font-weight: bold;
+            font-size: 11pt;
+        }
+
+        .products-table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .summary-table {
+            width: 350px;
+            margin-left: auto;
+            border-collapse: collapse;
+        }
+
+        .summary-table td {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .summary-table td:first-child {
+            text-align: left;
+            color: #666;
+        }
+
+        .summary-table td:last-child {
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .summary-table .total-row {
+            background-color: #e74c3c;
+            color: white;
+            font-size: 14pt;
+        }
+
+        .summary-table .total-row td {
+            border: none;
+            padding: 15px 10px;
+        }
+
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+            text-align: center;
+            font-size: 10pt;
+            color: #999;
+        }
+
+        .topping-info {
+            font-size: 10pt;
+            color: #666;
+            margin-top: 3px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-size: 10pt;
+            font-weight: bold;
+        }
+
+        .status-confirmed {
+            background-color: #27ae60;
+            color: white;
+        }
+
+        .status-pending {
+            background-color: #f39c12;
+            color: white;
+        }
+
+        .status-cancelled {
+            background-color: #e74c3c;
+            color: white;
+            
+        .invoice-box {
+            /* ... các style khác ... */
+            /* THAY ĐỔI: Sử dụng tên font đã đăng ký */
+            font-family: 'Roboto', 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif; 
+            color: #555;
+            background-color: #fff;
+        }
+
+        }
+    </style>
+</head>
+<body>
+<div class="invoice-container">
+
+    <!-- HEADER -->
+    <div class="header">
+        <h1>HÓA ĐƠN BÁN HÀNG</h1>
+        <p>AloTra - Hệ thống quản lý đặt hàng trà sữa</p>
+        <p>Website: www.alotra.com | Hotline: 1900-xxxx</p>
+    </div>
+
+    <!-- THÔNG TIN ĐơN HÀNG -->
+    <div class="invoice-info">
+        <div class="invoice-info-left">
+            <div class="info-block">
+                <strong>Mã đơn hàng:</strong>
+                <span class="order-number" th:text="'#ALOTRA-' + ${order.orderID}">#ALOTRA-1001</span>
+            </div>
+            
+            <div class="info-block">
+                <strong>Ngày đặt hàng:</strong>
+                <span th:text="${#temporals.format(order.orderDate, 'dd/MM/yyyy HH:mm')}">01/01/2024 10:30</span>
+            </div>
+
+            <div class="info-block">
+                <strong>Trạng thái:</strong>
+                <span class="status-badge"
+                      th:classappend="${order.orderStatus == 'Confirmed' ? 'status-confirmed' : 
+                                       order.orderStatus == 'Pending' ? 'status-pending' : 
+                                       'status-cancelled'}"
+                      th:text="${order.orderStatus}">Confirmed</span>
+            </div>
+        </div>
+
+        <div class="invoice-info-right">
+            <div class="info-block">
+                <strong>Khách hàng:</strong>
+                <span th:text="${order.recipientName}">Nguyễn Văn A</span>
+            </div>
+
+            <div class="info-block">
+                <strong>Số điện thoại:</strong>
+                <span th:text="${order.recipientPhone}">0901234567</span>
+            </div>
+
+            <div class="info-block">
+                <strong>Địa chỉ giao hàng:</strong>
+                <span th:text="${order.shippingAddress}">123 Nguyễn Huệ, Q1, TP.HCM</span>
+            </div>
+
+            <div class="info-block" th:if="${order.shop != null}">
+                <strong>Cửa hàng:</strong>
+                <span th:text="${order.shop.shopName}">AloTra Chi nhánh 1</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- BẢNG SẢN PHẨM -->
+    <table class="products-table">
+        <thead>
+        <tr>
+            <th class="text-center" style="width: 5%;">STT</th>
+            <th style="width: 35%;">Sản phẩm</th>
+            <th class="text-center" style="width: 10%;">Size</th>
+            <th class="text-right" style="width: 12%;">Đơn giá</th>
+            <th class="text-center" style="width: 8%;">SL</th>
+            <th class="text-right" style="width: 15%;">Thành tiền</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="detail, iterStat : ${orderDetails}">
+            <td class="text-center" th:text="${iterStat.count}">1</td>
+            <td>
+                <div th:text="${detail.variant.product.productName}">Trà sữa truyền thống</div>
+                
+                <!-- Hiển thị topping nếu có -->
+                <div class="topping-info" 
+                     th:if="${detail.toppings != null and not #lists.isEmpty(detail.toppings)}">
+                    <span style="color: #e74c3c;">+ Topping:</span>
+                    <span th:text="${#strings.listJoin(detail.toppings.![topping.toppingName], ', ')}">
+                        Trân châu, Pudding
+                    </span>
+                </div>
+            </td>
+            <td class="text-center" th:text="${detail.variant.size.sizeName}">M</td>
+            <td class="text-right" 
+                th:text="${#numbers.formatDecimal(detail.unitPrice, 0, 'POINT', 0, 'COMMA')} + 'đ'">
+                35,000đ
+            </td>
+            <td class="text-center" th:text="${detail.quantity}">2</td>
+            <td class="text-right" 
+                th:text="${#numbers.formatDecimal(detail.subtotal, 0, 'POINT', 0, 'COMMA')} + 'đ'">
+                70,000đ
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <!-- TỔNG TIỀN -->
+    <table class="summary-table">
+        <tr>
+            <td>Tạm tính:</td>
+            <td th:text="${#numbers.formatDecimal(order.subtotal, 0, 'POINT', 0, 'COMMA')} + 'đ'">
+                150,000đ
+            </td>
+        </tr>
+        <tr>
+            <td>Phí vận chuyển:</td>
+            <td th:text="${#numbers.formatDecimal(order.shippingFee, 0, 'POINT', 0, 'COMMA')} + 'đ'">
+                20,000đ
+            </td>
+        </tr>
+        <tr th:if="${order.discountAmount != null and order.discountAmount.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+            <td>Giảm giá:</td>
+            <td style="color: #27ae60;" 
+                th:text="'-' + ${#numbers.formatDecimal(order.discountAmount, 0, 'POINT', 0, 'COMMA')} + 'đ'">
+                -10,000đ
+            </td>
+        </tr>
+        <tr class="total-row">
+            <td>TỔNG CỘNG:</td>
+            <td th:text="${#numbers.formatDecimal(order.grandTotal, 0, 'POINT', 0, 'COMMA')} + 'đ'">
+                160,000đ
+            </td>
+        </tr>
+    </table>
+
+    <!-- GHI CHÚ -->
+    <div class="info-block" th:if="${order.notes != null and not #strings.isEmpty(order.notes)}" 
+         style="margin-top: 30px; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #e74c3c;">
+        <strong>Ghi chú:</strong>
+        <p th:text="${order.notes}" style="margin-top: 5px;">Giao hàng giờ hành chính</p>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        <p><strong>Cảm ơn quý khách đã mua hàng tại AloTra!</strong></p>
+        <p>Mọi thắc mắc vui lòng liên hệ hotline: 1900-xxxx hoặc email: support@alotra.com</p>
+        <p style="margin-top: 10px; font-style: italic;">
+            Hóa đơn được tạo tự động bởi hệ thống AloTra vào 
+            <span th:text="${#temporals.format(T(java.time.LocalDateTime).now(), 'dd/MM/yyyy HH:mm:ss')}"></span>
+        </p>
+    </div>
+
+</div>
+</body>
+</html>
