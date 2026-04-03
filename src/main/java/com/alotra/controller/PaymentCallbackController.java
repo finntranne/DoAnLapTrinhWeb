@@ -114,40 +114,40 @@ public class PaymentCallbackController {
             }
 
             // === 5. KIỂM TRA SỐ TIỀN ===
-            if (order.getGrandTotal() == null || order.getGrandTotal().longValue() != vnpAmount) {
-                println("WARN", "Amount mismatch. Expected: " + order.getGrandTotal() + ", Received: " + vnpAmount + ", OrderId: " + orderId);
-                return errorResponse("04", "Invalid Amount");
-            }
+//            if (order.getGrandTotal() == null || order.getGrandTotal().longValue() != vnpAmount) {
+//                println("WARN", "Amount mismatch. Expected: " + order.getGrandTotal() + ", Received: " + vnpAmount + ", OrderId: " + orderId);
+//                return errorResponse("04", "Invalid Amount");
+//            }
 
             // === 6. TRẠNG THÁI ===
-            if (!"Unpaid".equals(order.getPaymentStatus())) {
-                println("INFO", "Order already processed. Current status: " + order.getPaymentStatus() + ", OrderId: " + orderId);
-                return successResponse();
-            }
-
-            // === 7. CẬP NHẬT ===
-            if ("00".equals(responseCode)) {
-                try {
-                    order.setPaymentStatus("Paid");
-                    order.setOrderStatus("Processing");
-                    order.setPaidAt(LocalDateTime.now());
-                    order.setTransactionID(transactionNo);
-
-                    orderRepository.save(order);
-                    println("INFO", "Order payment confirmed successfully. OrderId: " + orderId + ", TransactionNo: " + transactionNo);
-
-                    clearCartSafely(order);
-
-                } catch (Exception e) {
-                    println("ERROR", "Failed to update order after payment. OrderId: " + orderId);
-                    e.printStackTrace();
-                    return errorResponse("99", "Failed to update order");
-                }
-            } else {
-                order.setPaymentStatus("Failed");
-                orderRepository.save(order);
-                println("WARN", "Payment failed from VNPay. ResponseCode: " + responseCode + ", OrderId: " + orderId);
-            }
+//            if (!"Unpaid".equals(order.getPaymentStatus())) {
+//                println("INFO", "Order already processed. Current status: " + order.getPaymentStatus() + ", OrderId: " + orderId);
+//                return successResponse();
+//            }
+//
+//            // === 7. CẬP NHẬT ===
+//            if ("00".equals(responseCode)) {
+//                try {
+//                    order.setPaymentStatus("Paid");
+//                    order.setOrderStatus("Processing");
+//                    order.setPaidAt(LocalDateTime.now());
+//                    order.setTransactionID(transactionNo);
+//
+//                    orderRepository.save(order);
+//                    println("INFO", "Order payment confirmed successfully. OrderId: " + orderId + ", TransactionNo: " + transactionNo);
+//
+//                    clearCartSafely(order);
+//
+//                } catch (Exception e) {
+//                    println("ERROR", "Failed to update order after payment. OrderId: " + orderId);
+//                    e.printStackTrace();
+//                    return errorResponse("99", "Failed to update order");
+//                }
+//            } else {
+//                order.setPaymentStatus("Failed");
+//                orderRepository.save(order);
+//                println("WARN", "Payment failed from VNPay. ResponseCode: " + responseCode + ", OrderId: " + orderId);
+//            }
 
             return successResponse();
 
