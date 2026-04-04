@@ -45,5 +45,11 @@ public class Topping {
     @Column(name = "ImageURL", length = 500)
     private String imageURL;
     
-   
+    public BigDecimal getAdditionalPrice() {
+        return price;
+    }
+
+    public void setAdditionalPrice(BigDecimal additionalPrice) {
+        this.price = additionalPrice;
+    }
 }
