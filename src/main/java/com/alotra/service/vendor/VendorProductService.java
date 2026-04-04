@@ -308,7 +308,7 @@ public class VendorProductService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         Promotion promotion = new Promotion();
-        promotion.setCreatedByUserID(user);
+//        promotion.setCreatedByUserID(user);
         promotion.setCreatedByShopID(shop);
         promotion.setPromotionName("Discount for " + product.getProductName());
         promotion.setDescription("Auto-generated product discount");

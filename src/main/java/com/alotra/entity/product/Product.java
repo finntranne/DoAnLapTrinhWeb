@@ -42,6 +42,9 @@ public class Product {
 
     @Column(name = "ProductName", nullable = false, length = 255, columnDefinition = "NVARCHAR(255)")
     private String productName;
+    
+    @Column(name = "BasePrice", precision = 18, scale = 2)
+    private BigDecimal basePrice;
 
     @Column(name = "Description", columnDefinition = "NVARCHAR(MAX)")
     private String description;

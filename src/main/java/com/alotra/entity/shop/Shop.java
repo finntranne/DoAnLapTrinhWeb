@@ -74,6 +74,9 @@ public class Shop {
     private List<Product> products = new ArrayList<>();
 
 
+    @Column(name = "CommissionRate", precision = 5, scale = 2) // Khớp DB
+    private BigDecimal commissionRate = new BigDecimal("5.00"); 
+    
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();

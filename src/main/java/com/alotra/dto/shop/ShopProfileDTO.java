@@ -8,6 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.alotra.entity.location.Address;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -33,9 +35,8 @@ public class ShopProfileDTO {
     private MultipartFile logoFile;
     private MultipartFile coverImageFile;
     
-    @NotBlank(message = "Địa chỉ không được để trống")
-    @Size(max = 500, message = "Địa chỉ không được quá 500 ký tự")
-    private String address;
+  
+    private Address address;
     
     @NotBlank(message = "Số điện thoại không được để trống")
     @Pattern(regexp = "^0[0-9]{9}$", message = "Số điện thoại không hợp lệ (phải là 10 số, bắt đầu bằng 0)")

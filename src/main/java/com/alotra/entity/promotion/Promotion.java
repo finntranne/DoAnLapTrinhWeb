@@ -27,14 +27,18 @@ import lombok.ToString; // Import Exclude
 @NoArgsConstructor
 @AllArgsConstructor
 // Thêm Excludes cho quan hệ LAZY
-@ToString(exclude = { "createdByShopID"})
-@EqualsAndHashCode(exclude = {"createdByShopID"}) // Thêm Exclude
+@ToString(exclude = { "createdByShopID", "createdByUserID"})
+@EqualsAndHashCode(exclude = {"createdByShopID", "createdByUserID"}) // Thêm Exclude
 public class Promotion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "PromotionID") // Khớp DB
     private Integer promotionId; // Giữ tên nhất quán (chữ thường d)
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "CreatedByUserID", nullable = false) // Khớp DB
+    private User createdByUserID;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CreatedByShopID") // Khớp DB
@@ -84,12 +88,12 @@ public class Promotion {
     @Column(name = "UsedCount") // Khớp DB
     private Integer usedCount = 0; // Giữ mặc định
     
-    @ManyToMany
-    @JoinTable(
-        name = "PromotionProduct",
-        joinColumns = @JoinColumn(name = "PromotionID"),
-        inverseJoinColumns = @JoinColumn(name = "ProductID")
-    )
-    private List<Product> products = new ArrayList<>();
+//    @ManyToMany
+//    @JoinTable(
+//        name = "PromotionProduct",
+//        joinColumns = @JoinColumn(name = "PromotionID"),
+//        inverseJoinColumns = @JoinColumn(name = "ProductID")
+//    )
+//    private List<Product> products = new ArrayList<>();
 
 }

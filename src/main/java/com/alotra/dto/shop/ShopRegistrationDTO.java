@@ -1,5 +1,7 @@
 package com.alotra.dto.shop;
 
+import com.alotra.entity.location.Address;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -15,7 +17,7 @@ public class ShopRegistrationDTO {
     private String description;
 
     @NotBlank(message = "Địa chỉ phải được cung cấp.")
-    private String address;
+    private Address address;
 
     @NotBlank(message = "Số điện thoại không được để trống.")
     @Size(min = 10, max = 15, message = "Số điện thoại không hợp lệ.")
