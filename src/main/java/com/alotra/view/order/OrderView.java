@@ -53,6 +53,11 @@ public class OrderView {
         return order.getOrderDate();
     }
 
+    public java.time.LocalDateTime getCompletedAt() {
+        // Current order model does not persist a dedicated completion timestamp.
+        return order.getOrderDate();
+    }
+
     public String getOrderStatus() {
         return order.getOrderStatus();
     }
@@ -79,6 +84,10 @@ public class OrderView {
 
     public String getNotes() {
         return order.getNotes();
+    }
+
+    public String getCancellationReason() {
+        return null;
     }
 
     public List<OrderLineView> getOrderDetails() {

@@ -3,6 +3,7 @@ package com.alotra.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,8 +20,10 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.alotra.entity.location.Address;
+import com.alotra.entity.order.Order;
 import com.alotra.entity.user.User;
 import com.alotra.repository.location.AddressRepository;
+import com.alotra.repository.order.OrderRepository;
 import com.alotra.service.cart.CartService;
 import com.alotra.service.product.CategoryService;
 import com.alotra.service.shop.StoreService;
@@ -36,6 +39,8 @@ public class CustomerAddressController {
 
     @Autowired
     private AddressRepository addressRepository;
+    @Autowired
+    private OrderRepository orderRepository;
     @Autowired
     private UserService userService;
     @Autowired
@@ -151,6 +156,23 @@ public class CustomerAddressController {
                 return "redirect:/user/addresses";
             }
 
+            if (addressRepository.existsShopUsingAddress(addressId)) {
+                redirectAttributes.addFlashAttribute("errorMessage",
+                        "Khong the xoa dia chi nay vi dang duoc shop su dung.");
+                return "redirect:/user/addresses";
+            }
+
+            if (orderRepository.existsByAddress_AddressID(addressId)) {
+                Address snapshotAddress = cloneAddress(addressToDelete);
+                snapshotAddress = addressRepository.save(snapshotAddress);
+
+                List<Order> linkedOrders = orderRepository.findByAddress_AddressID(addressId);
+                for (Order order : linkedOrders) {
+                    order.setAddress(snapshotAddress);
+                }
+                orderRepository.saveAll(linkedOrders);
+            }
+
             addressRepository.delete(addressToDelete);
 
             if (Boolean.TRUE.equals(addressToDelete.getIsDefault()) && allAddresses.size() > 1) {
@@ -166,10 +188,23 @@ public class CustomerAddressController {
             return "redirect:/login";
         } catch (EntityNotFoundException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        } catch (DataIntegrityViolationException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Khong the xoa dia chi nay vi dang duoc lien ket voi du lieu khac.");
         } catch (Exception ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Loi khi xoa dia chi.");
+            redirectAttributes.addFlashAttribute("errorMessage", "Loi khi xoa dia chi: " + ex.getMessage());
         }
         return "redirect:/user/addresses";
+    }
+
+    private Address cloneAddress(Address source) {
+        Address copy = new Address();
+        copy.setProvince(source.getProvince());
+        copy.setDistrict(source.getDistrict());
+        copy.setWard(source.getWard());
+        copy.setStreetAddress(source.getStreetAddress());
+        copy.setIsDefault(Boolean.FALSE);
+        return copy;
     }
 
     @PostMapping("/set-default/{id}")

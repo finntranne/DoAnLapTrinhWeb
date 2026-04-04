@@ -125,9 +125,6 @@ public class PaymentCallbackController {
                 payment.setPaidAt(LocalDateTime.now());
                 payment.setTransactionCode(transactionNo);
                 paymentRepository.save(payment);
-
-                order.setOrderStatus("Confirmed");
-                orderRepository.save(order);
             } else {
                 payment.setStatus(PaymentStatus.UNPAID);
                 paymentRepository.save(payment);

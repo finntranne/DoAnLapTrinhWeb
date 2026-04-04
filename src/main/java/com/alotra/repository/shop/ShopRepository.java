@@ -39,7 +39,15 @@ public interface ShopRepository extends JpaRepository<Shop, Integer> {
             SELECT s FROM Shop s
             WHERE (:shopName IS NULL OR LOWER(s.shopName) LIKE LOWER(CONCAT('%', :shopName, '%')))
               AND (:phoneNumber IS NULL OR LOWER(s.phoneNumber) LIKE LOWER(CONCAT('%', :phoneNumber, '%')))
-              AND (:address IS NULL OR LOWER(s.address) LIKE LOWER(CONCAT('%', :address, '%')))
+              AND (:address IS NULL OR LOWER(CONCAT(
+                    COALESCE(s.address.streetAddress, ''),
+                    ' ',
+                    COALESCE(s.address.ward, ''),
+                    ' ',
+                    COALESCE(s.address.district, ''),
+                    ' ',
+                    COALESCE(s.address.province, '')
+                  )) LIKE LOWER(CONCAT('%', :address, '%')))
               AND (:status IS NULL OR s.status = :status)
             """)
     Page<Shop> searchShops(

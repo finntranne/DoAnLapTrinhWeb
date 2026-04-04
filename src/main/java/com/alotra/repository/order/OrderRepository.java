@@ -160,4 +160,8 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
             LocalDateTime startDate, LocalDateTime endDate);
 
     Long countByShipper_IdAndOrderDateBetween(Integer shipperId, LocalDateTime startDate, LocalDateTime endDate);
+
+    boolean existsByAddress_AddressID(Integer addressId);
+
+    List<Order> findByAddress_AddressID(Integer addressId);
 }

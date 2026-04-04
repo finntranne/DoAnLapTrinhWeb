@@ -58,11 +58,9 @@ import com.alotra.repository.order.OrderItemRepository;
 import com.alotra.repository.order.OrderRepository;
 import com.alotra.repository.order.PaymentRepository;
 import com.alotra.repository.promotion.PromotionRepository;
-import com.alotra.repository.user.UserRepository;
 import com.alotra.service.cart.CartService;
 import com.alotra.service.checkout.VNPayService;
 import com.alotra.service.notification.NotificationService;
-import com.alotra.service.order.ShipperOrderService;
 import com.alotra.service.product.CategoryService;
 import com.alotra.service.shop.StoreService;
 import com.alotra.service.user.UserService;
@@ -116,10 +114,6 @@ public class OrderController {
     @Autowired
     private OrderHistoryRepository orderHistoryRepository;
     @Autowired
-    private ShipperOrderService shipperOrderService;
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
     private PdfGeneratorService pdfGeneratorService;
     @Autowired
     private NotificationService notificationService;
@@ -146,26 +140,6 @@ public class OrderController {
     private Integer getSelectedShopId(HttpSession session) {
         Integer selectedShopId = (Integer) session.getAttribute("selectedShopId");
         return selectedShopId == null ? 0 : selectedShopId;
-    }
-
-    private User assignShipperAutomatically(Integer shopId) {
-        List<User> shippers = userRepository.findByRoles_RoleName("SHIPPER").stream()
-                .filter(user -> user.getStatus() != null && user.getStatus() == 1)
-                .toList();
-
-        User selected = null;
-        long minActiveOrders = Long.MAX_VALUE;
-
-        for (User shipper : shippers) {
-            long activeOrderCount = orderRepository.countByShipper_IdAndOrderStatus(shipper.getId(), "Delivering")
-                    + orderRepository.countByShipper_IdAndOrderStatus(shipper.getId(), "Confirmed");
-            if (activeOrderCount < minActiveOrders) {
-                minActiveOrders = activeOrderCount;
-                selected = shipper;
-            }
-        }
-
-        return selected;
     }
 
     @PostMapping("/cart/select-for-checkout")
@@ -353,22 +327,20 @@ public class OrderController {
 
             Address chosenAddress = addressRepository.findById(addressId)
                     .orElseThrow(() -> new EntityNotFoundException("Dia chi giao hang khong hop le."));
+            Address orderAddress = createOrderAddressSnapshot(chosenAddress);
+            orderAddress = addressRepository.save(orderAddress);
 
             PaymentMethod paymentMethodEnum = resolvePaymentMethod(paymentMethod);
-            String initialStatus = paymentMethodEnum == PaymentMethod.COD ? "Confirmed" : "Pending";
-            User assignedShipper = paymentMethodEnum == PaymentMethod.COD
-                    ? assignShipperAutomatically(shop.getShopId())
-                    : null;
+            String initialStatus = "Pending";
 
             Order order = new Order();
             order.setUser(user);
             order.setShop(shop);
-            order.setAddress(chosenAddress);
+            order.setAddress(orderAddress);
             order.setOrderDate(LocalDateTime.now());
             order.setOrderStatus(initialStatus);
             order.setShippingFee(DEFAULT_SHIPPING_FEE);
             order.setNotes(notes);
-            order.setShipper(assignedShipper);
             order = orderRepository.save(order);
 
             List<OrderItem> orderItems = new ArrayList<>();
@@ -403,17 +375,6 @@ public class OrderController {
                             user.getFullName());
                 } catch (Exception ex) {
                     log.warn("Khong gui duoc thong bao cho vendor: {}", ex.getMessage());
-                }
-            }
-
-            if (assignedShipper != null) {
-                try {
-                    shipperOrderService.createInitialShippingHistory(order.getOrderID(), assignedShipper.getId(),
-                            "Don hang duoc gan tu dong cho shipper");
-                    notificationService.notifyShipperAboutAssignment(assignedShipper.getId(), order.getOrderID(),
-                            OrderPricingUtils.formatAddress(chosenAddress));
-                } catch (Exception ex) {
-                    log.warn("Khong gui duoc thong bao shipper: {}", ex.getMessage());
                 }
             }
 
@@ -601,6 +562,16 @@ public class OrderController {
             case "ZALOPAY" -> PaymentMethod.ZALOPAY;
             default -> throw new IllegalArgumentException("Phuong thuc thanh toan khong hop le.");
         };
+    }
+
+    private Address createOrderAddressSnapshot(Address source) {
+        Address snapshot = new Address();
+        snapshot.setProvince(source.getProvince());
+        snapshot.setDistrict(source.getDistrict());
+        snapshot.setWard(source.getWard());
+        snapshot.setStreetAddress(source.getStreetAddress());
+        snapshot.setIsDefault(Boolean.FALSE);
+        return snapshot;
     }
 
     private String buildVietQrUrl(Integer orderId, BigDecimal amount, String description) {

@@ -42,7 +42,10 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
                    AND pr.status = 1
                    AND pr.promotionType = 'PRODUCT'
                    AND pr.startDate <= CURRENT_TIMESTAMP
-                   AND pr.endDate >= CURRENT_TIMESTAMP)
+                   AND pr.endDate >= CURRENT_TIMESTAMP),
+                COALESCE((SELECT AVG(r.rating) FROM Review r WHERE r.product = p), 0.0),
+                COALESCE((SELECT COUNT(r) FROM Review r WHERE r.product = p), 0L),
+                COALESCE((SELECT COUNT(f) FROM Favorite f WHERE f.product = p), 0L)
             )
             FROM Product p
             WHERE p.status = 1 AND (:shopId = 0 OR p.shop.shopId = :shopId)
@@ -61,7 +64,10 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
                    AND pr.status = 1
                    AND pr.promotionType = 'PRODUCT'
                    AND pr.startDate <= CURRENT_TIMESTAMP
-                   AND pr.endDate >= CURRENT_TIMESTAMP)
+                   AND pr.endDate >= CURRENT_TIMESTAMP),
+                COALESCE((SELECT AVG(r.rating) FROM Review r WHERE r.product = p), 0.0),
+                COALESCE((SELECT COUNT(r) FROM Review r WHERE r.product = p), 0L),
+                COALESCE((SELECT COUNT(f) FROM Favorite f WHERE f.product = p), 0L)
             )
             FROM Product p
             WHERE p.category = :category
@@ -83,7 +89,10 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
                    AND pr.status = 1
                    AND pr.promotionType = 'PRODUCT'
                    AND pr.startDate <= CURRENT_TIMESTAMP
-                   AND pr.endDate >= CURRENT_TIMESTAMP)
+                   AND pr.endDate >= CURRENT_TIMESTAMP),
+                COALESCE((SELECT AVG(r.rating) FROM Review r WHERE r.product = p), 0.0),
+                COALESCE((SELECT COUNT(r) FROM Review r WHERE r.product = p), 0L),
+                COALESCE((SELECT COUNT(f) FROM Favorite f WHERE f.product = p), 0L)
             )
             FROM Product p
             WHERE p.productID = :id
@@ -102,7 +111,10 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
                    AND pr.status = 1
                    AND pr.promotionType = 'PRODUCT'
                    AND pr.startDate <= CURRENT_TIMESTAMP
-                   AND pr.endDate >= CURRENT_TIMESTAMP)
+                   AND pr.endDate >= CURRENT_TIMESTAMP),
+                COALESCE((SELECT AVG(r.rating) FROM Review r WHERE r.product = p), 0.0),
+                COALESCE((SELECT COUNT(r) FROM Review r WHERE r.product = p), 0L),
+                COALESCE((SELECT COUNT(f) FROM Favorite f WHERE f.product = p), 0L)
             )
             FROM Product p
             WHERE LOWER(p.productName) LIKE LOWER(CONCAT('%', :keyword, '%'))
@@ -123,7 +135,10 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
                    AND pr.status = 1
                    AND pr.promotionType = 'PRODUCT'
                    AND pr.startDate <= CURRENT_TIMESTAMP
-                   AND pr.endDate >= CURRENT_TIMESTAMP)
+                   AND pr.endDate >= CURRENT_TIMESTAMP),
+                COALESCE((SELECT AVG(r.rating) FROM Review r WHERE r.product = p), 0.0),
+                COALESCE((SELECT COUNT(r) FROM Review r WHERE r.product = p), 0L),
+                COALESCE((SELECT COUNT(f) FROM Favorite f WHERE f.product = p), 0L)
             )
             FROM Product p
             WHERE p.shop.shopId = :shopId AND p.status = 1

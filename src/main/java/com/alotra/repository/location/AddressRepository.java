@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.alotra.entity.location.Address;
+import com.alotra.entity.shop.Shop;
 import com.alotra.entity.user.User;
 
 @Repository
@@ -35,4 +36,7 @@ public interface AddressRepository extends JpaRepository<Address, Integer> {
 
     @Query("SELECT a FROM Address a ORDER BY a.isDefault DESC, a.addressID DESC")
     List<Address> findAllByOrderByIsDefaultDescAddressIDDesc();
+
+    @Query("SELECT COUNT(s) > 0 FROM Shop s WHERE s.address.addressID = :addressId")
+    boolean existsShopUsingAddress(@Param("addressId") Integer addressId);
 }

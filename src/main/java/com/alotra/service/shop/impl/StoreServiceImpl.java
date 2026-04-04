@@ -1,6 +1,7 @@
 package com.alotra.service.shop.impl;
 
 import com.alotra.dto.shop.ShopRegistrationDTO;
+import com.alotra.entity.location.Address;
 import com.alotra.entity.shop.Shop;
 import com.alotra.entity.user.User;
 import com.alotra.repository.shop.ShopRepository;
@@ -65,11 +66,24 @@ public class StoreServiceImpl implements StoreService {
         newShop.setUser(user);
         newShop.setShopName(dto.getShopName());
         newShop.setDescription(dto.getDescription());
-        newShop.setAddress(dto.getAddress());
+        newShop.setAddress(toAddress(dto.getAddress()));
         newShop.setPhoneNumber(dto.getPhoneNumber());
         newShop.setStatus((byte) 0); // Đặt trạng thái là Pending (0)
 
         // 5. Lưu và trả về
         return shopRepository.save(newShop);
+    }
+
+    private Address toAddress(String rawAddress) {
+        Address address = new Address();
+        String normalized = rawAddress != null ? rawAddress.trim() : "";
+        String[] parts = normalized.isEmpty() ? new String[0] : normalized.split("\\s*,\\s*");
+
+        address.setStreetAddress(parts.length > 0 ? parts[0] : normalized);
+        address.setWard(parts.length > 1 ? parts[1] : "");
+        address.setDistrict(parts.length > 2 ? parts[2] : "");
+        address.setProvince(parts.length > 3 ? parts[3] : "");
+        address.setIsDefault(Boolean.FALSE);
+        return address;
     }
 }

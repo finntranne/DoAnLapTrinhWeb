@@ -178,7 +178,7 @@ public class VendorPromotionService {
 		}
 
 		Promotion promotion = new Promotion();
-		promotion.setCreatedByUserID(user);
+		//promotion.setCreatedByUserID(user);
 		promotion.setCreatedByShopID(shop);
 		promotion.setPromotionName(request.getPromotionName());
 		promotion.setDescription(request.getDescription());

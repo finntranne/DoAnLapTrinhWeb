@@ -118,11 +118,11 @@
 														class="fa-solid fa-expand me-1"></i> Size: <span
 														th:text="${vm.item.variant.size.sizeName}"></span>
 													</span>
-													<div th:if="${not #lists.isEmpty(vm.item.selectedToppings)}"
+													<div th:if="${not #lists.isEmpty(vm.item.toppings)}"
 														class="mt-2">
 														<small class="text-muted"> <i
 															class="fa-solid fa-plus-circle me-1"></i> Topping: <span
-															th:text="${#strings.listJoin(vm.item.selectedToppings.![toppingName], ', ')}"></span>
+															th:text="${#strings.listJoin(vm.item.toppings.![toppingName], ', ')}"></span>
 														</small>
 													</div>
 												</div>

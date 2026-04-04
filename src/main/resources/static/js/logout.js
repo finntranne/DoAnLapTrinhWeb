@@ -18,7 +18,8 @@ function logout() {
 }
 
 document.addEventListener("DOMContentLoaded", function() {
-    const logoutBtn = document.getElementById("vendorLogoutBtn");
+    const logoutBtn = document.getElementById("vendorLogoutBtn")
+        || document.getElementById("shipperLogoutBtn");
     if (logoutBtn) {
         logoutBtn.addEventListener("click", function(e) {
             e.preventDefault();

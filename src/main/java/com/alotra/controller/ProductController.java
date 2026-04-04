@@ -195,18 +195,7 @@ public class ProductController {
 		}
 
 		int pageSize = 2; 
-		Sort sortOrder;
-		try {
-			sortOrder = SortHelper.getSort(sort); 
-		} catch (IllegalArgumentException ex) {
-			System.err.println("Invalid sort parameter: " + sort + ". Defaulting to 'newest'.");
-			sortOrder = Sort.by(Sort.Direction.DESC, "productID");
-			sort = "newest"; 
-		}
-
-		Pageable pageable = PageRequest.of(page, pageSize, sortOrder);
-
-		Page<ProductSaleDTO> salePage = productService.findProductSaleDataByKeyword(keyword, selectedShopId, pageable);
+		Page<ProductSaleDTO> salePage = productService.findProductSaleDataByKeywordSorted(keyword, selectedShopId, page, pageSize, sort);
 
 		model.addAttribute("sales", salePage);
 		model.addAttribute("keyword", keyword);
@@ -217,31 +206,4 @@ public class ProductController {
 
 		return "shop/search_results";
 	}
-
-	// === Helper method để tạo Sort object (Giữ nguyên) ===
-	private static class SortHelper {
-		private static Sort getSort(String sortType) {
-			if (sortType == null)
-				sortType = "newest"; 
-
-			switch (sortType) {
-			case "priceAsc":
-				return Sort.by(Sort.Direction.ASC, "productName");
-			case "priceDesc":
-				return Sort.by(Sort.Direction.DESC, "productID");
-			case "nameAsc":
-				return Sort.by(Sort.Direction.ASC, "productName");
-			case "nameDesc":
-				return Sort.by(Sort.Direction.DESC, "productName");
-			case "bestSelling":
-				return Sort.unsorted();
-			case "topRated":
-				return Sort.by(Sort.Direction.DESC, "productID");
-			case "newest":
-			default:
-				return Sort.by(Sort.Direction.DESC, "productID");
-			}
-		}
-	}
-
 }

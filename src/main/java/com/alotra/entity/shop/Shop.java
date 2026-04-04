@@ -73,6 +73,12 @@ public class Shop {
     @OneToMany(mappedBy = "shop", cascade = CascadeType.ALL, fetch = FetchType.LAZY) 
     private List<Product> products = new ArrayList<>();
 
+    @PrePersist
+    protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        createdAt = now;
+        updatedAt = now;
+    }
 
     @PreUpdate
     protected void onUpdate() {

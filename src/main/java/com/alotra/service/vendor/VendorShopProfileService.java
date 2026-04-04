@@ -1,5 +1,6 @@
 package com.alotra.service.vendor;
 
+import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Optional;
 
@@ -7,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.alotra.dto.shop.ShopProfileDTO;
+import com.alotra.entity.location.Address;
 import com.alotra.entity.shop.Shop;
 import com.alotra.repository.shop.ShopRepository;
 import com.alotra.service.cloudinary.CloudinaryService;
@@ -40,7 +42,7 @@ public class VendorShopProfileService {
 		dto.setDescription(shop.getDescription());
 		dto.setLogoURL(shop.getLogoURL());
 		dto.setCoverImageURL(shop.getCoverImageURL());
-		dto.setAddress(shop.getAddress());
+		dto.setAddress(formatAddress(shop.getAddress()));
 		dto.setPhoneNumber(shop.getPhoneNumber());
 		dto.setStatus(shop.getStatus());
 
@@ -59,7 +61,7 @@ public class VendorShopProfileService {
 			dto.setStatusText("Không xác định");
 		}
 
-		dto.setCommissionRate(shop.getCommissionRate());
+		dto.setCommissionRate(BigDecimal.ZERO);
 		dto.setCreatedAt(shop.getCreatedAt());
 		dto.setUpdatedAt(shop.getUpdatedAt());
 
@@ -125,7 +127,7 @@ public class VendorShopProfileService {
 		// Cập nhật thông tin cơ bản
 		shop.setShopName(request.getShopName());
 		shop.setDescription(request.getDescription());
-		shop.setAddress(request.getAddress());
+		shop.setAddress(toAddress(request.getAddress(), shop.getAddress()));
 		shop.setPhoneNumber(request.getPhoneNumber());
 
 		// updatedAt sẽ tự động cập nhật qua @PreUpdate
@@ -133,6 +135,42 @@ public class VendorShopProfileService {
 		shopRepository.save(shop);
 
 		log.info("Shop profile updated successfully - Shop ID: {}, User ID: {}", shopId, userId);
+	}
+
+	private String formatAddress(Address address) {
+		if (address == null) {
+			return "";
+		}
+
+		StringBuilder builder = new StringBuilder();
+		appendAddressPart(builder, address.getStreetAddress());
+		appendAddressPart(builder, address.getWard());
+		appendAddressPart(builder, address.getDistrict());
+		appendAddressPart(builder, address.getProvince());
+		return builder.toString();
+	}
+
+	private void appendAddressPart(StringBuilder builder, String value) {
+		if (value == null || value.isBlank()) {
+			return;
+		}
+		if (!builder.isEmpty()) {
+			builder.append(", ");
+		}
+		builder.append(value.trim());
+	}
+
+	private Address toAddress(String rawAddress, Address existingAddress) {
+		Address address = existingAddress != null ? existingAddress : new Address();
+		String normalized = rawAddress != null ? rawAddress.trim() : "";
+		String[] parts = normalized.isEmpty() ? new String[0] : normalized.split("\\s*,\\s*");
+
+		address.setStreetAddress(parts.length > 0 ? parts[0] : normalized);
+		address.setWard(parts.length > 1 ? parts[1] : "");
+		address.setDistrict(parts.length > 2 ? parts[2] : "");
+		address.setProvince(parts.length > 3 ? parts[3] : "");
+		address.setIsDefault(Boolean.FALSE);
+		return address;
 	}
 
 }

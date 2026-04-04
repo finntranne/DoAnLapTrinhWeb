@@ -39,16 +39,16 @@
             <div class="col-lg-6">
                 <h1 th:text="${product.productName}">Phin Sữa Đá</h1>
 
-                <div class="mb-3">
+                <div class="mb-3" th:if="${not #lists.isEmpty(variants)}" th:with="basePrice=${variants[0].price}">
                     <span class="fs-2 fw-bold text-danger" id="productPrice">
                         <span th:if="${saleDTO.discountPercentage != null and saleDTO.discountPercentage > 0}"
-                              th:text="${#numbers.formatDecimal(product.basePrice * (100 - saleDTO.discountPercentage) / 100, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                              th:text="${#numbers.formatDecimal(basePrice * (100 - saleDTO.discountPercentage) / 100, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
                         <span th:unless="${saleDTO.discountPercentage != null and saleDTO.discountPercentage > 0}"
-                              th:text="${#numbers.formatDecimal(product.basePrice, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
+                              th:text="${#numbers.formatDecimal(basePrice, 0, 'POINT', 0, 'COMMA')} + 'đ'"></span>
                     </span>
                     <span class="fs-4 text-muted text-decoration-line-through ms-2" id="originalPrice"
                           th:if="${saleDTO.discountPercentage != null and saleDTO.discountPercentage > 0}"
-                          th:text="${#numbers.formatDecimal(product.basePrice, 0, 'POINT', 0, 'COMMA')} + 'đ'">
+                          th:text="${#numbers.formatDecimal(basePrice, 0, 'POINT', 0, 'COMMA')} + 'đ'">
                     </span>
                 </div>
 
@@ -155,7 +155,7 @@
                                 data-bs-target="#reviews"
                                 type="button"
                                 role="tab">
-                            Đánh giá <span class="badge bg-secondary" th:text="${product.totalReviews ?: 0}"></span>
+                            Đánh giá <span class="badge bg-secondary" th:text="${saleDTO.reviewCount ?: 0}"></span>
                         </button>
                     </li>
                 </ul>

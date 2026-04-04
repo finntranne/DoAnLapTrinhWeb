@@ -56,15 +56,15 @@
                         <h5 class="product-title" th:text="${sale.product.productName}">Tên sản phẩm</h5>
                         
                         <div class="product-rating mb-2">
-                            <span th:if="${sale.product.averageRating != null and sale.product.averageRating > 0}">
-                                <span class="fw-bold" th:text="${#numbers.formatDecimal(sale.product.averageRating, 1, 1, 'POINT')}"></span>
+                            <span th:if="${sale.avgRating != null and sale.avgRating > 0}">
+                                <span class="fw-bold" th:text="${#numbers.formatDecimal(sale.avgRating, 1, 1, 'POINT')}"></span>
                                 <i class="fa-solid fa-star" style="color: #ffc107;"></i> 
                             </span>
-                            <span th:unless="${sale.product.averageRating != null and sale.product.averageRating > 0}">
+                            <span th:unless="${sale.avgRating != null and sale.avgRating > 0}">
                                  <span class="fw-bold">0.0</span>
                                 <i class="fa-regular fa-star" style="color: #ccc;"></i>
                             </span>
-                            <span class="ms-2" th:text="'(' + (${sale.product.totalReviews} ?: 0) + ' đánh giá)'"></span>
+                            <span class="ms-2" th:text="'(' + (${sale.reviewCount} ?: 0) + ' đánh giá)'"></span>
                         </div>
                         <div class="product-price" th:if="${not #lists.isEmpty(sale.product.variants)}">
                             <th:block th:with="originalPrice=${sale.product.variants[0].price}">

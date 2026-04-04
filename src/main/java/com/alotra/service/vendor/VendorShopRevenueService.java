@@ -42,9 +42,7 @@ public class VendorShopRevenueService {
                     BigDecimal gross = entry.getValue().stream()
                             .map(OrderPricingUtils::calculateOrderTotal)
                             .reduce(BigDecimal.ZERO, BigDecimal::add);
-                    BigDecimal commission = entry.getValue().stream()
-                            .map(order -> calculateCommission(order, OrderPricingUtils.calculateOrderTotal(order)))
-                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    BigDecimal commission = BigDecimal.ZERO;
 
                     ShopRevenueDTO dto = new ShopRevenueDTO();
                     dto.setDate(entry.getKey());
@@ -77,11 +75,7 @@ public class VendorShopRevenueService {
                     .map(item -> item.getVariant().getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            BigDecimal commissionRate = entry.getValue().stream()
-                    .findFirst()
-                    .map(item -> item.getOrder().getShop().getCommissionRate())
-                    .orElse(BigDecimal.ZERO);
-            BigDecimal commission = gross.multiply(commissionRate).divide(new BigDecimal("100"));
+            BigDecimal commission = BigDecimal.ZERO;
 
             CategoryRevenueDTO dto = new CategoryRevenueDTO();
             dto.setCategoryName(entry.getKey());
@@ -98,10 +92,4 @@ public class VendorShopRevenueService {
         return results;
     }
 
-    private BigDecimal calculateCommission(Order order, BigDecimal total) {
-        BigDecimal commissionRate = order.getShop() != null && order.getShop().getCommissionRate() != null
-                ? order.getShop().getCommissionRate()
-                : BigDecimal.ZERO;
-        return total.multiply(commissionRate).divide(new BigDecimal("100"));
-    }
 }
