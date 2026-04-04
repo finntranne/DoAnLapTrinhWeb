@@ -157,7 +157,7 @@ public class VendorPromotionController {
 
 			log.info("=== LOAD EDIT FORM ===");
 			log.info("Promotion ID: {}", id);
-			log.info("Current UsageLimit in DB: {}", promotion.getUsageLimit());
+			//log.info("Current UsageLimit in DB: {}", promotion.getUsageLimit());
 			log.info("DTO UsageLimit: {}", dto.getUsageLimit());
 
 			model.addAttribute("promotion", dto);

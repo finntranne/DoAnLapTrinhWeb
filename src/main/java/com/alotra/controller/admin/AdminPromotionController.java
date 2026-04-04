@@ -136,8 +136,7 @@ public class AdminPromotionController {
 	            throw new IllegalArgumentException("Mã khuyến mãi đã tồn tại: " + promotion.getPromoCode());
 	        }
 
-	        User admin = userRepository.findById(1).orElseThrow(() -> new RuntimeException("Admin not found"));
-	        promotion.setCreatedByUserID(admin);
+
 	       
 
 	        // Lưu promotion

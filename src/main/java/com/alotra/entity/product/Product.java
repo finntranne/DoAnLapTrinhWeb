@@ -2,6 +2,7 @@
 package com.alotra.entity.product;
 
 import com.alotra.entity.shop.Shop;
+import com.alotra.entity.promotion.Promotion;
 import com.alotra.entity.promotion.PromotionProduct;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -22,7 +23,8 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-
+@ToString(exclude = {"shop", "category", "variants", "images", "promotionProducts", "availableToppings"})
+@EqualsAndHashCode(exclude = {"shop", "category", "variants", "images", "promotionProducts", "availableToppings"})
 public class Product {
 
     @Id
@@ -56,6 +58,9 @@ public class Product {
 //    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
 //    private List<Review> reviews = new ArrayList<>();
 
+    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
+    private Set<PromotionProduct> promotionProducts = new HashSet<>();
+    
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "ProductAvailableToppings",

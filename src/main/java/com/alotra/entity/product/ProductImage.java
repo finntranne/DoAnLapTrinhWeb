@@ -13,6 +13,8 @@ import lombok.ToString; // Import Exclude
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = "product") 
+@EqualsAndHashCode(exclude = "product")
 public class ProductImage {
 
     @Id

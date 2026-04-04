@@ -80,7 +80,6 @@ public class AdminShopController {
 	                .orElseThrow(() -> new RuntimeException("Shop không tồn tại"));
 
         // Cập nhật chiết khấu và trạng thái
-        existingShop.setCommissionRate(updatedShop.getCommissionRate());
         existingShop.setStatus(updatedShop.getStatus());
         existingShop.setUpdatedAt(LocalDateTime.now());
 

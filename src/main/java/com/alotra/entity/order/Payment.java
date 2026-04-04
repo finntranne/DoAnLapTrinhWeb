@@ -32,7 +32,7 @@ public class Payment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "PaymentID")
-    private Integer id;
+    private Integer paymentId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

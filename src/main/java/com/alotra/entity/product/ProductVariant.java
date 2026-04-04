@@ -14,6 +14,8 @@ import lombok.ToString;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = {"product", "size"})
+@EqualsAndHashCode(exclude = {"product", "size"})
 public class ProductVariant {
 
     @Id

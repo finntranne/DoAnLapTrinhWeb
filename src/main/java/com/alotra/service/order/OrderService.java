@@ -47,15 +47,15 @@ public class OrderService {
         return (double) (currentOrders - previousOrders) / previousOrders;
     }
 
-    public BigDecimal getTotalProfitCurrentMonth() {
-        return getProfitForMonth(YearMonth.now());
-    }
-
-    public double calculateProfitChangeRate() {
-        BigDecimal currentProfit = getProfitForMonth(YearMonth.now());
-        BigDecimal previousProfit = getProfitForMonth(YearMonth.now().minusMonths(1));
-        return calculateChangeRate(currentProfit, previousProfit);
-    }
+//    public BigDecimal getTotalProfitCurrentMonth() {
+//        return getProfitForMonth(YearMonth.now());
+//    }
+//
+//    public double calculateProfitChangeRate() {
+//        BigDecimal currentProfit = getProfitForMonth(YearMonth.now());
+//        BigDecimal previousProfit = getProfitForMonth(YearMonth.now().minusMonths(1));
+//        return calculateChangeRate(currentProfit, previousProfit);
+//    }
 
     public List<Object[]> getMonthlyShopRanking() {
         YearMonth currentYearMonth = YearMonth.now();
@@ -110,11 +110,11 @@ public class OrderService {
         return orderCount != null ? orderCount : 0L;
     }
 
-    private BigDecimal getProfitForMonth(YearMonth yearMonth) {
-        return getOrdersForMonth(yearMonth).stream()
-                .map(this::calculateCommission)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
+//    private BigDecimal getProfitForMonth(YearMonth yearMonth) {
+//        return getOrdersForMonth(yearMonth).stream()
+//                .map(this::calculateCommission)
+//                .reduce(BigDecimal.ZERO, BigDecimal::add);
+//    }
 
     private List<Order> getOrdersForMonth(YearMonth yearMonth) {
         LocalDateTime startDate = yearMonth.atDay(1).atStartOfDay();
@@ -122,13 +122,13 @@ public class OrderService {
         return orderRepository.findCompletedOrdersInRange(startDate, endDate);
     }
 
-    private BigDecimal calculateCommission(Order order) {
-        BigDecimal total = OrderPricingUtils.calculateOrderTotal(order);
-        BigDecimal commissionRate = order.getShop() != null && order.getShop().getCommissionRate() != null
-                ? order.getShop().getCommissionRate()
-                : BigDecimal.ZERO;
-        return total.multiply(commissionRate).divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
-    }
+//    private BigDecimal calculateCommission(Order order) {
+//        BigDecimal total = OrderPricingUtils.calculateOrderTotal(order);
+//        BigDecimal commissionRate = order.getShop() != null && order.getShop().getCommissionRate() != null
+//                ? order.getShop().getCommissionRate()
+//                : BigDecimal.ZERO;
+//        return total.multiply(commissionRate).divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+//    }
 
     private double calculateChangeRate(BigDecimal currentValue, BigDecimal previousValue) {
         if (previousValue.compareTo(BigDecimal.ZERO) == 0) {

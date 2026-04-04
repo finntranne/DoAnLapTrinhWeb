@@ -29,7 +29,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         String email = oAuth2User.getAttribute("email");
         String name = oAuth2User.getAttribute("name");
-        String picture = oAuth2User.getAttribute("picture");
+//        String picture = oAuth2User.getAttribute("picture");
 
         if (email == null) {
             throw new OAuth2AuthenticationException("Google account does not have an email!");

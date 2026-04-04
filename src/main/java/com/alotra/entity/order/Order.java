@@ -23,7 +23,8 @@ import lombok.ToString; // Import Exclude
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-
+@ToString(exclude = { "user", "shop", "promotion", "shipper", "items" })
+@EqualsAndHashCode(exclude = { "user", "shop", "promotion", "shipper", "items" })
 public class Order {
 
     @Id
@@ -61,6 +62,10 @@ public class Order {
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY) 
     private List<OrderItem> items = new ArrayList<>();
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "PromotionID")
+    private Promotion promotion;
 
    
 }

@@ -2,7 +2,10 @@ package com.alotra.entity.promotion; // Giữ package này
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
+import com.alotra.entity.product.Product;
 import com.alotra.entity.shop.Shop;
 import com.alotra.entity.user.User;
 // Bỏ import com.alotra.enums.DiscountType; nếu dùng String
@@ -24,18 +27,14 @@ import lombok.ToString; // Import Exclude
 @NoArgsConstructor
 @AllArgsConstructor
 // Thêm Excludes cho quan hệ LAZY
-@ToString(exclude = {"createdByUserID", "createdByShopID"})
-@EqualsAndHashCode(exclude = {"createdByUserID", "createdByShopID"}) // Thêm Exclude
+@ToString(exclude = { "createdByShopID"})
+@EqualsAndHashCode(exclude = {"createdByShopID"}) // Thêm Exclude
 public class Promotion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "PromotionID") // Khớp DB
     private Integer promotionId; // Giữ tên nhất quán (chữ thường d)
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "CreatedByUserID", nullable = false) // Khớp DB
-    private User createdByUserID;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CreatedByShopID") // Khớp DB
@@ -60,8 +59,6 @@ public class Promotion {
     @Column(name = "DiscountValue", nullable = true, precision = 10, scale = 2)
     private BigDecimal discountValue;
 
-    @Column(name = "MaxDiscountAmount", precision = 10, scale = 2) // Khớp DB
-    private BigDecimal maxDiscountAmount; // Dùng cho Percentage
 
     @Column(name = "StartDate", nullable = false) // Khớp DB
     private LocalDateTime startDate;
@@ -69,38 +66,30 @@ public class Promotion {
     @Column(name = "EndDate", nullable = false) // Khớp DB
     private LocalDateTime endDate;
 
-    @Column(name = "MinOrderValue", precision = 10, scale = 2) // Khớp DB
-    private BigDecimal minOrderValue = BigDecimal.ZERO; // Giữ mặc định
+    @Column(name = "Status", nullable = false) // Khớp DB
+    private Byte status; // Mặc định được set ở @PrePersist
+
+    @Column(name = "CreatedAt", nullable = false, updatable = false) // Khớp DB, thêm updatable=false
+    private LocalDateTime createdAt;
+    
+    @Column(name = "MaxDiscountAmount", precision = 10, scale = 2) // Khớp DB
+    private BigDecimal maxDiscountAmount;
+
+    @Column(name = "MinOrderValue", precision = 10, scale = 2) 
+    private BigDecimal minOrderValue = BigDecimal.ZERO; 
 
     @Column(name = "UsageLimit")
     private Integer usageLimit;
 
     @Column(name = "UsedCount") // Khớp DB
     private Integer usedCount = 0; // Giữ mặc định
+    
+    @ManyToMany
+    @JoinTable(
+        name = "PromotionProduct",
+        joinColumns = @JoinColumn(name = "PromotionID"),
+        inverseJoinColumns = @JoinColumn(name = "ProductID")
+    )
+    private List<Product> products = new ArrayList<>();
 
-    @Column(name = "Status", nullable = false) // Khớp DB
-    private Byte status; // Mặc định được set ở @PrePersist
-
-    @Column(name = "CreatedAt", nullable = false, updatable = false) // Khớp DB, thêm updatable=false
-    private LocalDateTime createdAt;
-
-    // Bỏ @OneToMany Set<PromotionProduct> từ HEAD vì không cần thiết
-    // Mối quan hệ này được quản lý bởi PromotionProduct entity
-
-    // Tự động gán giá trị mặc định khi tạo mới
-    @PrePersist
-    protected void onCreate() {
-        if (createdAt == null) {
-            createdAt = LocalDateTime.now();
-        }
-        if (status == null) {
-            status = 1; // Mặc định là Active khi tạo (trừ khi Service set thành 0 cho approval)
-        }
-        if (usedCount == null) {
-            usedCount = 0;
-        }
-         if (minOrderValue == null) {
-            minOrderValue = BigDecimal.ZERO;
-        }
-    }
 }
