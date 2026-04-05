@@ -8,6 +8,7 @@ import java.util.StringJoiner;
 import com.alotra.entity.location.Address;
 import com.alotra.entity.order.Order;
 import com.alotra.entity.order.OrderItem;
+import com.alotra.entity.product.Topping;
 
 public final class OrderPricingUtils {
 
@@ -36,7 +37,16 @@ public final class OrderPricingUtils {
             return BigDecimal.ZERO;
         }
 
-        return item.getVariant().getPrice()
+        BigDecimal unitPrice = item.getVariant().getPrice();
+        if (item.getToppings() != null) {
+            for (Topping topping : item.getToppings()) {
+                if (topping != null && topping.getPrice() != null) {
+                    unitPrice = unitPrice.add(topping.getPrice());
+                }
+            }
+        }
+
+        return unitPrice
                 .multiply(BigDecimal.valueOf(item.getQuantity()))
                 .setScale(2, RoundingMode.HALF_UP);
     }

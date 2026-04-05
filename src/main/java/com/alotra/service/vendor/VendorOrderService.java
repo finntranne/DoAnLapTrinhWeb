@@ -1,6 +1,5 @@
 package com.alotra.service.vendor;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,16 +13,12 @@ import org.springframework.transaction.annotation.Transactional;
 import com.alotra.dto.shop.ShopEmployeeDTO;
 import com.alotra.dto.shop.ShopOrderDTO;
 import com.alotra.entity.order.Order;
-import com.alotra.entity.order.OrderHistory;
 import com.alotra.entity.order.Payment;
 import com.alotra.entity.user.Role;
 import com.alotra.entity.user.User;
-import com.alotra.repository.order.OrderHistoryRepository;
 import com.alotra.repository.order.OrderRepository;
 import com.alotra.repository.order.PaymentRepository;
 import com.alotra.repository.user.UserRepository;
-import com.alotra.service.notification.NotificationService;
-import com.alotra.service.order.ShipperOrderService;
 import com.alotra.util.OrderPricingUtils;
 
 import lombok.RequiredArgsConstructor;
@@ -35,10 +30,7 @@ public class VendorOrderService {
 
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
-    private final NotificationService notificationService;
     private final UserRepository userRepository;
-    private final ShipperOrderService shipperOrderService;
-    private final OrderHistoryRepository orderHistoryRepository;
 
     @Transactional(readOnly = true)
     public Page<ShopOrderDTO> getShopOrders(Integer shopId, String status, String searchQuery, Pageable pageable) {
@@ -69,55 +61,12 @@ public class VendorOrderService {
         return order;
     }
 
-    public void updateOrderStatus(Integer shopId, Integer orderId, String newStatus, Integer userId) {
-        Order order = getOrderDetail(shopId, orderId);
-        String oldStatus = order.getOrderStatus();
-        order.setOrderStatus(newStatus);
-        orderRepository.save(order);
-        saveOrderHistory(order, oldStatus, newStatus, userId, "Cap nhat trang thai don hang");
-        notificationService.notifyCustomerAboutOrderStatus(order.getUser().getId(), orderId, newStatus);
-    }
-
-    public void assignShipperToOrder(Integer shopId, Integer orderId, Integer shipperId, Integer userId) {
-        Order order = getOrderDetail(shopId, orderId);
-        User shipper = loadActiveShipper(shipperId);
-
-        order.setShipper(shipper);
-        order.setOrderStatus("Delivering");
-        orderRepository.save(order);
-
-        shipperOrderService.createInitialShippingHistory(orderId, shipperId,
-                "Don hang duoc gan cho shipper: " + shipper.getFullName());
-        saveOrderHistory(order, "Confirmed", "Delivering", userId,
-                "Gan shipper: " + shipper.getFullName());
-        notificationService.notifyShipperAboutAssignment(shipper.getId(), orderId,
-                OrderPricingUtils.formatAddress(order.getAddress()));
-    }
-
     @Transactional(readOnly = true)
     public List<ShopEmployeeDTO> getAvailableShippers(Integer shopId) {
         return userRepository.findByRoles_RoleName("SHIPPER").stream()
                 .filter(user -> user.getStatus() != null && user.getStatus() == 1)
                 .map(this::toEmployeeDto)
                 .toList();
-    }
-
-    public void reassignShipper(Integer shopId, Integer orderId, Integer newShipperId, Integer userId, String reason) {
-        Order order = getOrderDetail(shopId, orderId);
-        User previousShipper = order.getShipper();
-        User newShipper = loadActiveShipper(newShipperId);
-
-        order.setShipper(newShipper);
-        orderRepository.save(order);
-
-        shipperOrderService.createInitialShippingHistory(orderId, newShipperId,
-                "Don hang duoc gan lai. Ly do: " + reason);
-        saveOrderHistory(order, order.getOrderStatus(), order.getOrderStatus(), userId,
-                "Thay doi shipper tu "
-                        + (previousShipper != null ? previousShipper.getFullName() : "N/A")
-                        + " sang " + newShipper.getFullName() + ". Ly do: " + reason);
-        notificationService.notifyShipperAboutAssignment(newShipper.getId(), orderId,
-                OrderPricingUtils.formatAddress(order.getAddress()));
     }
 
     private ShopOrderDTO toDto(Order order) {
@@ -159,26 +108,4 @@ public class VendorOrderService {
         return dto;
     }
 
-    private User loadActiveShipper(Integer shipperId) {
-        User shipper = userRepository.findById(shipperId)
-                .orElseThrow(() -> new RuntimeException("Shipper not found"));
-        boolean isShipper = shipper.getRoles().stream()
-                .map(Role::getRoleName)
-                .anyMatch("SHIPPER"::equalsIgnoreCase);
-        if (!isShipper) {
-            throw new RuntimeException("User is not a shipper");
-        }
-        return shipper;
-    }
-
-    private void saveOrderHistory(Order order, String oldStatus, String newStatus, Integer userId, String notes) {
-        OrderHistory history = new OrderHistory();
-        history.setOrder(order);
-        history.setOldStatus(oldStatus);
-        history.setNewStatus(newStatus);
-        history.setChangedByUser(userRepository.findById(userId).orElse(null));
-        history.setNotes(notes);
-        history.setTimestamp(LocalDateTime.now());
-        orderHistoryRepository.save(history);
-    }
 }

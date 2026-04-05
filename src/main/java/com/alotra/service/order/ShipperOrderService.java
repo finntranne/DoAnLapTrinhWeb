@@ -20,6 +20,8 @@ import com.alotra.entity.order.Order;
 import com.alotra.entity.order.OrderHistory;
 import com.alotra.entity.order.OrderShippingHistory;
 import com.alotra.entity.order.Payment;
+import com.alotra.enums.PaymentMethod;
+import com.alotra.enums.PaymentStatus;
 import com.alotra.entity.user.User;
 import com.alotra.repository.order.OrderHistoryRepository;
 import com.alotra.repository.order.OrderRepository;
@@ -220,6 +222,7 @@ public class ShipperOrderService {
         if ("Delivered".equals(status)) {
             newOrderStatus = "Completed";
             order.setOrderStatus("Completed");
+            markCodPaymentAsPaid(orderId);
             notificationService.notifyCustomerAboutOrderStatus(order.getUser().getId(), orderId, "Completed");
         } else if ("Failed_Delivery".equals(status)) {
             newOrderStatus = "Confirmed";
@@ -229,11 +232,22 @@ public class ShipperOrderService {
         } else {
             order.setOrderStatus("Delivering");
             newOrderStatus = "Delivering";
-            notificationService.notifyCustomerAboutOrderStatus(order.getUser().getId(), orderId, "Delivering");
+            notificationService.notifyCustomerAboutOrderStatus(order.getUser().getId(), orderId, status);
         }
 
         orderRepository.save(order);
         saveOrderHistory(order, oldOrderStatus, newOrderStatus, shipperId, notes);
+    }
+
+    private void markCodPaymentAsPaid(Integer orderId) {
+        paymentRepository.findByOrder_OrderID(orderId)
+                .filter(payment -> payment.getMethod() == PaymentMethod.COD)
+                .filter(payment -> payment.getStatus() == PaymentStatus.UNPAID)
+                .ifPresent(payment -> {
+                    payment.setStatus(PaymentStatus.PAID);
+                    payment.setPaidAt(LocalDateTime.now());
+                    paymentRepository.save(payment);
+                });
     }
 
     private ShipperOrderDTO toDto(Order order, Integer shipperId) {

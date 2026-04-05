@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <body>
-<nav th:fragment="pagination(page, keyword, sort, categoryId, shopId)" 
+<nav th:fragment="pagination(page, keyword, sort, categoryId, shopId, status)" 
      th:if="${page.totalPages > 1}" 
      aria-label="Page navigation" 
      class="pagination-wrapper">
@@ -11,7 +11,7 @@
             <a class="page-link page-first" 
                th:href="${categoryId != null} 
                ? @{/categories/{id}(id=${categoryId}, page=0, sort=${sort}, shopId=${shopId})} 
-               : @{''(page=0, keyword=${keyword}, sort=${sort}, shopId=${shopId})}"
+               : @{''(page=0, keyword=${keyword}, sort=${sort}, shopId=${shopId}, status=${status})}"
                title="Trang đầu">
                 <i class="fa-solid fa-angles-left"></i>
             </a>
@@ -21,7 +21,7 @@
             <a class="page-link page-prev" 
                th:href="${categoryId != null} 
                ? @{/categories/{id}(id=${categoryId}, page=${page.number - 1}, sort=${sort}, shopId=${shopId})} 
-               : @{''(page=${page.number - 1}, keyword=${keyword}, sort=${sort}, shopId=${shopId})}"
+               : @{''(page=${page.number - 1}, keyword=${keyword}, sort=${sort}, shopId=${shopId}, status=${status})}"
                title="Trang trước">
                 <i class="fa-solid fa-angle-left"></i>
             </a>
@@ -38,7 +38,7 @@
                     <a class="page-link" 
                        th:href="${categoryId != null} 
                        ? @{/categories/{id}(id=${categoryId}, page=0, sort=${sort}, shopId=${shopId})} 
-                       : @{''(page=0, keyword=${keyword}, sort=${sort}, shopId=${shopId})}">1</a>
+                       : @{''(page=0, keyword=${keyword}, sort=${sort}, shopId=${shopId}, status=${status})}">1</a>
                 </li>
                 <li class="page-item disabled" th:if="${startPage > 1}">
                     <span class="page-link page-dots">...</span>
@@ -51,7 +51,7 @@
                 <a class="page-link" 
                    th:href="${categoryId != null} 
                    ? @{/categories/{id}(id=${categoryId}, page=${i}, sort=${sort}, shopId=${shopId})} 
-                   : @{''(page=${i}, keyword=${keyword}, sort=${sort}, shopId=${shopId})}"
+                   : @{''(page=${i}, keyword=${keyword}, sort=${sort}, shopId=${shopId}, status=${status})}"
                    th:text="${i + 1}"></a>
             </li>
 
@@ -63,7 +63,7 @@
                     <a class="page-link" 
                        th:href="${categoryId != null} 
                        ? @{/categories/{id}(id=${categoryId}, page=${totalPages - 1}, sort=${sort}, shopId=${shopId})} 
-                       : @{''(page=${totalPages - 1}, keyword=${keyword}, sort=${sort}, shopId=${shopId})}"
+                       : @{''(page=${totalPages - 1}, keyword=${keyword}, sort=${sort}, shopId=${shopId}, status=${status})}"
                        th:text="${totalPages}"></a>
                 </li>
             </th:block>
@@ -73,7 +73,7 @@
             <a class="page-link page-next" 
                th:href="${categoryId != null} 
                ? @{/categories/{id}(id=${categoryId}, page=${page.number + 1}, sort=${sort}, shopId=${shopId})} 
-               : @{''(page=${page.number + 1}, keyword=${keyword}, sort=${sort}, shopId=${shopId})}"
+               : @{''(page=${page.number + 1}, keyword=${keyword}, sort=${sort}, shopId=${shopId}, status=${status})}"
                title="Trang sau">
                 <i class="fa-solid fa-angle-right"></i>
             </a>
@@ -83,7 +83,7 @@
             <a class="page-link page-last" 
                th:href="${categoryId != null} 
                ? @{/categories/{id}(id=${categoryId}, page=${page.totalPages - 1}, sort=${sort}, shopId=${shopId})} 
-               : @{''(page=${page.totalPages - 1}, keyword=${keyword}, sort=${sort}, shopId=${shopId})}"
+               : @{''(page=${page.totalPages - 1}, keyword=${keyword}, sort=${sort}, shopId=${shopId}, status=${status})}"
                title="Trang cuối">
                 <i class="fa-solid fa-angles-right"></i>
             </a>

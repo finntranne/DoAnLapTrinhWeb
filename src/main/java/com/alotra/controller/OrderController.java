@@ -349,6 +349,9 @@ public class OrderController {
                 orderItem.setOrder(order);
                 orderItem.setVariant(cartItem.getVariant());
                 orderItem.setQuantity(cartItem.getQuantity());
+                if (cartItem.getToppings() != null && !cartItem.getToppings().isEmpty()) {
+                    orderItem.getToppings().addAll(cartItem.getToppings());
+                }
                 orderItems.add(orderItem);
             }
             orderItemRepository.saveAll(orderItems);

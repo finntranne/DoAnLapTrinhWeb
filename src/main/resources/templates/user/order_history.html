@@ -128,7 +128,7 @@
         </div>
 
         <div th:if="${orderPage != null and orderPage.totalPages > 1}" class="mt-4">
-             <div th:replace="~{fragments/pagination :: pagination(page=${orderPage}, keyword=${null}, sort=${null}, categoryId=${null}, status=${currentStatus})}"></div>
+             <div th:replace="~{fragments/pagination :: pagination(page=${orderPage}, keyword=${null}, sort=${null}, categoryId=${null}, shopId=${null}, status=${currentStatus})}"></div>
         </div>
     </div>
 </section>

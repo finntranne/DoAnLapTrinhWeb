@@ -23,6 +23,7 @@ import com.alotra.entity.order.Order;
 import com.alotra.repository.order.PaymentRepository;
 import com.alotra.security.MyUserDetails;
 import com.alotra.service.vendor.VendorOrderService;
+import com.alotra.pattern.vendororder.VendorOrderFacade;
 import com.alotra.view.order.OrderView;
 
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class VendorOrderController {
 	private final VendorOrderService vendorService;
+	private final VendorOrderFacade vendorOrderFacade;
 	private final PaymentRepository paymentRepository;
 
 	// ==================== HELPER METHOD ====================
@@ -140,7 +142,11 @@ public class VendorOrderController {
 			Integer shopId = getShopIdOrThrow(userDetails);
 			Integer userId = getUserIdOrThrow(userDetails);
 
-			vendorService.updateOrderStatus(shopId, id, newStatus, userId);
+			switch (newStatus) {
+			case "Confirmed" -> vendorOrderFacade.confirmOrder(shopId, id, userId);
+			case "Cancelled" -> vendorOrderFacade.cancelOrder(shopId, id, userId, "Huy don hang");
+			default -> throw new IllegalStateException("Unsupported status update from vendor: " + newStatus);
+			}
 
 			redirectAttributes.addFlashAttribute("success", "Cập nhật trạng thái đơn hàng thành công");
 
@@ -162,7 +168,7 @@ public class VendorOrderController {
 			Integer shopId = getShopIdOrThrow(userDetails);
 			Integer userId = getUserIdOrThrow(userDetails);
 
-			vendorService.assignShipperToOrder(shopId, id, shipperId, userId);
+			vendorOrderFacade.assignShipper(shopId, id, shipperId, userId, "Gan shipper");
 
 			redirectAttributes.addFlashAttribute("success", "Đã gán shipper cho đơn hàng thành công");
 
@@ -192,7 +198,7 @@ public class VendorOrderController {
 
 			String finalReason = (reason != null && !reason.isEmpty()) ? reason : "Thay đổi shipper";
 
-			vendorService.reassignShipper(shopId, id, newShipperId, userId, finalReason);
+			vendorOrderFacade.assignShipper(shopId, id, newShipperId, userId, finalReason);
 
 			redirectAttributes.addFlashAttribute("success", "Đã thay đổi shipper thành công");
 

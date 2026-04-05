@@ -1,0 +1,224 @@
+@startuml
+title Vendor Order Processing - Pattern Collaboration UML
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+
+package "Current Domain" {
+  class Order {
+    - orderID: Integer
+    - orderStatus: String
+    - orderDate: LocalDateTime
+    - shipper: User
+    - user: User
+    ~ transitionTo(status: String)
+  }
+
+  class OrderHistory {
+    - historyId: Integer
+    - order: Order
+    - status: String
+    - changedAt: LocalDateTime
+    - note: String
+  }
+
+  class User {
+    - id: Integer
+    - fullName: String
+  }
+
+  class Shop {
+    - shopId: Integer
+    - shopName: String
+  }
+}
+
+package "Facade Pattern" {
+  class VendorOrderFacade {
+    + confirmOrder(orderId: Integer, actorId: Integer)
+    + assignShipper(orderId: Integer, shipperId: Integer, actorId: Integer)
+    + cancelOrder(orderId: Integer, reason: String, actorId: Integer)
+  }
+}
+
+package "Command Pattern" {
+  interface OrderActionCommand {
+    + execute(ctx: VendorOrderContext)
+  }
+
+  class ConfirmOrderCommand
+  class AssignShipperCommand
+  class CancelOrderCommand
+
+  OrderActionCommand <|.. ConfirmOrderCommand
+  OrderActionCommand <|.. AssignShipperCommand
+  OrderActionCommand <|.. CancelOrderCommand
+
+  note bottom of OrderActionCommand
+  In current scope:
+  - VendorOrderFacade acts as Client + Invoker
+  - OrderStateHandler acts as Receiver
+  If undo/queue is added later,
+  extract a dedicated Invoker.
+  end note
+}
+
+package "State Pattern" {
+  interface OrderStateHandler {
+    + confirm(ctx: VendorOrderContext)
+    + assignShipper(ctx: VendorOrderContext)
+    + cancel(ctx: VendorOrderContext)
+  }
+
+  class PendingStateHandler
+  class ConfirmedStateHandler
+  class DeliveringStateHandler
+  class CancelledStateHandler
+
+  OrderStateHandler <|.. PendingStateHandler
+  OrderStateHandler <|.. ConfirmedStateHandler
+  OrderStateHandler <|.. DeliveringStateHandler
+  OrderStateHandler <|.. CancelledStateHandler
+
+  class OrderStateFactory {
+    + getState(order: Order): OrderStateHandler
+  }
+}
+
+package "Observer Pattern" {
+  class OrderEvent
+  class OrderConfirmedEvent
+  class OrderAssignedEvent
+  class OrderCancelledEvent
+
+  OrderEvent <|-- OrderConfirmedEvent
+  OrderEvent <|-- OrderAssignedEvent
+  OrderEvent <|-- OrderCancelledEvent
+
+  interface OrderEventObserver {
+    + update(event: OrderEvent)
+  }
+
+  class NotificationObserver
+  class OrderHistoryObserver
+  class AuditLogObserver
+
+  OrderEventObserver <|.. NotificationObserver
+  OrderEventObserver <|.. OrderHistoryObserver
+  OrderEventObserver <|.. AuditLogObserver
+
+  class OrderEventPublisher {
+    - observers: List<OrderEventObserver>
+    + publish(event: OrderEvent)
+    + addObserver(observer: OrderEventObserver)
+    + removeObserver(observer: OrderEventObserver)
+  }
+}
+
+package "Client / Wiring" {
+  class VendorOrderPatternConfig {
+    + vendorOrderFacade(...): VendorOrderFacade
+    + orderEventPublisher(...): OrderEventPublisher
+  }
+}
+
+package "Shared Context" {
+  class VendorOrderContext {
+    - order: Order
+    - actor: User
+    - shipper: User
+    - shop: Shop
+    - note: String
+    - eventPublisher: OrderEventPublisher
+    + getOrder(): Order
+    + getEventPublisher(): OrderEventPublisher
+  }
+}
+
+package "Repositories / Services" {
+  class OrderRepository
+  class OrderHistoryRepository
+  class UserRepository
+  class NotificationService
+}
+
+VendorOrderFacade --> OrderRepository : load/save order
+VendorOrderFacade --> UserRepository : load actor/shipper
+VendorOrderFacade --> OrderStateFactory : resolve state
+VendorOrderFacade --> OrderActionCommand : create & execute
+VendorOrderFacade --> VendorOrderContext : create
+
+ConfirmOrderCommand --> OrderStateHandler : confirm()
+AssignShipperCommand --> OrderStateHandler : assignShipper()
+CancelOrderCommand --> OrderStateHandler : cancel()
+
+OrderStateFactory --> PendingStateHandler
+OrderStateFactory --> ConfirmedStateHandler
+OrderStateFactory --> DeliveringStateHandler
+OrderStateFactory --> CancelledStateHandler
+
+VendorOrderContext --> Order
+VendorOrderContext --> User
+VendorOrderContext --> Shop
+VendorOrderContext --> OrderEventPublisher
+
+OrderEventPublisher --> OrderEventObserver : notify *
+
+NotificationObserver --> NotificationService
+OrderHistoryObserver --> OrderHistoryRepository
+OrderHistoryObserver --> OrderHistory
+VendorOrderPatternConfig --> OrderEventPublisher : register observers
+VendorOrderPatternConfig --> NotificationObserver
+VendorOrderPatternConfig --> OrderHistoryObserver
+VendorOrderPatternConfig --> AuditLogObserver
+
+Order "1" --> "0..*" OrderHistory
+Order "0..1" --> User : shipper
+Order --> User : customer
+
+note right of VendorOrderFacade
+Facade role:
+- entry point for vendor order actions
+- hides state / command / observer orchestration
+end note
+
+note right of OrderActionCommand
+Command role:
+- encapsulates one vendor action
+- allows validation, logging, undo/queue later
+end note
+
+note right of OrderStateHandler
+State role:
+- controls legal transitions
+- avoids if/else by status all over controller/service
+- supports flow:
+  Pending -> Confirmed -> Delivering -> Completed
+  Pending/Confirmed -> Cancelled
+end note
+
+note right of Order
+`transitionTo(status)` is package-private/internal.
+Only StateHandler should change order status.
+This preserves the State pattern boundary.
+end note
+
+note bottom of OrderStateFactory
+Suggested package:
+vendor/order/state/OrderStateFactory
+end note
+
+note right of OrderEventPublisher
+Observer role:
+- decouples notification/history/audit
+- one order action can trigger many reactions
+end note
+
+note bottom of VendorOrderContext
+Context should not expose a duplicate `publish()` method.
+Keep a single event path through `getEventPublisher().publish(...)`.
+end note
+
+@enduml

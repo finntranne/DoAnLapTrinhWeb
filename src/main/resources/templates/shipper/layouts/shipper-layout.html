@@ -3,7 +3,7 @@
 	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title layout:title-pattern="$CONTENT_TITLE - $LAYOUT_TITLE">He thong shipper</title>
+<title layout:title-pattern="$CONTENT_TITLE - $LAYOUT_TITLE">H&#7879; th&#7889;ng shipper</title>
 
 <meta name="viewport"
 	content="width=device-width, initial-scale=1.0, user-scalable=yes" />
@@ -46,22 +46,21 @@
 					</a>
 						<div class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
 							<span class="dropdown-item dropdown-header"
-								th:text="${unreadNotificationCount == 0 ? 'Khong co thong bao moi' : unreadNotificationCount + ' thong bao'}">
+								th:text="${unreadNotificationCount == 0 ? 'Kh&#244;ng c&#243; th&#244;ng b&#225;o m&#7899;i' : unreadNotificationCount + ' th&#244;ng b&#225;o'}">
 							</span>
 
 							<th:block th:each="notify : ${unreadNotifications}">
 								<div class="dropdown-divider"></div>
-								<a
-									th:with="url = ${#strings.containsIgnoreCase(notify.message, 'order') or #strings.containsIgnoreCase(notify.message, 'don hang') ? '/shipper/orders' : '/shipper/dashboard'}"
-									th:href="@{${url}}" class="dropdown-item text-truncate"> <i
-									class="bi bi-info-circle-fill me-2"></i> <span
-									th:text="${notify.message}">Noi dung thong bao</span>
+								<a th:with="url = ${#strings.equalsIgnoreCase(notify.type, 'OrderAssignment') or #strings.equalsIgnoreCase(notify.type, 'OrderStatus') ? '/shipper/orders' : '/shipper/dashboard'}"
+									th:href="@{${url}}" class="dropdown-item">
+									<div class="fw-semibold small" th:text="${notify.title}">C&#7853;p nh&#7853;t &#273;&#417;n h&#224;ng</div>
+									<div class="text-muted small text-wrap" th:text="${notify.message}">N&#7897;i dung th&#244;ng b&#225;o</div>
 								</a>
 							</th:block>
 
 							<div class="dropdown-divider"></div>
 							<a th:href="@{/shipper/dashboard}"
-								class="dropdown-item dropdown-footer">Xem thong bao</a>
+								class="dropdown-item dropdown-footer">Xem th&#244;ng b&#225;o</a>
 						</div></li>
 
 					<li class="nav-item"><a class="nav-link" href="#"
@@ -84,7 +83,7 @@
 							<li class="user-footer"><a th:href="@{/user/profile}"
 								class="btn btn-default btn-flat">Profile</a> <a href="#"
 								id="shipperLogoutBtn" class="btn btn-default btn-flat float-end">
-									Dang xuat </a></li>
+									&#272;&#259;ng xu&#7845;t </a></li>
 						</ul></li>
 				</ul>
 			</div>
@@ -106,14 +105,14 @@
 							th:href="@{/shipper/dashboard}"
 							th:classappend="${currentUri == '/shipper/dashboard' ? 'active' : ''}">
 								<i class="nav-icon bi bi-house-door-fill"></i>
-								<p>Trang chu shipper</p>
+								<p>Trang ch&#7911; shipper</p>
 						</a></li>
 
 						<li class="nav-item"><a class="nav-link"
 							th:href="@{/shipper/orders}"
 							th:classappend="${currentUri == '/shipper/orders' ? 'active' : ''}">
 								<i class="nav-icon bi bi-receipt-cutoff"></i>
-								<p>Quan ly don hang</p>
+								<p>Qu&#7843;n l&#253; &#273;&#417;n h&#224;ng</p>
 						</a></li>
 					</ul>
 				</nav>
