@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,11 +23,15 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.alotra.dto.product.ProductRequestDTO;
 import com.alotra.dto.product.ProductStatisticsDTO;
+import com.alotra.dto.product.ProductVariantDTO;
 import com.alotra.entity.product.Product;
 import com.alotra.entity.product.Topping;
 import com.alotra.repository.product.ToppingRepository;
 import com.alotra.repository.promotion.PromotionRepository;
 import com.alotra.security.MyUserDetails;
+import com.alotra.service.approval_request.request.ApprovalCommand;
+import com.alotra.service.approval_request.request.CreateProductRequestCommand;
+import com.alotra.service.approval_request.request.VendorApprovalRequestService;
 import com.alotra.service.vendor.VendorProductService;
 
 import jakarta.validation.Valid;
@@ -96,7 +101,7 @@ public class VendorProductController {
 			model.addAttribute("status", status);
 			model.addAttribute("search", search);
 			model.addAttribute("categoryId", categoryId);
-			// *** ADD approvalStatus TO MODEL HERE ***
+			
 			model.addAttribute("approvalStatus", approvalStatus);
 			model.addAttribute("categories", vendorProductService.getAllCategoriesSimple());
 
@@ -136,6 +141,9 @@ public class VendorProductController {
 			return "redirect:/shop/register";
 		}
 	}
+	
+	@Autowired
+	private VendorApprovalRequestService vendorApprovalRequestService;
 
 	@PostMapping("/products/create")
 	public String createProduct(@AuthenticationPrincipal MyUserDetails userDetails,
@@ -144,7 +152,7 @@ public class VendorProductController {
 
 		log.info("=== CREATE PRODUCT REQUEST ===");
 		log.info("Product name: {}", request.getProductName());
-		log.info("Discount Percentage: {}", request.getDiscountPercentage()); // *** MỚI ***
+
 
 		if (result.hasErrors()) {
 			log.error("Validation errors: {}", result.getAllErrors());
@@ -157,8 +165,9 @@ public class VendorProductController {
 		try {
 			Integer shopId = getShopIdOrThrow(userDetails);
 			Integer userId = getUserIdOrThrow(userDetails);
+			
+			request.setShopId(shopId);
 
-			// *** BỎ LOGIC TOPPING (nếu không cần) ***
 			Set<Topping> selectedToppings = new HashSet<>();
 			if (request.getAvailableToppingIds() != null && !request.getAvailableToppingIds().isEmpty()) {
 				List<Topping> toppingsFromDb = toppingRepository.findAllById(request.getAvailableToppingIds());
@@ -169,30 +178,19 @@ public class VendorProductController {
 				}
 				selectedToppings.addAll(toppingsFromDb);
 			}
-
-			// Validate variants
+			
 			if (request.getVariants() == null || request.getVariants().isEmpty()) {
 				redirectAttributes.addFlashAttribute("error", "Sản phẩm phải có ít nhất một biến thể");
 				return "redirect:/vendor/products/create";
 			}
 
-			// Validate images
 			if (request.getImages() == null || request.getImages().isEmpty()
 					|| request.getImages().stream().allMatch(file -> file == null || file.isEmpty())) {
 				redirectAttributes.addFlashAttribute("error", "Vui lòng upload ít nhất một hình ảnh");
 				return "redirect:/vendor/products/create";
 			}
 
-			// *** MỚI: Validate Discount Percentage ***
-			if (request.getDiscountPercentage() != null) {
-				if (request.getDiscountPercentage() < 0 || request.getDiscountPercentage() > 100) {
-					redirectAttributes.addFlashAttribute("error", "% Giảm giá phải từ 0-100%");
-					return "redirect:/vendor/products/create";
-				}
-			}
-
-			// *** GỌI SERVICE MỚI (đã bao gồm logic lưu discount) ***
-			vendorProductService.requestProductCreation(shopId, request, userId, selectedToppings);
+			vendorApprovalRequestService.submitCreateProductRequest(request, userId);
 
 			redirectAttributes.addFlashAttribute("success",
 					"Yêu cầu tạo sản phẩm đã được gửi. Vui lòng chờ admin phê duyệt.");
@@ -209,6 +207,7 @@ public class VendorProductController {
 			return "redirect:/vendor/products/create";
 		}
 	}
+	
 
 	@GetMapping("/products/edit/{id}")
 	public String showEditProductForm(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
@@ -234,8 +233,8 @@ public class VendorProductController {
 					promotionRepository.findAllActiveProductPromotionsByShop(shopId));
 
 			// *** LOG ĐỂ DEBUG ***
-			log.info("Loaded product {} for edit with discount: {}%", product.getProductID(),
-					dto.getDiscountPercentage());
+//			log.info("Loaded product {} for edit with discount: {}%", product.getProductID(),
+//					dto.getDiscountPercentage());
 
 			return "vendor/products/form";
 
@@ -274,20 +273,14 @@ public class VendorProductController {
 			Integer shopId = getShopIdOrThrow(userDetails);
 			Integer userId = getUserIdOrThrow(userDetails);
 
+			request.setShopId(shopId);
 			// Validate variants
 			if (request.getVariants() == null || request.getVariants().isEmpty()) {
 				redirectAttributes.addFlashAttribute("error", "Sản phẩm phải có ít nhất một biến thể");
 				return "redirect:/vendor/products/edit/" + id;
 			}
 
-			// *** MỚI: Validate Discount Percentage ***
-			if (request.getDiscountPercentage() != null) {
-				if (request.getDiscountPercentage() < 0 || request.getDiscountPercentage() > 100) {
-					redirectAttributes.addFlashAttribute("error", "% Giảm giá phải từ 0-100%");
-					return "redirect:/vendor/products/edit/" + id;
-				}
-				log.info("Product update includes discount: {}%", request.getDiscountPercentage());
-			}
+			
 
 			Set<Topping> selectedToppings = new HashSet<>();
 			if (request.getAvailableToppingIds() != null && !request.getAvailableToppingIds().isEmpty()) {
@@ -301,7 +294,9 @@ public class VendorProductController {
 			}
 
 			request.setProductId(id);
-			vendorProductService.requestProductUpdate(shopId, request, userId, selectedToppings);
+			
+			vendorApprovalRequestService.submitUpdateProductRequest(request, userId);
+			
 			redirectAttributes.addFlashAttribute("success",
 					"Yêu cầu cập nhật sản phẩm đã được gửi. Vui lòng chờ admin phê duyệt.");
 
@@ -324,14 +319,19 @@ public class VendorProductController {
 	}
 
 	@PostMapping("/products/delete/{id}")
-	public String deleteProduct(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
+	public String deleteProduct(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable("id") Integer id,
 			RedirectAttributes redirectAttributes) {
 
 		try {
 			Integer shopId = getShopIdOrThrow(userDetails);
 			Integer userId = getUserIdOrThrow(userDetails);
 
-			vendorProductService.requestProductDeletion(shopId, id, userId);
+			ProductRequestDTO request = new ProductRequestDTO();
+			
+			request.setShopId(shopId);
+			request.setProductId(id);
+			
+			vendorApprovalRequestService.submitDeleteProductRequest(request, userId);
 
 			redirectAttributes.addFlashAttribute("success",
 					"Yêu cầu xóa sản phẩm đã được gửi. Vui lòng chờ admin phê duyệt.");

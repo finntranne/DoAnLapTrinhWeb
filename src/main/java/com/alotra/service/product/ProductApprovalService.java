@@ -1,23 +1,26 @@
-//package com.alotra.service.product;
-//
-//import java.util.List;
-//import java.util.Optional;
-//
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.data.domain.Page;
-//import org.springframework.data.domain.Pageable;
-//import org.springframework.stereotype.Service;
-//import org.springframework.transaction.annotation.Transactional;
-//
-//import com.alotra.entity.product.ProductApproval;
-//import com.alotra.repository.product.ProductApprovalRepository;
-//
-//@Service
-//public class ProductApprovalService {
+package com.alotra.service.product;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.alotra.entity.ApprovalRequest;
+import com.alotra.enums.ApprovalStatus;
+import com.alotra.repository.approval_request.ApprovalRequestRepository;
+
+
+@Service
+public class ProductApprovalService {
 //	
 //	private static final String PENDING_STATUS = "Pending"; // Định nghĩa hằng số trạng thái
 //
-//    private final ProductApprovalRepository approvalRepository;
+	@Autowired
+	private ApprovalRequestRepository approvalRequestRepository;
 //
 //    public ProductApprovalService(ProductApprovalRepository approvalRepository) {
 //        this.approvalRepository = approvalRepository;
@@ -50,13 +53,17 @@
 //    }
 //
 //
-//	public Page<ProductApproval> findByStatus(String status, Pageable pageable) {
-//		return approvalRepository.findByStatus(status, pageable);
-//	}
-//	
-//	public Optional<ProductApproval> findById(Integer approvalId){
-//		return approvalRepository.findById(approvalId);
-//	}
+	public Page<ApprovalRequest> findByStatus(ApprovalStatus status, Pageable pageable) {
+		return approvalRequestRepository.findByStatus(status, pageable);
+	}
+	
+	public Page<ApprovalRequest> findAll(Pageable pageable) {
+		return approvalRequestRepository.findAll(pageable);
+	}
+	
+	public Optional<ApprovalRequest> findById(Integer id){
+		return approvalRequestRepository.findById(id);
+	}
 //	
 //	public void approveProductChange(Integer approvalId, Integer reviewedByUserId) {
 //		approvalRepository.approveProductChange(approvalId, reviewedByUserId);
@@ -66,4 +73,4 @@
 //		approvalRepository.rejectProductChange(approvalId, reviewedByUserId, rejectionReason);
 //    }
 //
-//}
+}
