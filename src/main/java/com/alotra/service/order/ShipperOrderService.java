@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.alotra.dto.order.ShipperOrderDTO;
 import com.alotra.dto.shipper.ShipperDashboardDTO;
 import com.alotra.dto.shipper.ShipperInfoDTO;
+import com.alotra.entity.order.AuditLog;
 import com.alotra.entity.order.Order;
 import com.alotra.entity.order.OrderHistory;
 import com.alotra.entity.order.OrderShippingHistory;
@@ -23,6 +24,7 @@ import com.alotra.entity.order.Payment;
 import com.alotra.enums.PaymentMethod;
 import com.alotra.enums.PaymentStatus;
 import com.alotra.entity.user.User;
+import com.alotra.repository.order.AuditLogRepository;
 import com.alotra.repository.order.OrderHistoryRepository;
 import com.alotra.repository.order.OrderRepository;
 import com.alotra.repository.order.OrderShippingHistoryRepository;
@@ -41,6 +43,7 @@ public class ShipperOrderService {
     private final OrderRepository orderRepository;
     private final OrderShippingHistoryRepository shippingHistoryRepository;
     private final OrderHistoryRepository orderHistoryRepository;
+    private final AuditLogRepository auditLogRepository;
     private final PaymentRepository paymentRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
@@ -207,6 +210,10 @@ public class ShipperOrderService {
         User shipper = userRepository.findById(shipperId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay shipper"));
 
+        String previousShippingStatus = getLatestShippingHistory(orderId, shipperId)
+                .map(OrderShippingHistory::getStatus)
+                .orElse("Assigned");
+
         OrderShippingHistory history = new OrderShippingHistory();
         history.setOrder(order);
         history.setShipper(shipper);
@@ -236,6 +243,7 @@ public class ShipperOrderService {
         }
 
         orderRepository.save(order);
+        saveAuditLog(order, previousShippingStatus, status, shipper, status, notes);
         saveOrderHistory(order, oldOrderStatus, newOrderStatus, shipperId, notes);
     }
 
@@ -340,5 +348,40 @@ public class ShipperOrderService {
         history.setNotes(notes);
         history.setTimestamp(LocalDateTime.now());
         orderHistoryRepository.save(history);
+    }
+
+    private void saveAuditLog(Order order, String oldStatus, String newStatus, User actor, String shippingStatus, String notes) {
+        AuditLog auditLog = new AuditLog();
+        auditLog.setOrder(order);
+        auditLog.setShop(order.getShop());
+        auditLog.setActor(actor);
+        auditLog.setEventType(mapShippingStatusToAuditEvent(shippingStatus));
+        auditLog.setOldStatus(oldStatus);
+        auditLog.setNewStatus(newStatus);
+        auditLog.setNote(notes != null && !notes.isBlank() ? notes : defaultAuditNote(shippingStatus));
+        auditLog.setCreatedAt(LocalDateTime.now());
+        auditLogRepository.save(auditLog);
+    }
+
+    private String mapShippingStatusToAuditEvent(String shippingStatus) {
+        return switch (shippingStatus) {
+            case "Picking_Up" -> "OrderPickingUpEvent";
+            case "Delivering" -> "OrderDeliveringEvent";
+            case "Delivered" -> "OrderDeliveredEvent";
+            case "Failed_Delivery" -> "OrderFailedDeliveryEvent";
+            case "Delivery_Attempt" -> "OrderDeliveryAttemptEvent";
+            default -> "OrderShippingStatusUpdatedEvent";
+        };
+    }
+
+    private String defaultAuditNote(String shippingStatus) {
+        return switch (shippingStatus) {
+            case "Picking_Up" -> "Shipper dang lay hang";
+            case "Delivering" -> "Shipper dang giao hang";
+            case "Delivered" -> "Shipper giao hang thanh cong";
+            case "Failed_Delivery" -> "Shipper giao hang that bai";
+            case "Delivery_Attempt" -> "Shipper da thu giao hang";
+            default -> "Shipper cap nhat trang thai giao hang";
+        };
     }
 }

@@ -12,9 +12,8 @@ public class ConfirmedStateHandler extends AbstractOrderStateHandler {
     public void assignShipper(VendorOrderContext ctx) {
         String oldStatus = ctx.getOrder().getOrderStatus();
         ctx.getOrder().setShipper(ctx.getShipper());
-        ctx.getOrder().setOrderStatus("Delivering");
         ctx.getEventPublisher().publish(new OrderAssignedEvent(
-                ctx.getOrder(), ctx.getActor(), ctx.getShipper(), oldStatus, "Delivering",
+                ctx.getOrder(), ctx.getActor(), ctx.getShipper(), oldStatus, "Assigned",
                 ctx.getNote() != null ? ctx.getNote() : "Gan shipper cho don hang"));
     }
 
