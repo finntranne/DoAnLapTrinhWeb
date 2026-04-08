@@ -26,7 +26,7 @@ import com.alotra.dto.category.CategoryModel;
 import com.alotra.entity.product.Category;
 import com.alotra.entity.user.Role;
 import com.alotra.entity.user.User;
-import com.alotra.service.cloudinary.CloudinaryService;
+import com.alotra.service.cloudinary.strategy.UploadService;
 import com.alotra.service.product.CategoryService;
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,7 +40,7 @@ public class AdminCategoryController {
 	CategoryService categoryService;
 	
 	@Autowired
-	CloudinaryService cloudinary;
+	UploadService uploadService;
 	
 	@GetMapping("")
 	public String list(ModelMap model,
@@ -83,8 +83,9 @@ public class AdminCategoryController {
 			
             if (categoryModel.getFile() != null && !categoryModel.getFile().isEmpty()) {
                 try {
-                    
-                    String uploadedUrl = cloudinary.uploadImage(categoryModel.getFile(), "images");
+                    // Upload with Strategy + Proxy Pattern
+                    java.util.Map<String, String> uploadResult = uploadService.uploadImage(categoryModel.getFile(), "categories", null);
+                    String uploadedUrl = uploadResult.get("secure_url");
                     category.setImageURL(uploadedUrl);
                 } catch (Exception e) {
                     log.error("Lỗi khi upload ảnh đại diện: {}", e.getMessage(), e);
@@ -136,14 +137,15 @@ public class AdminCategoryController {
 	            try {
 	                // Xóa ảnh cũ nếu tồn tại
 	                if (existingCategory.getImageURL() != null && !existingCategory.getImageURL().isEmpty()) {
-	                    String oldPublicId = cloudinary.extractPublicIdFromUrl(existingCategory.getImageURL());
+	                    String oldPublicId = extractPublicIdFromUrl(existingCategory.getImageURL());
 	                    if (oldPublicId != null) {
-	                        cloudinary.deleteImage(oldPublicId);
+	                        uploadService.deleteFile(oldPublicId);
 	                    }
 	                }
 
 	                // Upload ảnh mới lên Cloudinary
-	                String uploadedUrl = cloudinary.uploadImage(imageFile, "categories", null);
+	                java.util.Map<String, String> uploadResult = uploadService.uploadImage(imageFile, "categories", null);
+	                String uploadedUrl = uploadResult.get("secure_url");
 	                category.setImageURL(uploadedUrl);
 
 	            } catch (Exception e) {
@@ -220,5 +222,26 @@ public class AdminCategoryController {
 		model.addAttribute("activeMenu", "categories");
 		
 		return "admin/categories/list"; 
+	}
+
+	// ========== HELPER METHODS ==========
+	private String extractPublicIdFromUrl(String url) {
+		if (url == null || url.isEmpty()) {
+			return null;
+		}
+		try {
+			// Extract public ID from Cloudinary URL
+			// Format: https://res.cloudinary.com/cloud-name/image/upload/v1234567890/public/id.jpg
+			String[] parts = url.split("/upload/");
+			if (parts.length > 1) {
+				String pathPart = parts[1];
+				// Remove version and file extension
+				String publicId = pathPart.replaceAll("v\\d+/", "").replaceAll("\\.[^.]*$", "");
+				return publicId;
+			}
+		} catch (Exception e) {
+			log.error("Error extracting public ID from URL: {}", url, e);
+		}
+		return null;
 	}
 }

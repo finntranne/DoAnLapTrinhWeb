@@ -17,6 +17,7 @@ import com.alotra.entity.order.Payment;
 import com.alotra.enums.PaymentMethod;
 import com.alotra.repository.order.OrderRepository;
 import com.alotra.service.order.PaymentService;
+import com.alotra.service.order.PaymentCallbackService;
 import com.alotra.service.order.payment.sdk.VNPaySDK;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -44,6 +45,9 @@ public class PaymentController {
     
     @Autowired
     private VNPayConfig vnPayConfig;
+    
+    @Autowired
+    private PaymentCallbackService paymentCallbackService;
     
     /**
      * VNPaySDK instance tạo từ VNPayConfig
@@ -292,110 +296,27 @@ public class PaymentController {
     }
     
     /**
-     * VNPay Callback Handler
-     * GET /vnpay-return
+     * VNPay User Return Endpoint
+     * GET /api/payments/vnpay-return
      * 
-     * VNPay sẽ redirect khách hàng đến endpoint này sau khi thanh toán
-     * Endpoint này xác minh callback hash và cập nhật trạng thái payment
-     * 
-     * Các parameters từ VNPay:
-     * - vnp_ResponseCode: 00 = success, other = failed
-     * - vnp_TransactionNo: VNPay transaction ID
-     * - vnp_Amount: Số tiền thanh toán (x100)
-     * - vnp_PayDate: Ngày giờ thanh toán
-     * - vnp_BankCode: Mã ngân hàng khách hàng sử dụng
-     * - vnp_SecureHash: Chữ ký xác minh từ VNPay
+     * Handle browser redirect from VNPay payment page after user completes payment.
+     * This endpoint validates the callback and returns payment status.
      */
     @GetMapping("/vnpay-return")
     public ResponseEntity<?> vnpayReturn(HttpServletRequest request) {
         try {
-            // Lấy tất cả parameters từ request
-            Map<String, String> vnpParams = new HashMap<>();
-            request.getParameterMap().forEach((key, values) -> {
-                if (values.length > 0) {
-                    vnpParams.put(key, values[0]);
-                }
-            });
+            Map<String, Object> result = paymentCallbackService.handleVNPayUserReturn(request);
             
-            // Lấy hash từ parameters
-            String vnpSecureHash = vnpParams.get("vnp_SecureHash");
-            if (vnpSecureHash == null || vnpSecureHash.isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Missing vnp_SecureHash", "success", false));
-            }
-            
-            // Xóa hash khỏi params để validate
-            vnpParams.remove("vnp_SecureHash");
-            vnpParams.remove("vnp_SecureHashType");
-            
-            // Xác minh hash
-            if (!getVNPaySDK().validatePaymentHash(vnpParams, vnpSecureHash)) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of(
-                                "error", "Invalid checksum",
-                                "success", false,
-                                "message", "Chữ ký thanh toán không hợp lệ"
-                        ));
-            }
-            
-            // Lấy response code
-            String vnpResponseCode = vnpParams.get("vnp_ResponseCode");
-            String vnpOrderInfo = vnpParams.get("vnp_OrderInfo");
-            String vnpTransactionNo = vnpParams.get("vnp_TransactionNo");
-            String vnpPayDate = vnpParams.get("vnp_PayDate");
-            String vnpAmount = vnpParams.get("vnp_Amount");
-            
-            // Parse order ID từ vnp_TxnRef
-            String vnpTxnRef = vnpParams.get("vnp_TxnRef");
-            Integer orderId;
-            try {
-                orderId = Integer.parseInt(vnpTxnRef);
-            } catch (NumberFormatException e) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Invalid order ID", "success", false));
-            }
-            
-            // Lấy payment record
-            Optional<Payment> paymentOpt = paymentService.getPaymentByOrder(orderId);
-            if (paymentOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("error", "Payment not found", "success", false));
-            }
-            
-            Payment payment = paymentOpt.get();
-            
-            // Kiểm tra response code
-            if (getVNPaySDK().isPaymentSuccess(vnpResponseCode)) {
-                // Thanh toán thành công
-                paymentService.confirmPayment(orderId, vnpTransactionNo, vnpPayDate);
-                
-                return ResponseEntity.ok(Map.of(
-                        "success", true,
-                        "message", "Thanh toán thành công",
-                        "orderId", orderId,
-                        "transactionNo", vnpTransactionNo,
-                        "amount", Long.parseLong(vnpAmount) / 100 // Convert back to VND
-                ));
+            if ((Boolean) result.get("success")) {
+                return ResponseEntity.ok(result);
             } else {
-                // Thanh toán thất bại
-                String errorMessage = getVNPayErrorMessage(vnpResponseCode);
-                
-                // Cập nhật trạng thái thanh toán thất bại
-                paymentService.failPayment(orderId, errorMessage);
-                
-                return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED)
-                        .body(Map.of(
-                                "success", false,
-                                "message", "Thanh toán thất bại: " + errorMessage,
-                                "orderId", orderId,
-                                "responseCode", vnpResponseCode
-                        ));
+                return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(result);
             }
             
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of(
-                            "error", "Error processing VNPay callback",
+                            "error", "Error processing VNPay return",
                             "message", e.getMessage(),
                             "success", false
                     ));
@@ -403,24 +324,28 @@ public class PaymentController {
     }
     
     /**
-     * Ánh xạ VNPay response codes thành error messages tiếng Việt
+     * VNPay IPN Callback Endpoint
+     * POST /api/payments/vnpay-ipn
+     * 
+     * Handle server-to-server IPN (Instant Payment Notification) from VNPay.
+     * VNPay will POST to this endpoint to notify the server about payment result.
+     * This is more reliable than user redirect as it happens server-side.
      */
-    private String getVNPayErrorMessage(String responseCode) {
-        return switch (responseCode) {
-            case "01" -> "Yêu cầu được gửi từ IP không được phép";
-            case "02" -> "Merchant được lock";
-            case "03" -> "URL không hợp lệ";
-            case "04" -> "Số tiền không hợp lệ";
-            case "05" -> "Không tìm thấy giao dịch";
-            case "06" -> "Chữ ký không hợp lệ";
-            case "07" -> "Không đủ tiền trong tài khoản";
-            case "08" -> "Giao dịch bị từ chối";
-            case "09" -> "Tài khoản không được phép thanh toán trực tuyến";
-            case "10" -> "Thẻ hết hạn hoặc bị khóa";
-            case "11" -> "Giao dịch bị hủy bởi người dùng";
-            case "12" -> " Giao dịch đang chờ xử lý";
-            case "13" -> "Lỗi máy chủ";
-            default -> "Lỗi không xác định (" + responseCode + ")";
-        };
+    @PostMapping("/vnpay-ipn")
+    public ResponseEntity<?> vnpayIpn(HttpServletRequest request) {
+        try {
+            Map<String, String> result = paymentCallbackService.handleVNPayIpnCallback(request);
+            
+            // Return JSON response for VNPay to verify
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "error", "Error processing VNPay IPN",
+                            "message", e.getMessage()
+                    ));
+        }
     }
 }
+

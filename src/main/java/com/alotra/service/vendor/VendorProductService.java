@@ -41,7 +41,7 @@ import com.alotra.repository.promotion.PromotionProductRepository;
 import com.alotra.repository.promotion.PromotionRepository;
 import com.alotra.repository.shop.ShopRepository;
 import com.alotra.repository.user.UserRepository;
-import com.alotra.service.cloudinary.CloudinaryService;
+import com.alotra.service.cloudinary.strategy.UploadService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -59,7 +59,7 @@ public class VendorProductService {
     private final SizeRepository sizeRepository;
     private final CategoryRepository categoryRepository;
     private final ReviewRepository reviewRepository;
-    private final CloudinaryService cloudinaryService;
+    private final UploadService uploadService;
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
@@ -256,7 +256,8 @@ public class VendorProductService {
 
             String imageUrl;
             try {
-                imageUrl = cloudinaryService.uploadImageAndReturnDetails(file, "products", userId).get("secure_url");
+                java.util.Map<String, String> uploadResult = uploadService.uploadImage(file, "products", userId);
+                imageUrl = uploadResult.get("secure_url");
             } catch (Exception ex) {
                 throw new RuntimeException("Khong the upload hinh anh san pham", ex);
             }

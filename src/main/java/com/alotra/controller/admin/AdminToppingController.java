@@ -36,7 +36,7 @@ import com.alotra.entity.product.Product;
 import com.alotra.entity.product.Topping;
 //import com.alotra.entity.product.ToppingApproval;
 import com.alotra.repository.product.ToppingRepository;
-import com.alotra.service.cloudinary.CloudinaryService;
+import com.alotra.service.cloudinary.strategy.UploadService;
 //import com.alotra.service.product.ToppingApprovalService;
 import com.alotra.service.product.ToppingService;
 
@@ -55,7 +55,7 @@ public class AdminToppingController {
 //	ToppingApprovalService toppingApprovalService;
 	
 	@Autowired
-	CloudinaryService cloudinary;
+	UploadService uploadService;
 
 	@GetMapping("")
 	public String listSelling(ModelMap model, @RequestParam(name = "page", defaultValue = "1") int page,
@@ -115,15 +115,15 @@ public class AdminToppingController {
                 try {
                     
                     if (existingTopping.getImageURL() != null && !existingTopping.getImageURL().isEmpty()) {
-                        String oldPublicId = cloudinary.extractPublicIdFromUrl(existingTopping.getImageURL());
+                        String oldPublicId = extractPublicIdFromUrl(existingTopping.getImageURL());
                         if (oldPublicId != null) {
-                            cloudinary.deleteImage(oldPublicId);
+                            uploadService.deleteFile(oldPublicId);
                         }
                     }
 
              
-                    String uploadedUrl = cloudinary.uploadImage(imageFile, "toppings", existingTopping.getToppingID());
-
+                    java.util.Map<String, String> uploadResult = uploadService.uploadImage(imageFile, "toppings", existingTopping.getToppingID());
+                    String uploadedUrl = uploadResult.get("secure_url");
                     toppingFromForm.setImageURL(uploadedUrl); 
 
                 } catch (Exception e) {
@@ -263,6 +263,27 @@ public class AdminToppingController {
 	    }
 
 	    return "redirect:/admin/toppings";
+	}
+
+	// ========== HELPER METHODS ==========
+	private String extractPublicIdFromUrl(String url) {
+		if (url == null || url.isEmpty()) {
+			return null;
+		}
+		try {
+			// Extract public ID from Cloudinary URL
+			// Format: https://res.cloudinary.com/cloud-name/image/upload/v1234567890/public/id.jpg
+			String[] parts = url.split("/upload/");
+			if (parts.length > 1) {
+				String pathPart = parts[1];
+				// Remove version and file extension
+				String publicId = pathPart.replaceAll("v\\d+/", "").replaceAll("\\.[^.]*$", "");
+				return publicId;
+			}
+		} catch (Exception e) {
+			log.error("Error extracting public ID from URL: {}", url, e);
+		}
+		return null;
 	}
 
 }

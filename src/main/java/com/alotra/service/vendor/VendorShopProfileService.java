@@ -11,7 +11,7 @@ import com.alotra.dto.shop.ShopProfileDTO;
 import com.alotra.entity.location.Address;
 import com.alotra.entity.shop.Shop;
 import com.alotra.repository.shop.ShopRepository;
-import com.alotra.service.cloudinary.CloudinaryService;
+import com.alotra.service.cloudinary.strategy.UploadService;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 public class VendorShopProfileService {
 
 	private final ShopRepository shopRepository;
-	private final CloudinaryService cloudinaryService;
+	private final UploadService uploadService;
 
 	@PersistenceContext // Inject EntityManager for JPQL
 	private EntityManager entityManager;
@@ -95,7 +95,7 @@ public class VendorShopProfileService {
 		// Upload logo mới (nếu có)
 		if (request.getLogoFile() != null && !request.getLogoFile().isEmpty()) {
 			try {
-				Map<String, String> uploadResult = cloudinaryService.uploadImageAndReturnDetails(request.getLogoFile(),
+				java.util.Map<String, String> uploadResult = uploadService.uploadImage(request.getLogoFile(),
 						"shops/logos", userId);
 				String newLogoUrl = uploadResult.get("secure_url");
 				if (newLogoUrl != null) {
@@ -111,8 +111,8 @@ public class VendorShopProfileService {
 		// Upload cover image mới (nếu có)
 		if (request.getCoverImageFile() != null && !request.getCoverImageFile().isEmpty()) {
 			try {
-				Map<String, String> uploadResult = cloudinaryService
-						.uploadImageAndReturnDetails(request.getCoverImageFile(), "shops/covers", userId);
+				java.util.Map<String, String> uploadResult = uploadService
+						.uploadImage(request.getCoverImageFile(), "shops/covers", userId);
 				String newCoverUrl = uploadResult.get("secure_url");
 				if (newCoverUrl != null) {
 					shop.setCoverImageURL(newCoverUrl);

@@ -12,7 +12,7 @@ import com.alotra.entity.product.Topping;
 import com.alotra.entity.shop.Shop;
 import com.alotra.repository.product.ToppingRepository;
 import com.alotra.repository.shop.ShopRepository;
-import com.alotra.service.cloudinary.CloudinaryService;
+import com.alotra.service.cloudinary.strategy.UploadService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,7 +22,7 @@ import lombok.RequiredArgsConstructor;
 public class VendorToppingService {
 
     private final ShopRepository shopRepository;
-    private final CloudinaryService cloudinaryService;
+    private final UploadService uploadService;
     private final ToppingRepository toppingRepository;
 
     @Transactional(readOnly = true)
@@ -97,7 +97,7 @@ public class VendorToppingService {
         }
 
         try {
-            Map<String, String> uploadResult = cloudinaryService.uploadImageAndReturnDetails(
+            java.util.Map<String, String> uploadResult = uploadService.uploadImage(
                     request.getImageFile(),
                     "toppings",
                     userId);
