@@ -1,7 +1,7 @@
 package com.alotra.enums;
 
 public enum ApprovalStatus {
-    PENDING,
+	PENDING,
     APPROVED,
-    REJECTED
+    REJECTED,
 }

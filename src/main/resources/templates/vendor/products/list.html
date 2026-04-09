@@ -168,14 +168,16 @@
 								<td><span class="badge"
 									th:classappend="${product.status == 'Đang hoạt động' ? 'bg-success' : 'bg-secondary'}"
 									th:text="${product.status}"></span></td>
-								<td><span class="badge bg-warning text-dark"
-									th:if="${product.approvalStatus != null and #strings.startsWith(product.approvalStatus, 'Đang chờ:')}"
-									th:text="${product.approvalStatus}"> </span> <span
-									class="badge bg-danger"
-									th:if="${product.approvalStatus != null and #strings.startsWith(product.approvalStatus, 'Bị từ chối:')}"
-									th:text="${product.approvalStatus}"> </span> <span
-									class="badge bg-success"
-									th:if="${product.approvalStatus == null}"> Đã duyệt </span></td>
+								<td>
+								    <span th:if="${product.approvalStatus != null and product.approvalStatus.toString() == 'PENDING'}" 
+								          class="badge bg-warning text-dark">Đang chờ duyệt</span>
+								
+								    <span th:if="${product.approvalStatus != null and product.approvalStatus.toString() == 'REJECTED'}" 
+								          class="badge bg-danger" th:title="${product.reason}">Bị từ chối</span>
+								
+								    <span th:if="${product.approvalStatus == null or product.approvalStatus.toString() == 'APPROVED'}" 
+								          class="badge bg-success">Đã duyệt</span>
+								</td>
 								<td>
 									<div class="btn-group" role="group">
 										<a

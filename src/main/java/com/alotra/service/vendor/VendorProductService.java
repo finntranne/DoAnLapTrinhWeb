@@ -95,7 +95,7 @@ public class VendorProductService {
         product = productRepository.save(product);
         syncVariants(product, request.getVariants());
         syncImages(product, request.getImages(), request.getPrimaryImageIndex(), userId, false);
-        replaceProductDiscount(product, request.getDiscountPercentage(), shopId, userId);
+//        replaceProductDiscount(product, request.getDiscountPercentage(), shopId, userId);
     }
 
     public void requestProductUpdate(Integer shopId, ProductRequestDTO request, Integer userId,
@@ -110,7 +110,7 @@ public class VendorProductService {
 
         syncVariants(product, request.getVariants());
         syncImages(product, request.getImages(), request.getPrimaryImageIndex(), userId, true);
-        replaceProductDiscount(product, request.getDiscountPercentage(), shopId, userId);
+//        replaceProductDiscount(product, request.getDiscountPercentage(), shopId, userId);
     }
 
     public void requestProductDeletion(Integer shopId, Integer productId, Integer userId) {
@@ -168,7 +168,7 @@ public class VendorProductService {
             }
         }
 
-        dto.setDiscountPercentage(getCurrentDiscount(product));
+//        dto.setDiscountPercentage(getCurrentDiscount(product));
         return dto;
     }
 
@@ -196,7 +196,7 @@ public class VendorProductService {
                 .min(BigDecimal::compareTo)
                 .orElse(BigDecimal.ZERO));
         dto.setStatus(product.getStatus() != null && product.getStatus() == 1 ? "Dang hoat dong" : "Khong hoat dong");
-        dto.setApprovalStatus("Approved");
+        dto.setApprovalStatus("APPROVED");
         dto.setDiscountPercentage(getCurrentDiscount(product));
         return dto;
     }
@@ -206,8 +206,8 @@ public class VendorProductService {
         dto.setVariantId(variant.getVariantID());
         dto.setSizeId(variant.getSize() != null ? variant.getSize().getSizeID() : null);
         dto.setPrice(variant.getPrice());
-        dto.setStock(0);
-        dto.setSku(null);
+//        dto.setStock(0);
+//        dto.setSku(null);
         return dto;
     }
 

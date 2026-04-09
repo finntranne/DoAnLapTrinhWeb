@@ -152,7 +152,7 @@
 							</div>
 						</div>
 					</div>
-
+<!--  
 					<div class="card mb-4">
 						<div class="card-header bg-danger text-white">
 							<h5 class="mb-0">
@@ -211,7 +211,7 @@
 							</div>
 						</div>
 					</div>
-
+-->
 					<div class="card mb-4">
 						<div class="card-header">
 							<i class="bi bi-cup-straw"></i> Topping có sẵn cho sản phẩm này
@@ -366,34 +366,48 @@
         
         // *** MỚI: Update discount preview ***
         function updateDiscountPreview() {
-            const discountInput = document.getElementById('discountPercentage');
-            const discountPercent = parseFloat(discountInput?.value) || 0;
-            
-            // Get minimum price from variants
-            const priceInputs = document.querySelectorAll('input[name*="variants"][name*="price"]');
-            let minPrice = 0;
-            
-            priceInputs.forEach(input => {
-                const price = parseFloat(input.value) || 0;
-                if (price > 0 && (minPrice === 0 || price < minPrice)) {
-                    minPrice = price;
-                }
-            });
-            
-            if (minPrice > 0) {
-                const discountAmount = minPrice * (discountPercent / 100);
-                const finalPrice = minPrice - discountAmount;
-                
-                document.getElementById('previewOriginalPrice').textContent = formatNumber(minPrice) + 'đ';
-                document.getElementById('previewDiscountAmount').textContent = 
-                    (discountPercent > 0 ? '-' : '') + formatNumber(discountAmount) + 'đ';
-                document.getElementById('previewFinalPrice').textContent = formatNumber(finalPrice) + 'đ';
-            } else {
-                document.getElementById('previewOriginalPrice').textContent = '--';
-                document.getElementById('previewDiscountAmount').textContent = '0đ';
-                document.getElementById('previewFinalPrice').textContent = '--';
-            }
-        }
+		    const discountInput = document.getElementById('discountPercentage');
+		    const discountPercent = parseFloat(discountInput?.value) || 0;
+		
+		    const previewBox = document.getElementById('discountPreview');
+		    const originalPriceEl = document.getElementById('originalPricePreview');
+		    const discountedPriceEl = document.getElementById('discountedPricePreview');
+		    const savingsAmountEl = document.getElementById('savingsAmount');
+		    const discountBadgeEl = document.getElementById('discountBadge');
+		
+		    // Nếu thiếu element thì dừng luôn, tránh crash trang
+		    if (!previewBox || !originalPriceEl || !discountedPriceEl || !savingsAmountEl || !discountBadgeEl) {
+		        console.warn("Discount preview elements not found");
+		        return;
+		    }
+		
+		    const priceInputs = document.querySelectorAll('input[name*="variants"][name*="price"]');
+		    let minPrice = 0;
+		
+		    priceInputs.forEach(input => {
+		        const price = parseFloat(input.value) || 0;
+		        if (price > 0 && (minPrice === 0 || price < minPrice)) {
+		            minPrice = price;
+		        }
+		    });
+		
+		    if (minPrice > 0) {
+		        const discountAmount = minPrice * (discountPercent / 100);
+		        const finalPrice = minPrice - discountAmount;
+		
+		        previewBox.style.display = 'block';
+		        originalPriceEl.textContent = formatNumber(minPrice) + 'đ';
+		        discountedPriceEl.textContent = formatNumber(finalPrice) + 'đ';
+		        savingsAmountEl.textContent = formatNumber(discountAmount) + 'đ';
+		        discountBadgeEl.textContent = '-' + discountPercent + '%';
+		    } else {
+		        previewBox.style.display = 'none';
+		        originalPriceEl.textContent = '--';
+		        discountedPriceEl.textContent = '--';
+		        savingsAmountEl.textContent = '0đ';
+		        discountBadgeEl.textContent = '-0%';
+		    }
+		}
         
         function formatNumber(num) {
             return new Intl.NumberFormat('vi-VN').format(Math.round(num));
@@ -417,27 +431,18 @@
                     </button>
                     ` : ''}
                     <div class="row g-3">
-                        <div class="col-md-3">
+                        <div class="col-md-6">
                             <label class="form-label">Kích cỡ <span class="text-danger">*</span></label>
                             <select class="form-select" name="variants[${index}].sizeId" required>
                                 ${optionsHTML}
                             </select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-6">
                             <label class="form-label">Giá (VNĐ) <span class="text-danger">*</span></label>
                             <input type="number" class="form-control" name="variants[${index}].price"
                                    min="0" step="1000" value="${variant.price || ''}" required>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Số lượng <span class="text-danger">*</span></label>
-                            <input type="number" class="form-control" name="variants[${index}].stock"
-                                   min="0" value="${variant.stock || ''}" required>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">SKU</label>
-                            <input type="text" class="form-control" name="variants[${index}].sku"
-                                   placeholder="Mã SKU" value="${variant.sku || ''}">
-                        </div>
+                     
                     </div>
                     ${variant.variantId ? `<input type="hidden" name="variants[${index}].variantId" value="${variant.variantId}">` : ''}
                 </div>
@@ -470,27 +475,18 @@
                     </button>
                     ` : ''}
                     <div class="row g-3">
-                        <div class="col-md-3">
+                        <div class="col-md-6">
                             <label class="form-label">Kích cỡ <span class="text-danger">*</span></label>
                             <select class="form-select" name="variants[${index}].sizeId" required>
                                 ${optionsHTML}
                             </select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-6">
                             <label class="form-label">Giá (VNĐ) <span class="text-danger">*</span></label>
                             <input type="number" class="form-control" name="variants[${index}].price"
                                    min="0" step="1000" required>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Số lượng <span class="text-danger">*</span></label>
-                            <input type="number" class="form-control" name="variants[${index}].stock"
-                                   min="0" required>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">SKU</label>
-                            <input type="text" class="form-control" name="variants[${index}].sku"
-                                   placeholder="Mã SKU">
-                        </div>
+                       
                     </div>
                 </div>
             `;

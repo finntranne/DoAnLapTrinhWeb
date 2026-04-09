@@ -1,5 +1,6 @@
 package com.alotra.dto.product;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 
@@ -18,6 +19,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class ProductRequestDTO {
 
     private Integer productId;
+    
+    private Integer shopId;
 
     @NotNull(message = "Vui lòng chọn danh mục sản phẩm")
     private Integer categoryId;
@@ -28,6 +31,8 @@ public class ProductRequestDTO {
 
     @Size(max = 5000, message = "Mô tả sản phẩm không được vượt quá 5000 ký tự")
     private String description;
+    
+    private BigDecimal basePrice;
     
     @JsonIgnore
     @Size(max = 10, message = "Chỉ được tải lên tối đa 10 hình ảnh")
@@ -48,7 +53,7 @@ public class ProductRequestDTO {
     
 //    private Set<Integer> promotionIds;
     
-    @Min(value = 0, message = "% Giảm giá phải từ 0-100")
-    @Max(value = 100, message = "% Giảm giá phải từ 0-100")
-    private Integer discountPercentage; // Null = không giảm giá
+//    @Min(value = 0, message = "% Giảm giá phải từ 0-100")
+//    @Max(value = 100, message = "% Giảm giá phải từ 0-100")
+//    private Integer discountPercentage; // Null = không giảm giá
 }
