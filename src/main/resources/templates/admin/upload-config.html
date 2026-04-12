@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layouts/admin-layout}"
+      lang="vi">
+<head>
+    <title>Quản lý Upload Ảnh</title>
+    <style layout:fragment="head">
+        .uc-page {
+            padding: 2rem 0;
+        }
+        .uc-page-header {
+            margin-bottom: 1.75rem;
+        }
+        .uc-page-header h1 {
+            font-size: 1.35rem;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 4px;
+        }
+        .uc-page-header p {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin: 0;
+        }
+
+        /* Card */
+        .uc-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .uc-card-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            color: #9ca3af;
+            margin-bottom: 0.875rem;
+        }
+
+        /* Alert */
+        .uc-alert {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+        .uc-alert-success {
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        .uc-alert-danger {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        .uc-alert-info {
+            background: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+
+        /* Strategy current */
+        .uc-strategy-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .uc-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            flex-shrink: 0;
+        }
+        .uc-strategy-name {
+            font-size: 0.975rem;
+            font-weight: 600;
+            color: #111827;
+        }
+        .uc-strategy-hint {
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin: 0;
+        }
+
+        /* Badge */
+        .uc-badge {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 3px 9px;
+            border-radius: 20px;
+        }
+        .uc-badge-teal   { background: #d1fae5; color: #065f46; }
+        .uc-badge-blue   { background: #dbeafe; color: #1e40af; }
+        .uc-badge-gray   { background: #f3f4f6; color: #4b5563; }
+        .uc-badge-green  { background: #dcfce7; color: #166534; }
+        .uc-badge-red    { background: #fee2e2; color: #991b1b; }
+        .uc-badge-amber  { background: #fef3c7; color: #92400e; }
+
+        /* Stat grid */
+        .uc-stat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 1.25rem;
+        }
+        @media (max-width: 768px) {
+            .uc-stat-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        .uc-stat {
+            background: #f9fafb;
+            border: 1px solid #f3f4f6;
+            border-radius: 10px;
+            padding: 0.875rem 1rem;
+        }
+        .uc-stat-label {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin-bottom: 6px;
+        }
+        .uc-stat-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .uc-stat-value.blue   { color: #2563eb; }
+        .uc-stat-value.green  { color: #059669; }
+        .uc-stat-value.amber  { color: #d97706; }
+        .uc-stat-value.red    { color: #dc2626; }
+
+        /* Form */
+        .uc-form-label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #374151;
+            display: block;
+            margin-bottom: 6px;
+        }
+        .uc-select {
+            width: 100%;
+            padding: 9px 12px;
+            font-size: 0.9rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: #fff;
+            color: #111827;
+            outline: none;
+            cursor: pointer;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .uc-select:focus {
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+        }
+
+        /* Description box */
+        .uc-desc-box {
+            margin-top: 0.75rem;
+            padding: 0.875rem 1rem;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            color: #6b7280;
+            line-height: 1.65;
+            display: none;
+        }
+        .uc-desc-box ul {
+            padding-left: 1.1rem;
+            margin: 6px 0 0;
+        }
+        .uc-desc-box li {
+            margin-bottom: 3px;
+        }
+        .uc-desc-title {
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+        }
+
+        /* Buttons */
+        .uc-btn-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+        .uc-btn {
+            padding: 7px 16px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid #d1d5db;
+            background: #fff;
+            color: #374151;
+            transition: background 0.15s, border-color 0.15s;
+            text-decoration: none;
+        }
+        .uc-btn:hover {
+            background: #f9fafb;
+            border-color: #9ca3af;
+        }
+        .uc-btn-primary {
+            background: #10b981;
+            color: #fff;
+            border-color: #10b981;
+        }
+        .uc-btn-primary:hover {
+            background: #059669;
+            border-color: #059669;
+        }
+        .uc-btn-warn {
+            border-color: #f59e0b;
+            color: #92400e;
+        }
+        .uc-btn-warn:hover {
+            background: #fef3c7;
+        }
+        .uc-btn-danger {
+            border-color: #f87171;
+            color: #991b1b;
+        }
+        .uc-btn-danger:hover {
+            background: #fee2e2;
+        }
+
+        /* Table */
+        .uc-table-wrap {
+            overflow-x: auto;
+        }
+        .uc-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .uc-table thead th {
+            padding: 9px 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #9ca3af;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            white-space: nowrap;
+        }
+        .uc-table tbody td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #f3f4f6;
+            color: #374151;
+            vertical-align: middle;
+        }
+        .uc-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        .uc-table tbody tr:hover td {
+            background: #f9fafb;
+        }
+        .uc-empty {
+            text-align: center;
+            padding: 2.5rem;
+            color: #9ca3af;
+            font-size: 0.875rem;
+        }
+        .uc-timestamp {
+            color: #9ca3af;
+            font-size: 0.78rem;
+        }
+    </style>
+</head>
+<body>
+<th:block layout:fragment="content">
+<div class="uc-page">
+
+    <!-- Page Header -->
+    <div class="uc-page-header">
+        <h1>Quản lý upload ảnh</h1>
+        <p>Cấu hình chiến lược upload, xem thống kê và quản lý cache / lịch sử</p>
+    </div>
+
+    <!-- Alert Messages -->
+    <div th:if="${successMessage}" class="uc-alert uc-alert-success" role="alert"
+         th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="uc-alert uc-alert-danger" role="alert"
+         th:text="${errorMessage}"></div>
+
+    <!-- Current Strategy -->
+    <div class="uc-card">
+        <div class="uc-card-label">Chiến lược hiện tại</div>
+        <div class="uc-strategy-row">
+            <div class="uc-dot"></div>
+            <span class="uc-strategy-name" th:text="${currentStrategy}">CLOUDINARY_WITH_PROXY</span>
+            <span class="uc-badge uc-badge-teal">Đang dùng</span>
+        </div>
+        <p class="uc-strategy-hint">
+            Chiến lược này áp dụng cho toàn bộ upload của người dùng trong hệ thống.
+            Admin có thể thay đổi bất kỳ lúc nào.
+        </p>
+    </div>
+
+    <!-- Statistics -->
+    <div class="uc-card">
+        <div class="uc-card-label">Thống kê upload</div>
+
+        <div class="uc-stat-grid" th:if="${statistics != null}">
+            <div class="uc-stat">
+                <div class="uc-stat-label">Tổng upload</div>
+                <div class="uc-stat-value blue" th:text="${statistics.get('totalUploads') ?: 0}">0</div>
+            </div>
+            <div class="uc-stat">
+                <div class="uc-stat-label">Upload ảnh</div>
+                <div class="uc-stat-value green" th:text="${statistics.get('totalImageUploads') ?: 0}">0</div>
+            </div>
+            <div class="uc-stat">
+                <div class="uc-stat-label">Upload video</div>
+                <div class="uc-stat-value amber" th:text="${statistics.get('totalVideoUploads') ?: 0}">0</div>
+            </div>
+            <div class="uc-stat">
+                <div class="uc-stat-label">Lỗi</div>
+                <div class="uc-stat-value red" th:text="${statistics.get('totalErrors') ?: 0}">0</div>
+            </div>
+        </div>
+
+        <div th:if="${statistics == null}" class="uc-alert uc-alert-info">
+            Thống kê chưa có dữ liệu hoặc chiến lược hiện tại không hỗ trợ.
+        </div>
+
+        <div class="uc-btn-row">
+            <button type="button" class="uc-btn uc-btn-warn" onclick="clearCache()">Xóa cache</button>
+            <button type="button" class="uc-btn uc-btn-danger" onclick="clearHistory()">Xóa lịch sử</button>
+        </div>
+    </div>
+
+    <!-- Change Strategy -->
+    <div class="uc-card">
+        <div class="uc-card-label">Thay đổi chiến lược upload</div>
+
+        <form method="post" action="/admin/upload-config/change-strategy">
+            <label for="strategySelect" class="uc-form-label">Chọn chiến lược:</label>
+            <select class="uc-select" id="strategySelect" name="strategy" onchange="showStrategyDescription()">
+                <option value="">— Chọn chiến lược —</option>
+                <option th:each="strategy : ${availableStrategies}"
+                        th:value="${strategy}"
+                        th:text="${strategy}"
+                        th:selected="${strategy == currentStrategy}"></option>
+            </select>
+
+            <div id="strategyDescription" class="uc-desc-box"></div>
+
+            <!-- Hidden description templates -->
+            <div style="display:none;">
+                <div id="desc-CLOUDINARY_WITH_PROXY">
+                    <div class="uc-desc-title">Cloudinary + Proxy — Khuyến khích</div>
+                    <ul>
+                        <li>Cache tốc độ cao cho file upload trùng lặp</li>
+                        <li>Ghi log chi tiết mọi hoạt động</li>
+                        <li>Lưu lịch sử và thống kê đầy đủ</li>
+                        <li>Lưu trữ trên Cloudinary Cloud</li>
+                    </ul>
+                </div>
+                <div id="desc-CLOUDINARY">
+                    <div class="uc-desc-title">Cloudinary — Upload trực tiếp</div>
+                    <ul>
+                        <li>Upload thẳng lên Cloudinary không qua proxy</li>
+                        <li>Không có cache</li>
+                        <li>Logging cơ bản</li>
+                        <li>Lưu trữ trên Cloudinary Cloud</li>
+                    </ul>
+                </div>
+                <div id="desc-LOCAL_STORAGE">
+                    <div class="uc-desc-title">Local Storage — Phát triển / Kiểm thử</div>
+                    <ul>
+                        <li>Lưu ảnh trên server nội bộ</li>
+                        <li>Không cần kết nối Cloudinary</li>
+                        <li>Tốc độ nhanh nhất (local)</li>
+                        <li>Chỉ dùng cho môi trường dev / test</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="uc-btn-row">
+                <button type="submit" class="uc-btn uc-btn-primary">Cập nhật chiến lược</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Upload History -->
+    <div class="uc-card">
+        <div class="uc-card-label">Lịch sử upload</div>
+
+        <div class="uc-table-wrap">
+            <table class="uc-table">
+                <thead>
+                <tr>
+                    <th style="width:44px;">STT</th>
+                    <th>Tên file</th>
+                    <th style="width:80px;">Loại</th>
+                    <th style="width:120px;">Thời gian (ms)</th>
+                    <th style="width:120px;">Trạng thái</th>
+                    <th style="width:160px;">Thời gian</th>
+                </tr>
+                </thead>
+                <tbody>
+                <th:block th:if="${uploadHistory == null or uploadHistory.isEmpty()}">
+                    <tr>
+                        <td colspan="6">
+                            <div class="uc-empty">Chưa có upload nào</div>
+                        </td>
+                    </tr>
+                </th:block>
+                <th:block th:if="${uploadHistory != null and not uploadHistory.isEmpty()}">
+                    <tr th:each="entry, iter : ${uploadHistory?.entrySet()}">
+                    <td th:text="${iter.count}">1</td>
+                    <td th:text="${entry.value.fileName}">file.jpg</td>
+                    <td>
+                        <span class="uc-badge uc-badge-blue" th:text="${entry.value.fileType}">image</span>
+                    </td>
+                    <td th:text="${entry.value.durationMs}">250</td>
+                    <td>
+                        <span th:if="${entry.value.successful}" class="uc-badge uc-badge-green">Thành công</span>
+                        <span th:unless="${entry.value.successful}" class="uc-badge uc-badge-red">Thất bại</span>
+                    </td>
+                    <td>
+                        <span class="uc-timestamp"
+                              th:text="${#dates.format(entry.value.timestamp, 'dd/MM/yyyy HH:mm:ss')}">
+                            07/04/2026 10:30:45
+                        </span>
+                    </td>
+                </tr>
+                </th:block>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script layout:fragment="scripts">
+    function showStrategyDescription() {
+        const val = document.getElementById('strategySelect').value;
+        const box = document.getElementById('strategyDescription');
+        if (val) {
+            const src = document.getElementById('desc-' + val);
+            if (src) {
+                box.innerHTML = src.innerHTML;
+                box.style.display = 'block';
+                return;
+            }
+        }
+        box.style.display = 'none';
+    }
+
+    function clearCache() {
+        if (!confirm('Bạn chắc chắn muốn xóa cache upload?')) return;
+        fetch('/admin/upload-config/api/clear-cache', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(r => r.json())
+        .then(d => { alert(d.message); location.reload(); })
+        .catch(e => console.error('Error:', e));
+    }
+
+    function clearHistory() {
+        if (!confirm('Bạn chắc chắn muốn xóa lịch sử upload?')) return;
+        fetch('/admin/upload-config/api/clear-history', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(r => r.json())
+        .then(d => { alert(d.message); location.reload(); })
+        .catch(e => console.error('Error:', e));
+    }
+
+    window.addEventListener('load', showStrategyDescription);
+</script>
+</th:block>
+</body>
+</html>

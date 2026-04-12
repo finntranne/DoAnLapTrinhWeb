@@ -32,7 +32,7 @@ import com.alotra.dto.user.UserModel;
 import com.alotra.entity.user.Role;
 import com.alotra.entity.user.User;
 import com.alotra.repository.user.RoleRepository;
-import com.alotra.service.cloudinary.CloudinaryService;
+import com.alotra.service.cloudinary.strategy.UploadService;
 import com.alotra.service.user.IUserService;
 import lombok.extern.slf4j.Slf4j;
 
@@ -49,7 +49,7 @@ public class AdminUserController {
 	RoleRepository roleRepository;
 	
 	@Autowired
-	CloudinaryService cloudinary;
+	UploadService uploadService;
 	
 	@Autowired
 	BCryptPasswordEncoder passwordEncoder;
@@ -115,8 +115,9 @@ public class AdminUserController {
             
             if (userModel.getFile() != null && !userModel.getFile().isEmpty()) {
                 try {
-                    // ⚙️ Gọi CloudinaryService để upload ảnh (an toàn hơn)
-                    String uploadedUrl = cloudinary.uploadImage(userModel.getFile(), "avatars");
+                    // ⚙️ Gọi UploadService với Strategy + Proxy Pattern
+                    java.util.Map<String, String> uploadResult = uploadService.uploadImage(userModel.getFile(), "avatars", null);
+                    String uploadedUrl = uploadResult.get("secure_url");
                     user.setAvatarURL(uploadedUrl);
                 } catch (Exception e) {
                     log.error("Lỗi khi upload ảnh đại diện: {}", e.getMessage(), e);
@@ -187,13 +188,14 @@ public class AdminUserController {
             if (avatarFile != null && !avatarFile.isEmpty()) {
                 try {
                     if (existingUser.getAvatarURL() != null && !existingUser.getAvatarURL().isEmpty()) {
-                        String oldPublicId = cloudinary.extractPublicIdFromUrl(existingUser.getAvatarURL());
+                        String oldPublicId = extractPublicIdFromUrl(existingUser.getAvatarURL());
                         if (oldPublicId != null) {
-                            cloudinary.deleteImage(oldPublicId);
+                            uploadService.deleteFile(oldPublicId);
                         }
                     }
 
-                    String uploadedUrl = cloudinary.uploadImage(avatarFile, "avatars", existingUser.getId());
+                    java.util.Map<String, String> uploadResult = uploadService.uploadImage(avatarFile, "avatars", existingUser.getId());
+                    String uploadedUrl = uploadResult.get("secure_url");
                     user.setAvatarURL(uploadedUrl);
                 } catch (Exception e) {
                     log.error("Lỗi khi upload ảnh cho user {}: {}", existingUser.getUsername(), e.getMessage());
@@ -301,6 +303,27 @@ public class AdminUserController {
         model.addAttribute("roles", roleRepository.findAllWithoutAdmin());
         model.addAttribute("activeMenu", "users");
         return "admin/users/list";
+    }
+
+    // ========== HELPER METHODS ==========
+    private String extractPublicIdFromUrl(String url) {
+        if (url == null || url.isEmpty()) {
+            return null;
+        }
+        try {
+            // Extract public ID from Cloudinary URL
+            // Format: https://res.cloudinary.com/cloud-name/image/upload/v1234567890/public/id.jpg
+            String[] parts = url.split("/upload/");
+            if (parts.length > 1) {
+                String pathPart = parts[1];
+                // Remove version and file extension
+                String publicId = pathPart.replaceAll("v\\d+/", "").replaceAll("\\.[^.]*$", "");
+                return publicId;
+            }
+        } catch (Exception e) {
+            log.error("Error extracting public ID from URL: {}", url, e);
+        }
+        return null;
     }
 
 }

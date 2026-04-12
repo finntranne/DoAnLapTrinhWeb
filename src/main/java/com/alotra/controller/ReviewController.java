@@ -28,7 +28,7 @@ import com.alotra.entity.product.Review;
 import com.alotra.entity.user.User;
 import com.alotra.repository.order.OrderItemRepository;
 import com.alotra.repository.product.ReviewRepository;
-import com.alotra.service.cloudinary.CloudinaryService;
+import com.alotra.service.cloudinary.strategy.UploadService;
 import com.alotra.service.user.UserService;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -46,7 +46,7 @@ public class ReviewController {
     @Autowired
     private UserService userService;
     @Autowired
-    private CloudinaryService cloudinaryService;
+    private UploadService uploadService;
 
     private User getCurrentAuthenticatedUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -146,10 +146,17 @@ public class ReviewController {
 
                     String contentType = file.getContentType();
                     String url = null;
-                    if (contentType != null && contentType.startsWith("image/")) {
-                        url = cloudinaryService.uploadImage(file, "reviews", user.getId());
-                    } else if (contentType != null && contentType.startsWith("video/")) {
-                        url = cloudinaryService.uploadVideo(file, "reviews", user.getId());
+                    try {
+                        if (contentType != null && contentType.startsWith("image/")) {
+                            java.util.Map<String, String> uploadResult = uploadService.uploadImage(file, "reviews", user.getId());
+                            url = uploadResult.get("secure_url");
+                        } else if (contentType != null && contentType.startsWith("video/")) {
+                            java.util.Map<String, String> uploadResult = uploadService.uploadVideo(file, "reviews", user.getId());
+                            url = uploadResult.get("secure_url");
+                        }
+                    } catch (Exception e) {
+                        log.warn("Failed to upload file: {}", e.getMessage());
+                        continue;
                     }
 
                     if (url != null) {
