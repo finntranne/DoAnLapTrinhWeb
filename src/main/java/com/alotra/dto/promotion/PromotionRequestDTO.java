@@ -7,6 +7,7 @@ import java.util.List;
 import com.alotra.enums.DiscountType;
 import com.alotra.enums.ActionType;
 
+import jakarta.persistence.Column;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -19,6 +20,8 @@ import lombok.NoArgsConstructor;
 public class PromotionRequestDTO {
 
 	private Integer promotionId;
+	
+	private Integer shopId;
 
 	@NotBlank(message = "Promotion name is required")
 	@Size(max = 255, message = "Promotion name must not exceed 255 characters")
@@ -48,11 +51,13 @@ public class PromotionRequestDTO {
 	@DecimalMin(value = "0.0", message = "Min order value cannot be negative")
 	private BigDecimal minOrderValue = BigDecimal.ZERO;
 
-	private Integer usageLimit;
+	private Integer usageLimit = null;
 
 	private List<Integer> productIds;
 
 	private ActionType actionType;
+	
+    private LocalDateTime createdAt = LocalDateTime.now();
 
 	private Byte status = 1; // 0: Inactive, 1: Active
 

@@ -1,40 +1,49 @@
-package com.alotra.entity.promotion; // Giữ package này
+package com.alotra.entity.draft;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
+import com.alotra.entity.product.Category;
 import com.alotra.entity.product.Product;
+import com.alotra.entity.product.Topping;
+import com.alotra.entity.promotion.Promotion;
 import com.alotra.entity.shop.Shop;
-import com.alotra.entity.user.User;
-// Bỏ import com.alotra.enums.DiscountType; nếu dùng String
 
-import jakarta.persistence.*; // Import đầy đủ JPA annotations
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode; // Import Exclude
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.ToString; // Import Exclude
+import lombok.ToString;
 
 @Entity
-@Table(name = "Promotions", indexes = { // Giữ lại indexes từ nhánh lam
-    @Index(name = "IX_Promotions_PromoCode", columnList = "PromoCode"),
-    @Index(name = "IX_Promotions_Status", columnList = "Status"),
-    @Index(name = "IX_Promotions_EndDate", columnList = "EndDate") // Thêm index cho EndDate nếu thường lọc/sắp xếp
-})
+@Table(name = "PromotionDrafts")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-// Thêm Excludes cho quan hệ LAZY
-@ToString(exclude = { "createdByShopID"})
-@EqualsAndHashCode(exclude = {"createdByShopID"}) // Thêm Exclude
-public class Promotion {
+public class PromotionDraft implements DraftEntity{
 
-    @Id
+	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "PromotionID") // Khớp DB
-    private Integer promotionId; // Giữ tên nhất quán (chữ thường d)
+    @Column(name = "PromotionDraftID") // Khớp DB
+    private Integer promotionDraftId; // Giữ tên nhất quán (chữ thường d)
+	
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "PromotionID", nullable = true)
+	private Promotion promotion;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CreatedByShopID") // Khớp DB
@@ -69,8 +78,6 @@ public class Promotion {
     @Column(name = "Status", nullable = false) // Khớp DB
     private Byte status; // Mặc định được set ở @PrePersist
 
-    @Column(name = "CreatedAt") // Khớp DB, thêm updatable=false
-    private LocalDateTime createdAt;
     
     @Column(name = "MaxDiscountAmount", precision = 10, scale = 2) // Khớp DB
     private BigDecimal maxDiscountAmount;
@@ -79,17 +86,19 @@ public class Promotion {
     private BigDecimal minOrderValue = BigDecimal.ZERO; 
 
     @Column(name = "UsageLimit")
-    private Integer usageLimit;
-
-    @Column(name = "UsedCount") // Khớp DB
-    private Integer usedCount = 0; // Giữ mặc định
+    private Integer usageLimit = null;
     
     @ManyToMany
     @JoinTable(
-        name = "PromotionProduct",
-        joinColumns = @JoinColumn(name = "PromotionID"),
+        name = "PromotionDraftProduct",
+        joinColumns = @JoinColumn(name = "PromotionDraftID"),
         inverseJoinColumns = @JoinColumn(name = "ProductID")
     )
     private List<Product> products = new ArrayList<>();
+    
+	@Override
+	public Integer getId() {
+		return promotionDraftId;
+	}
 
 }

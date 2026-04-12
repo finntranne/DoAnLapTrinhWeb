@@ -1,5 +1,6 @@
 package com.alotra.controller.vendor;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -19,7 +20,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.alotra.dto.promotion.PromotionRequestDTO;
 import com.alotra.dto.promotion.PromotionStatisticsDTO;
 import com.alotra.entity.promotion.Promotion;
+import com.alotra.enums.TargetType;
 import com.alotra.security.MyUserDetails;
+import com.alotra.service.approval_request.request.VendorApprovalRequestService;
 import com.alotra.service.vendor.VendorPromotionService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -95,6 +98,9 @@ public class VendorPromotionController {
 			return "redirect:/shop/register";
 		}
 	}
+	
+	@Autowired
+	private VendorApprovalRequestService vendorApprovalRequestService;
 
 	@PostMapping("/promotions/create")
 	public String createPromotion(@AuthenticationPrincipal MyUserDetails userDetails,
@@ -115,8 +121,10 @@ public class VendorPromotionController {
 		try {
 			Integer shopId = getShopIdOrThrow(userDetails);
 			Integer userId = getUserIdOrThrow(userDetails);
+			
+			request.setShopId(shopId);
 
-			vendorPromotionService.requestPromotionCreation(shopId, request, userId);
+			vendorApprovalRequestService.createDraft(request, TargetType.PROMOTION, userId);
 
 			redirectAttributes.addFlashAttribute("success",
 					"Yêu cầu tạo khuyến mãi đã được gửi. Vui lòng chờ admin phê duyệt.");
@@ -131,12 +139,13 @@ public class VendorPromotionController {
 			model.addAttribute("error", e.getMessage());
 			model.addAttribute("action", "create");
 			return "vendor/promotions/form";
-		} catch (JsonProcessingException e) {
-			log.error("Error creating promotion", e);
-			model.addAttribute("error", "Có lỗi xảy ra khi tạo khuyến mãi");
-			model.addAttribute("action", "create");
-			return "vendor/promotions/form";
-		}
+		} catch (org.springframework.dao.DataIntegrityViolationException e) {
+	        log.error("Duplicate key error: {}", e.getMessage());
+	        // Hiển thị thông báo cụ thể cho người dùng
+	        model.addAttribute("error", "Mã khuyến mãi (Promo Code) này đã tồn tại, vui lòng chọn mã khác!");
+	        model.addAttribute("action", "create");
+	        return "vendor/promotions/form";
+	    }
 	}
 
 	@GetMapping("/promotions/edit/{id}")
@@ -221,9 +230,13 @@ public class VendorPromotionController {
 
 			log.info("Calling service.requestPromotionUpdate...");
 			request.setPromotionId(id);
-			vendorPromotionService.requestPromotionUpdate(shopId, request, userId);
+			request.setShopId(shopId);
+			//vendorPromotionService.requestPromotionUpdate(shopId, request, userId);
+			vendorApprovalRequestService.updateDraft(request, TargetType.PROMOTION, userId);
 			log.info("Service call completed successfully");
 
+			
+			
 			redirectAttributes.addFlashAttribute("success",
 					"Yêu cầu cập nhật khuyến mãi đã được gửi. Vui lòng chờ admin phê duyệt.");
 
@@ -280,7 +293,7 @@ public class VendorPromotionController {
 			Integer shopId = getShopIdOrThrow(userDetails);
 			Integer userId = getUserIdOrThrow(userDetails);
 
-			vendorPromotionService.requestPromotionDeletion(shopId, id, userId);
+			vendorApprovalRequestService.deleteDraft(id, TargetType.PROMOTION, userId);
 
 			redirectAttributes.addFlashAttribute("success",
 					"Yêu cầu xóa khuyến mãi đã được gửi. Vui lòng chờ admin phê duyệt.");

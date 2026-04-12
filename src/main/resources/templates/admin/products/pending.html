@@ -38,13 +38,23 @@
 						<tbody>
 							<tr th:each="approval : ${products}">
 								<td th:text="${approval.id}"></td>
-								<td th:text="${approval.actionType}"></td>
 								
-								
+								<td th:switch="${approval.actionType.name()}">
+								    <span th:case="'CREATE'" class="badge bg-info">Thêm mới</span>
+								    <span th:case="'UPDATE'" class="badge bg-primary">Cập nhật</span>
+								    <span th:case="'DELETE'" class="badge bg-danger">Xóa</span>
+								    <span th:case="*" class="badge bg-dark" th:text="${tp.actionType}"></span>
+								</td>
 								<td th:text="${#temporals.format(approval.requestedAt, 'HH:mm dd/MM/yyyy')}">10:30 25/10/2025</td>
 								<td th:text="${approval.requestedBy.shopName}"></td>
-								<td><span class="badge bg-warning"
-									th:text="${approval.status}"></span></td>
+								
+								<td th:switch="${approval.status.name()}">
+								    <span th:case="'PENDING'" class="badge bg-warning text-dark">Chờ duyệt</span>
+								    <span th:case="'APPROVED'" class="badge bg-success">Đã duyệt</span>
+								    <span th:case="'REJECTED'" class="badge bg-danger">Từ chối</span>
+								    <span th:case="*" class="badge bg-secondary" th:text="${tp.status}"></span>
+								</td>
+								
 								<td>
 									
 										<a
@@ -68,13 +78,13 @@
 					<li class="page-item"
 						th:classappend="${currentPage == 1} ? 'disabled'"><a
 						class="page-link rounded-pill shadow-sm border-0"
-						th:href="@{'/admin/products?page=' + ${currentPage - 1}}"> <i
+						th:href="@{'/admin/products/pending?page=' + ${currentPage - 1}}"> <i
 							class="bi bi-chevron-double-left"></i>
 					</a></li>
 
 					<li class="page-item" th:if="${currentPage > 3}"><a
 						class="page-link rounded-pill shadow-sm border-0"
-						th:href="@{'/admin/products?page=1'}">1</a></li>
+						th:href="@{'/admin/products/pending?page=1'}">1</a></li>
 
 					<li class="page-item disabled" th:if="${currentPage > 4}"><span
 						class="page-link border-0 bg-transparent">...</span></li>
@@ -84,7 +94,7 @@
 						th:if="${page >= 1 and page <= totalPages}"
 						th:classappend="${page == currentPage} ? 'active'"><a
 						class="page-link rounded-pill shadow-sm border-0 fw-semibold"
-						th:href="@{'/admin/products?page=' + ${page}}" th:text="${page}"></a>
+						th:href="@{'/admin/products/pending?page=' + ${page}}" th:text="${page}"></a>
 					</li>
 
 					<li class="page-item disabled"
@@ -93,14 +103,14 @@
 
 					<li class="page-item" th:if="${currentPage < totalPages - 2}">
 						<a class="page-link rounded-pill shadow-sm border-0"
-						th:href="@{'/admin/products?page=' + ${totalPages}}"
+						th:href="@{'/admin/products/pending?page=' + ${totalPages}}"
 						th:text="${totalPages}"></a>
 					</li>
 
 					<li class="page-item"
 						th:classappend="${currentPage == totalPages} ? 'disabled'"><a
 						class="page-link rounded-pill shadow-sm border-0"
-						th:href="@{'/admin/products?page=' + ${currentPage + 1}}"> <i
+						th:href="@{'/admin/products/pending?page=' + ${currentPage + 1}}"> <i
 							class="bi bi-chevron-double-right"></i>
 					</a></li>
 				</ul>

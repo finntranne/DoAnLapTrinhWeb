@@ -9,11 +9,6 @@ import com.alotra.entity.shop.Shop;
 import com.alotra.enums.ActionType;
 import com.alotra.enums.ApprovalStatus;
 import com.alotra.enums.TargetType;
-import com.alotra.service.approval_request.approval.ApprovalState;
-import com.alotra.service.approval_request.approval.ApprovedApprovalState;
-import com.alotra.service.approval_request.approval.PendingApprovalState;
-import com.alotra.service.approval_request.approval.RejectedApprovalState;
-import com.alotra.service.approval_request.approval.RejectedApprovalState;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

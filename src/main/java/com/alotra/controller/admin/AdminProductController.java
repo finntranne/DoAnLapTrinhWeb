@@ -36,6 +36,7 @@ import com.alotra.entity.product.Topping;
 import com.alotra.entity.promotion.Promotion;
 import com.alotra.enums.ActionType;
 import com.alotra.enums.ApprovalStatus;
+import com.alotra.enums.TargetType;
 import com.alotra.repository.approval_request.ApprovalRequestRepository;
 import com.alotra.repository.approval_request.ProductDraftRepository;
 import com.alotra.security.CustomUserDetailsService;
@@ -95,7 +96,7 @@ public class AdminProductController {
 		Pageable pageable = PageRequest.of(actualPage - 1, size, Sort.by("requestedAt").ascending());
 //		Page<ApprovalRequest> approvalPage = productApprovalService.findByStatus(ApprovalStatus.PENDING, pageable);
 		
-		Page<ApprovalRequest> approvalPage = productApprovalService.findAll(pageable);
+		Page<ApprovalRequest> approvalPage = approvalRequestRepository.findByTargetType(TargetType.PRODUCT, pageable);
 
 		int totalPages = approvalPage.getTotalPages();
 
@@ -177,7 +178,10 @@ public class AdminProductController {
 	public String approveProduct(@PathVariable("id") Integer approvalId, 
 	                            RedirectAttributes redirectAttributes) {
 	    try {
-	        approvalAdminService.processApprove(approvalId);
+	    	ApprovalRequest approvalRequest = approvalRequestRepository.findById(approvalId)
+	    			.orElseThrow(() -> new IllegalArgumentException("Không tìm thấy ApprovalRequest"));
+	    	
+	        approvalAdminService.approve(approvalRequest);
 
 	        redirectAttributes.addFlashAttribute("success", 
 	            "Phê duyệt yêu cầu #" + approvalId + " thành công!");
@@ -199,7 +203,9 @@ public class AdminProductController {
 	                            Authentication authentication) {
 
 	    try {
-	    	approvalAdminService.reject(approvalId, rejectionReason);
+	    	ApprovalRequest approvalRequest = approvalRequestRepository.findById(approvalId)
+	    			.orElseThrow(() -> new IllegalArgumentException("Không tìm thấy ApprovalRequest"));
+	    	approvalAdminService.reject(approvalRequest, rejectionReason);
 	        redirectAttributes.addFlashAttribute("success", "Từ chối yêu cầu #" + approvalId + " thành công!");
 	    } catch (RuntimeException e) {
 	        redirectAttributes.addFlashAttribute("error", "Từ chối thất bại. Chi tiết: " + e.getMessage());

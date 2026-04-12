@@ -31,7 +31,6 @@
 							<tr>
 								<th>ID</th>
 								<th>Hành động</th>
-								<th>Tên khuyến mãi</th>
 
 								<th>Ngày yêu cầu</th>
 								<th>Người yêu cầu</th>
@@ -41,19 +40,29 @@
 						</thead>
 						<tbody>
 							<tr th:each="approval : ${promotions}">
-								<td th:text="${approval.approvalId}"></td>
-								<td th:text="${approval.actionType}"></td>
-								<td th:text="${approval.promotion.promotionName}"></td>
+								<td th:text="${approval.id}"></td>
+								<td th:switch="${approval.actionType.name()}">
+								    <span th:case="'CREATE'" class="badge bg-info">Thêm mới</span>
+								    <span th:case="'UPDATE'" class="badge bg-primary">Cập nhật</span>
+								    <span th:case="'DELETE'" class="badge bg-danger">Xóa</span>
+								    <span th:case="*" class="badge bg-dark" th:text="${tp.actionType}"></span>
+								</td>
+								
 								
 								
 								<td th:text="${#temporals.format(approval.requestedAt, 'HH:mm dd/MM/yyyy')}">10:30 25/10/2025</td>
-								<td th:text="${approval.requestedBy.username}"></td>
-								<td><span class="badge bg-warning"
-									th:text="${approval.status}"></span></td>
+								<td th:text="${approval.requestedBy.shopName}"></td>
+								
+								<td th:switch="${approval.status.name()}">
+								    <span th:case="'PENDING'" class="badge bg-warning text-dark">Chờ duyệt</span>
+								    <span th:case="'APPROVED'" class="badge bg-success">Đã duyệt</span>
+								    <span th:case="'REJECTED'" class="badge bg-danger">Từ chối</span>
+								    <span th:case="*" class="badge bg-secondary" th:text="${tp.status}"></span>
+								</td>
 								<td>
 									
 										<a
-											th:href="@{/admin/promotions/pending/detail/{id}(id=${approval.approvalId})}"
+											th:href="@{/admin/promotions/pending/detail/{id}(id=${approval.id})}"
 											class="btn btn-outline-info btn-sm "> <i
 											class="bi bi-eye"></i>
 										</a> 

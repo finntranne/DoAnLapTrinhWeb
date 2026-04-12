@@ -257,20 +257,19 @@
 						</div>
 						<div class="card-body">
 							<!-- Existing images (for edit mode) -->
-							<div
-								th:if="${action == 'edit' and existingImages != null and !existingImages.isEmpty()}"
-								class="mb-3">
-								<label class="form-label">Hình ảnh hiện tại</label>
-								<div class="d-flex flex-wrap gap-2">
-									<div th:each="image : ${existingImages}" class="existing-image">
-										<img th:src="${image.imageURL}" alt="Product Image"> <span
-											th:if="${image.isPrimary}" class="primary-badge">Chính</span>
-									</div>
-								</div>
-								<div class="form-text">
-									<i class="bi bi-info-circle"></i> Upload hình mới để thay thế
-									(tùy chọn)
-								</div>
+							<div th:if="${action == 'edit' and existingImages != null and !existingImages.isEmpty()}" class="mb-3">
+							    <label class="form-label">Hình ảnh hiện tại</label>
+							    <div class="d-flex flex-wrap gap-2">
+							        <div th:each="image : ${existingImages}" class="existing-image">
+							            <img th:src="${image.imageURL}" alt="Product Image">
+							            <span th:if="${image.isPrimary}" class="primary-badge">Chính</span>
+							            
+							            <input type="hidden" name="existingImageUrls" th:value="${image.imageURL}">
+							        </div>
+							    </div>
+							    <div class="form-text">
+							        <i class="bi bi-info-circle"></i> Giữ nguyên nếu không thay đổi, hoặc upload hình mới để bổ sung.
+							    </div>
 							</div>
 
 							<div class="mb-3">

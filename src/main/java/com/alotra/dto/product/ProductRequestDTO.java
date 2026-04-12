@@ -10,6 +10,8 @@ import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import com.alotra.entity.product.ProductImage;
 import com.alotra.enums.ActionType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
