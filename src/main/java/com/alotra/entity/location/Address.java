@@ -1,7 +1,5 @@
 package com.alotra.entity.location;
 
-import java.time.LocalDateTime;
-
 import com.alotra.entity.user.User;
 
 import jakarta.persistence.Column;
@@ -42,5 +40,9 @@ public class Address {
     
     @Column(name = "IsDefault", nullable = false)
     private Boolean isDefault = false;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "UserID", nullable = false)
+    private User user;
     
 }

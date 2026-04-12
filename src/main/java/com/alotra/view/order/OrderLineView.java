@@ -4,7 +4,9 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import com.alotra.entity.order.OrderItem;
+import com.alotra.entity.product.Topping;
 import com.alotra.entity.product.ProductVariant;
+import com.alotra.util.OrderPricingUtils;
 
 public class OrderLineView {
 
@@ -19,7 +21,7 @@ public class OrderLineView {
                 && orderItem.getVariant().getPrice() != null
                         ? orderItem.getVariant().getPrice()
                         : BigDecimal.ZERO;
-        this.subtotal = unitPrice.multiply(BigDecimal.valueOf(orderItem != null ? orderItem.getQuantity() : 0));
+        this.subtotal = OrderPricingUtils.calculateLineTotal(orderItem);
     }
 
     public Integer getOrderDetailID() {
@@ -46,11 +48,28 @@ public class OrderLineView {
         return subtotal;
     }
 
-    public List<Object> getToppings() {
-        return List.of();
+    public List<OrderLineToppingView> getToppings() {
+        if (orderItem == null || orderItem.getToppings() == null || orderItem.getToppings().isEmpty()) {
+            return List.of();
+        }
+        return orderItem.getToppings().stream()
+                .map(OrderLineToppingView::new)
+                .toList();
     }
 
     public OrderItem getOrderItem() {
         return orderItem;
+    }
+
+    public static class OrderLineToppingView {
+        private final Topping topping;
+
+        public OrderLineToppingView(Topping topping) {
+            this.topping = topping;
+        }
+
+        public Topping getTopping() {
+            return topping;
+        }
     }
 }

@@ -1,22 +1,27 @@
-//package com.alotra.service.product;
-//
-//import java.util.Optional;
-//
-//import org.springframework.data.domain.Page;
-//import org.springframework.data.domain.Pageable;
-//import org.springframework.stereotype.Service;
-//
+package com.alotra.service.product;
+
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
+import com.alotra.entity.ApprovalRequest;
 //import com.alotra.entity.product.ToppingApproval;
+import com.alotra.repository.approval_request.ApprovalRequestRepository;
 //import com.alotra.repository.product.ToppingApprovalRepository;
-//
-//@Service
-//public class ToppingApprovalService {
-//	
-//	private final ToppingApprovalRepository approvalRepository;
-//	
-//	public ToppingApprovalService(ToppingApprovalRepository approvalRepository) {
-//        this.approvalRepository = approvalRepository;
-//    }
+
+@Service
+public class ToppingApprovalService {
+	
+	@Autowired
+	private ApprovalRequestRepository approvalRequestRepository;
+	
+	public Page<ApprovalRequest> findAll(Pageable pageable) {
+		return approvalRequestRepository.findAll(pageable);
+	}
+	
 //	public Page<ToppingApproval> findByStatus(String status, Pageable pageable) {
 //		return approvalRepository.findByStatus(status, pageable);
 //	}
@@ -32,5 +37,5 @@
 //	public void rejectToppingChange(Integer approvalId, Integer reviewedByUserId, String rejectionReason) {
 //		approvalRepository.rejectToppingChange(approvalId, reviewedByUserId, rejectionReason);
 //    }
-//
-//}
+
+}

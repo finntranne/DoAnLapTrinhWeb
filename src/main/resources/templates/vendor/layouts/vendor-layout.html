@@ -3,8 +3,7 @@
 	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title layout:title-pattern="$CONTENT_TITLE - $LAYOUT_TITLE">Hệ
-	thống quản lý bán trà sữa</title>
+<title layout:title-pattern="$CONTENT_TITLE - $LAYOUT_TITLE">H&#7879; th&#7889;ng qu&#7843;n l&#253; b&#225;n tr&#224; s&#7919;a</title>
 
 <meta name="viewport"
 	content="width=device-width, initial-scale=1.0, user-scalable=yes" />
@@ -32,7 +31,6 @@
 	integrity="sha256-4MX+61mt9NVvvuPjUWdUdyfZfxSB1/Rf9WtqRHgG5S0="
 	crossorigin="anonymous" />
 
-<!-- Layout-specific head content -->
 <th:block layout:fragment="head"></th:block>
 </head>
 
@@ -61,7 +59,7 @@
 							style="width: 320px; max-height: 400px; overflow-y: auto;">
 							<div
 								th:if="${recentMessages == null || #lists.isEmpty(recentMessages)}"
-								class="text-center text-muted py-3">Không có tin nhắn mới
+								class="text-center text-muted py-3">Kh&#244;ng c&#243; tin nh&#7855;n m&#7899;i
 							</div>
 
 							<a th:each="msg : ${recentMessages}"
@@ -75,20 +73,19 @@
 									<div class="flex-grow-1">
 										<h3
 											class="dropdown-item-title mb-1 d-flex justify-content-between align-items-center">
-											<span th:text="${msg.customer.username}">Tên khách</span> <span
+											<span th:text="${msg.customer.username}">T&#234;n kh&#225;ch</span> <span
 												class="fs-7 text-secondary"
 												th:text="${#temporals.format(msg.timestamp, 'HH:mm')}">12:45</span>
 										</h3>
 										<p class="fs-7 mb-1 text-truncate" th:text="${msg.content}">
-											Nội dung tin nhắn...</p>
+											N&#7897;i dung tin nh&#7855;n...</p>
 									</div>
 								</div>
 							</a>
 
 							<div class="dropdown-divider"></div>
 							<a th:href="@{/vendor/dashboard}"
-								class="dropdown-item dropdown-footer text-center"> Xem tất
-								cả tin nhắn </a>
+								class="dropdown-item dropdown-footer text-center"> Xem t&#7845;t c&#7843; tin nh&#7855;n </a>
 						</div></li>
 
 					<li class="nav-item dropdown"><a class="nav-link"
@@ -101,34 +98,26 @@
 
 						<div class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
 							<span class="dropdown-item dropdown-header"
-								th:text="${unreadNotificationCount == 0 ? 'Không có thông báo mới' : unreadNotificationCount + ' Thông báo'}">
+								th:text="${unreadNotificationCount == 0 ? 'Kh&#244;ng c&#243; th&#244;ng b&#225;o m&#7899;i' : unreadNotificationCount + ' th&#244;ng b&#225;o'}">
 							</span>
 
 							<th:block th:each="notify : ${unreadNotifications}">
 								<div class="dropdown-divider"></div>
-
 								<a
-									th:with="
-					url = ${#strings.containsIgnoreCase(notify.message, 'order') or 
-							#strings.containsIgnoreCase(notify.message, 'đơn hàng') ? '/vendor/orders' :
-						  (#strings.containsIgnoreCase(notify.message, 'product') or 
-							#strings.containsIgnoreCase(notify.message, 'sản phẩm') ? '/vendor/products' :
-						  (#strings.containsIgnoreCase(notify.message, 'review') or 
-							#strings.containsIgnoreCase(notify.message, 'đánh giá') ? '/vendor/products' :
-						  (#strings.containsIgnoreCase(notify.message, 'topping') ? '/vendor/toppings' :
-							'/vendor/dashboard')))}"
-									th:href="@{${url}}" class="dropdown-item text-truncate"> <i
-									class="bi bi-info-circle-fill me-2"></i> <span
-									th:text="${notify.message}">Nội dung thông báo ở đây...</span>
+									th:with="url = ${#strings.equalsIgnoreCase(notify.type, 'NewOrder') or #strings.equalsIgnoreCase(notify.type, 'OrderStatus') ? '/vendor/orders' :
+													 (#strings.equalsIgnoreCase(notify.type, 'NewReview') ? '/vendor/products' : '/vendor/dashboard')}"
+									th:href="@{${url}}" class="dropdown-item">
+									<div class="fw-semibold small" th:text="${notify.title}">C&#7853;p nh&#7853;t</div>
+									<div class="text-muted small text-wrap"
+										th:text="${notify.message}">N&#7897;i dung th&#244;ng b&#225;o</div>
 								</a>
 							</th:block>
 
 							<div class="dropdown-divider"></div>
 							<a th:href="@{/vendor/notifications/all}"
-								class="dropdown-item dropdown-footer"> Xem tất cả thông báo
+								class="dropdown-item dropdown-footer"> Xem t&#7845;t c&#7843; th&#244;ng b&#225;o
 							</a>
 						</div></li>
-
 
 					<li class="nav-item"><a class="nav-link" href="#"
 						data-lte-toggle="fullscreen"> <i data-lte-icon="maximize"
@@ -150,7 +139,7 @@
 							<li class="user-footer"><a th:href="@{/user/profile}"
 								class="btn btn-default btn-flat">Profile</a> <a href="#"
 								id="vendorLogoutBtn" class="btn btn-default btn-flat float-end">
-									Đăng Xuất </a></li>
+									&#272;&#259;ng xu&#7845;t </a></li>
 						</ul></li>
 				</ul>
 			</div>
@@ -172,56 +161,63 @@
 							th:href="@{/vendor/dashboard}"
 							th:classappend="${currentUri == '/vendor/dashboard' ? 'active' : ''}">
 								<i class="nav-icon bi bi-house-door-fill"></i>
-								<p>Trang chủ Shop</p>
+								<p>Trang ch&#7911; Shop</p>
 						</a></li>
 
 						<li class="nav-item"><a class="nav-link"
 							th:href="@{/vendor/products}"
 							th:classappend="${#strings.startsWith(currentUri, '/vendor/products') ? 'active' : ''}">
 								<i class="nav-icon bi bi-box-seam"></i>
-								<p>Quản lý sản phẩm</p>
+								<p>Qu&#7843;n l&#253; s&#7843;n ph&#7849;m</p>
 						</a></li>
 
 						<li class="nav-item"><a class="nav-link"
 							th:href="@{/vendor/toppings}"
 							th:classappend="${#strings.startsWith(currentUri, '/vendor/toppings') ? 'active' : ''}">
 								<i class="nav-icon bi bi-plus-circle-dotted"></i>
-								<p>Quản lý Topping</p>
+								<p>Qu&#7843;n l&#253; topping</p>
 						</a></li>
 
 						<li class="nav-item"><a class="nav-link"
 							th:href="@{/vendor/promotions}"
 							th:classappend="${#strings.startsWith(currentUri, '/vendor/promotions') ? 'active' : ''}">
 								<i class="nav-icon bi bi-gift-fill"></i>
-								<p>Quản lý khuyến mãi</p>
+								<p>Qu&#7843;n l&#253; khuy&#7871;n m&#227;i</p>
 						</a></li>
 
 						<li class="nav-item"><a class="nav-link"
 							th:href="@{/vendor/orders}"
 							th:classappend="${#strings.startsWith(currentUri, '/vendor/orders') ? 'active' : ''}">
 								<i class="nav-icon bi bi-receipt-cutoff"></i>
-								<p>Quản lý đơn hàng</p>
+								<p>Qu&#7843;n l&#253; &#273;&#417;n h&#224;ng</p>
+						</a></li>
+
+						<li class="nav-item"><a class="nav-link"
+							th:href="@{/vendor/audit-logs}"
+							th:classappend="${#strings.startsWith(currentUri, '/vendor/audit-logs') ? 'active' : ''}">
+								<i class="nav-icon bi bi-journal-text"></i>
+								<p>Audit log</p>
 						</a></li>
 
 						<li class="nav-item"><a class="nav-link"
 							th:href="@{/vendor/staff}"
 							th:classappend="${currentUri == '/vendor/staff' ? 'active' : ''}">
 								<i class="nav-icon bi bi-person"></i>
-								<p>Quản lý nhân viên</p>
+								<p>Qu&#7843;n l&#253; nh&#226;n vi&#234;n</p>
 						</a></li>
 
 						<li class="nav-item"><a class="nav-link"
 							th:href="@{/vendor/revenue}"
 							th:classappend="${currentUri == '/vendor/revenue' ? 'active' : ''}">
 								<i class="nav-icon bi bi-graph-up-arrow"></i>
-								<p>Quản lý doanh thu</p>
+								<p>Qu&#7843;n l&#253; doanh thu</p>
 						</a></li>
 
 						<li class="nav-item"><a class="nav-link"
 							th:href="@{/vendor/shop-profile}"
 							th:classappend="${currentUri == '/vendor/shop-profile' ? 'active' : ''}">
 								<i class="nav-icon bi bi-shop"></i>
-								<p>Thông tin cửa hàng</p>
+								<p>Th&#244;ng tin c&#7917;a h&#224;ng</p>
 						</a></li>
 					</ul>
 				</nav>
@@ -239,8 +235,6 @@
 		</footer>
 	</div>
 
-	<!-- Core Scripts -->
-	<!-- jQuery - Thêm trước các script khác -->
 	<script src="https://code.jquery.com/jquery-3.7.1.min.js"
 		integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
 		crossorigin="anonymous"></script>
@@ -255,15 +249,12 @@
 
 	<script>
 		document.addEventListener("DOMContentLoaded", function () {
-			// Initialize tooltips
 			const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
 			[...tooltipTriggerList].forEach(el => new bootstrap.Tooltip(el));
 		});
 	</script>
 
 	<script th:src="@{/js/adminlte.js}"></script>
-
-	<!-- Page-specific scripts -->
 	<script th:src="@{/js/logout.js}"></script>
 	<th:block layout:fragment="scripts"></th:block>
 </body>

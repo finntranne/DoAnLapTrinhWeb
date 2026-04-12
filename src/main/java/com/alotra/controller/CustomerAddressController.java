@@ -69,6 +69,11 @@ public class CustomerAddressController {
         }
     }
 
+    private Address getUserAddressOrThrow(Integer addressId, User user) {
+        return addressRepository.findByAddressIDAndUserId(addressId, user.getId())
+                .orElseThrow(() -> new EntityNotFoundException("Khong tim thay dia chi."));
+    }
+
     private Integer getSelectedShopId(HttpSession session) {
         Integer selectedShopId = (Integer) session.getAttribute("selectedShopId");
         return selectedShopId == null ? 0 : selectedShopId;
@@ -123,6 +128,7 @@ public class CustomerAddressController {
             RedirectAttributes redirectAttributes) {
         try {
             User user = getCurrentAuthenticatedUser();
+            address.setUser(user);
 
             if (Boolean.TRUE.equals(address.getIsDefault())) {
                 List<Address> allAddresses = addressRepository.findByUserId(user.getId());
@@ -147,8 +153,7 @@ public class CustomerAddressController {
     public String deleteAddress(@PathVariable("id") Integer addressId, RedirectAttributes redirectAttributes) {
         try {
             User user = getCurrentAuthenticatedUser();
-            Address addressToDelete = addressRepository.findById(addressId)
-                    .orElseThrow(() -> new EntityNotFoundException("Khong tim thay dia chi."));
+            Address addressToDelete = getUserAddressOrThrow(addressId, user);
 
             List<Address> allAddresses = addressRepository.findByUserId(user.getId());
             if (Boolean.TRUE.equals(addressToDelete.getIsDefault()) && allAddresses.size() <= 1) {
@@ -204,6 +209,7 @@ public class CustomerAddressController {
         copy.setWard(source.getWard());
         copy.setStreetAddress(source.getStreetAddress());
         copy.setIsDefault(Boolean.FALSE);
+        copy.setUser(source.getUser());
         return copy;
     }
 
@@ -211,16 +217,12 @@ public class CustomerAddressController {
     public String setDefaultAddress(@PathVariable("id") Integer addressId, RedirectAttributes redirectAttributes) {
         try {
             User user = getCurrentAuthenticatedUser();
-            Address newDefaultAddress = addressRepository.findById(addressId)
-                    .orElseThrow(() -> new EntityNotFoundException("Khong tim thay dia chi."));
+            getUserAddressOrThrow(addressId, user);
 
             List<Address> allAddresses = addressRepository.findByUserId(user.getId());
             for (Address address : allAddresses) {
-                if (!address.getAddressID().equals(addressId)) {
-                    address.setIsDefault(false);
-                }
+                address.setIsDefault(address.getAddressID().equals(addressId));
             }
-            newDefaultAddress.setIsDefault(true);
             addressRepository.saveAll(allAddresses);
             redirectAttributes.addFlashAttribute("successMessage", "Da dat dia chi lam mac dinh!");
         } catch (ResponseStatusException | UsernameNotFoundException ex) {
@@ -237,10 +239,9 @@ public class CustomerAddressController {
     public String showEditAddressForm(@PathVariable("id") Integer addressId, Model model, HttpSession session) {
         try {
             Integer selectedShopId = getSelectedShopId(session);
-            getCurrentAuthenticatedUser();
+            User user = getCurrentAuthenticatedUser();
 
-            Address addressToEdit = addressRepository.findById(addressId)
-                    .orElseThrow(() -> new EntityNotFoundException("Khong tim thay dia chi."));
+            Address addressToEdit = getUserAddressOrThrow(addressId, user);
 
             model.addAttribute("address", addressToEdit);
             model.addAttribute("pageTitle", "Chinh sua dia chi");
@@ -263,17 +264,16 @@ public class CustomerAddressController {
     public String updateAddress(@ModelAttribute("address") Address updatedAddress,
             RedirectAttributes redirectAttributes) {
         try {
-            getCurrentAuthenticatedUser();
+            User user = getCurrentAuthenticatedUser();
 
             if (updatedAddress.getAddressID() == null) {
                 throw new IllegalArgumentException("Thieu ID dia chi de cap nhat.");
             }
 
-            Address existingAddress = addressRepository.findById(updatedAddress.getAddressID())
-                    .orElseThrow(() -> new EntityNotFoundException("Dia chi khong ton tai de cap nhat."));
+            Address existingAddress = getUserAddressOrThrow(updatedAddress.getAddressID(), user);
 
             if (Boolean.TRUE.equals(updatedAddress.getIsDefault())) {
-                List<Address> allAddresses = addressRepository.findAllByOrderByIsDefaultDescAddressIDDesc();
+                List<Address> allAddresses = addressRepository.findByUserId(user.getId());
                 for (Address address : allAddresses) {
                     if (!address.getAddressID().equals(updatedAddress.getAddressID())) {
                         address.setIsDefault(false);

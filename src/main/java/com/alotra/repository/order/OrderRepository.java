@@ -161,6 +161,13 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 
     Long countByShipper_IdAndOrderDateBetween(Integer shipperId, LocalDateTime startDate, LocalDateTime endDate);
 
+    @Query("""
+            SELECT COUNT(o) FROM Order o
+            WHERE o.shipper.id = :shipperId
+              AND o.orderStatus IN ('Confirmed', 'Delivering')
+            """)
+    Long countActiveAssignments(@Param("shipperId") Integer shipperId);
+
     boolean existsByAddress_AddressID(Integer addressId);
 
     List<Order> findByAddress_AddressID(Integer addressId);

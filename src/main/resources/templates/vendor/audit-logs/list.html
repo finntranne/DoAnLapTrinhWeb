@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+    xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{vendor/layouts/vendor-layout}" lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Audit Log - Vendor | AloTra</title>
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="d-flex justify-content-between align-items-center flex-wrap pt-3 pb-2 mb-3 border-bottom">
+            <div>
+                <h1 class="h2 mb-1">
+                    <i class="bi bi-journal-text"></i> Audit log don hang
+                </h1>
+                <div class="text-muted">Theo doi cac thao tac thay doi trang thai va gan shipper trong shop.</div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <form method="get" th:action="@{/vendor/audit-logs}" class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label for="orderId" class="form-label">Loc theo ma don</label>
+                        <input type="number" min="1" class="form-control" id="orderId" name="orderId"
+                            th:value="${orderIdFilter}" placeholder="Nhap Order ID">
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-funnel"></i> Loc
+                        </button>
+                        <a th:href="@{/vendor/audit-logs}" class="btn btn-outline-secondary">
+                            Bo loc
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Thoi gian</th>
+                                <th>Don hang</th>
+                                <th>Su kien</th>
+                                <th>Trang thai</th>
+                                <th>Nguoi thuc hien</th>
+                                <th>Ghi chu</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${auditLogs.isEmpty()}">
+                                <td colspan="6" class="text-center py-4 text-muted">Chua co audit log nao.</td>
+                            </tr>
+                            <tr th:each="logItem : ${auditLogs.content}">
+                                <td th:text="${#temporals.format(logItem.createdAt, 'dd/MM/yyyy HH:mm:ss')}"></td>
+                                <td>
+                                    <a th:href="@{/vendor/orders/{id}(id=${logItem.order.orderID})}"
+                                        th:text="${'#' + logItem.order.orderID}"
+                                        class="text-decoration-none fw-semibold"></a>
+                                </td>
+                                <td>
+                                    <span class="badge text-bg-info" th:text="${logItem.eventType}"></span>
+                                </td>
+                                <td th:text="${(logItem.oldStatus != null ? logItem.oldStatus : '-') + ' -> ' + (logItem.newStatus != null ? logItem.newStatus : '-')}"></td>
+                                <td th:text="${logItem.actor != null ? logItem.actor.fullName : 'He thong'}"></td>
+                                <td th:text="${logItem.note != null && !#strings.isEmpty(logItem.note) ? logItem.note : '-'}"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card-footer d-flex justify-content-between align-items-center" th:if="${totalPages > 0}">
+                <div class="text-muted">
+                    Trang <span th:text="${currentPage + 1}"></span> / <span th:text="${totalPages}"></span>
+                </div>
+                <div class="btn-group">
+                    <a class="btn btn-outline-secondary"
+                        th:classappend="${!auditLogs.hasPrevious()} ? ' disabled' : ''"
+                        th:href="@{/vendor/audit-logs(page=${auditLogs.hasPrevious() ? currentPage - 1 : currentPage}, orderId=${orderIdFilter})}">
+                        Truoc
+                    </a>
+                    <a class="btn btn-outline-secondary"
+                        th:classappend="${!auditLogs.hasNext()} ? ' disabled' : ''"
+                        th:href="@{/vendor/audit-logs(page=${auditLogs.hasNext() ? currentPage + 1 : currentPage}, orderId=${orderIdFilter})}">
+                        Sau
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -69,7 +69,7 @@ public class Promotion {
     @Column(name = "Status", nullable = false) // Khớp DB
     private Byte status; // Mặc định được set ở @PrePersist
 
-    @Column(name = "CreatedAt", nullable = false, updatable = false) // Khớp DB, thêm updatable=false
+    @Column(name = "CreatedAt") // Khớp DB, thêm updatable=false
     private LocalDateTime createdAt;
     
     @Column(name = "MaxDiscountAmount", precision = 10, scale = 2) // Khớp DB

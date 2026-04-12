@@ -1,0 +1,328 @@
+@startuml
+title Vendor Order Processing UML
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+left to right direction
+
+package "Domain" {
+  class Order {
+    - orderID: Integer
+    - orderStatus: String
+    - orderDate: LocalDateTime
+    - shipper: User
+    - user: User
+  }
+
+  class OrderHistory {
+    - historyId: Integer
+    - order: Order
+    - status: String
+    - changedAt: LocalDateTime
+    - note: String
+  }
+
+  class AuditLog {
+    - auditLogID: Integer
+    - order: Order
+    - shop: Shop
+    - actor: User
+    - eventType: String
+    - oldStatus: String
+    - newStatus: String
+    - note: String
+    - createdAt: LocalDateTime
+  }
+
+  class User {
+    - id: Integer
+    - fullName: String
+    - lastLoginAt: LocalDateTime
+  }
+
+  class Shop {
+    - shopId: Integer
+    - shopName: String
+  }
+}
+
+package "Facade" {
+  class VendorOrderFacade {
+    - orderRepository: OrderRepository
+    - userRepository: UserRepository
+    - confirmOrderCommand: ConfirmOrderCommand
+    - assignShipperCommand: AssignShipperCommand
+    - cancelOrderCommand: CancelOrderCommand
+    - orderEventPublisher: OrderEventPublisher
+    - shipperSelectionStrategyFactory: ShipperSelectionStrategyFactory
+    + confirmOrder(orderId: Integer, actorId: Integer)
+    + assignShipper(orderId: Integer, shipperId: Integer, actorId: Integer, selectionType: ShipperSelectionType)
+    + recommendShipper(orderId: Integer, selectionType: ShipperSelectionType): User
+    + cancelOrder(orderId: Integer, reason: String, actorId: Integer)
+    - loadOrder(shopId: Integer, orderId: Integer): Order
+    - loadUser(userId: Integer): User
+    - selectShipper(order: Order, preferredShipperId: Integer, selectionType: ShipperSelectionType): User
+  }
+}
+
+package "Command" {
+  interface OrderActionCommand {
+    + execute(ctx: VendorOrderContext)
+  }
+
+  class ConfirmOrderCommand {
+    - orderStateFactory: OrderStateFactory
+    + execute(ctx: VendorOrderContext)
+  }
+
+  class AssignShipperCommand {
+    - orderStateFactory: OrderStateFactory
+    + execute(ctx: VendorOrderContext)
+  }
+
+  class CancelOrderCommand {
+    - orderStateFactory: OrderStateFactory
+    + execute(ctx: VendorOrderContext)
+  }
+
+  OrderActionCommand <|.. ConfirmOrderCommand
+  OrderActionCommand <|.. AssignShipperCommand
+  OrderActionCommand <|.. CancelOrderCommand
+}
+
+package "Strategy" {
+  enum ShipperSelectionType {
+    MANUAL
+    LEAST_BUSY
+    RECENTLY_ACTIVE
+  }
+
+  class ShipperSelectionContext {
+    - order: Order
+    - preferredShipperId: Integer
+    - candidates: List<User>
+  }
+
+  interface ShipperSelectionStrategy {
+    + getType(): ShipperSelectionType
+    + select(ctx: ShipperSelectionContext): User
+  }
+
+  class ManualShipperSelectionStrategy {
+    + getType(): ShipperSelectionType
+    + select(ctx: ShipperSelectionContext): User
+  }
+
+  class LeastBusyShipperSelectionStrategy {
+    - orderRepository: OrderRepository
+    + getType(): ShipperSelectionType
+    + select(ctx: ShipperSelectionContext): User
+    - compare(left: User, right: User, startOfDay: LocalDateTime, endOfDay: LocalDateTime): int
+  }
+
+  class RecentlyActiveShipperSelectionStrategy {
+    - orderRepository: OrderRepository
+    + getType(): ShipperSelectionType
+    + select(ctx: ShipperSelectionContext): User
+    - compare(left: User, right: User): int
+  }
+
+  class ShipperSelectionStrategyFactory {
+    - strategies: Map<ShipperSelectionType, ShipperSelectionStrategy>
+    + ShipperSelectionStrategyFactory(strategies: List<ShipperSelectionStrategy>)
+    + getStrategy(type: ShipperSelectionType): ShipperSelectionStrategy
+  }
+
+  ShipperSelectionStrategy <|.. ManualShipperSelectionStrategy
+  ShipperSelectionStrategy <|.. LeastBusyShipperSelectionStrategy
+  ShipperSelectionStrategy <|.. RecentlyActiveShipperSelectionStrategy
+}
+
+package "State" {
+  interface OrderStateHandler {
+    + confirm(ctx: VendorOrderContext)
+    + assignShipper(ctx: VendorOrderContext)
+    + cancel(ctx: VendorOrderContext)
+  }
+
+  abstract class AbstractOrderStateHandler {
+    + confirm(ctx: VendorOrderContext)
+    + assignShipper(ctx: VendorOrderContext)
+    + cancel(ctx: VendorOrderContext)
+  }
+
+  class PendingStateHandler {
+    + confirm(ctx: VendorOrderContext)
+    + cancel(ctx: VendorOrderContext)
+  }
+
+  class ConfirmedStateHandler {
+    + assignShipper(ctx: VendorOrderContext)
+    + cancel(ctx: VendorOrderContext)
+  }
+
+  class DeliveringStateHandler {
+    + assignShipper(ctx: VendorOrderContext)
+  }
+
+  class CancelledStateHandler
+
+  class OrderStateFactory {
+    - pendingStateHandler: PendingStateHandler
+    - confirmedStateHandler: ConfirmedStateHandler
+    - deliveringStateHandler: DeliveringStateHandler
+    - cancelledStateHandler: CancelledStateHandler
+    + getState(order: Order): OrderStateHandler
+  }
+
+  OrderStateHandler <|.. AbstractOrderStateHandler
+  AbstractOrderStateHandler <|-- PendingStateHandler
+  AbstractOrderStateHandler <|-- ConfirmedStateHandler
+  AbstractOrderStateHandler <|-- DeliveringStateHandler
+  AbstractOrderStateHandler <|-- CancelledStateHandler
+}
+
+package "Observer" {
+  abstract class OrderEvent {
+    - order: Order
+    - actor: User
+    - oldStatus: String
+    - newStatus: String
+    - note: String
+  }
+
+  class OrderConfirmedEvent {
+    + OrderConfirmedEvent(order: Order, actor: User, oldStatus: String, newStatus: String, note: String)
+  }
+
+  class OrderAssignedEvent {
+    - shipper: User
+    + OrderAssignedEvent(order: Order, actor: User, shipper: User, oldStatus: String, newStatus: String, note: String)
+  }
+
+  class OrderCancelledEvent {
+    + OrderCancelledEvent(order: Order, actor: User, oldStatus: String, newStatus: String, note: String)
+  }
+
+  interface OrderEventObserver {
+    + update(event: OrderEvent)
+  }
+
+  class NotificationObserver {
+    - notificationService: NotificationService
+    + update(event: OrderEvent)
+  }
+
+  class AuditLogObserver {
+    - auditLogRepository: AuditLogRepository
+    - log: Logger
+    + update(event: OrderEvent)
+  }
+
+  class OrderEventPublisher {
+    - observers: List<OrderEventObserver>
+    + publish(event: OrderEvent)
+    + addObserver(observer: OrderEventObserver)
+    + removeObserver(observer: OrderEventObserver)
+  }
+
+  OrderEvent <|-- OrderConfirmedEvent
+  OrderEvent <|-- OrderAssignedEvent
+  OrderEvent <|-- OrderCancelledEvent
+
+  OrderEventObserver <|.. NotificationObserver
+  OrderEventObserver <|.. AuditLogObserver
+}
+
+package "Context" {
+  class VendorOrderContext {
+    - order: Order
+    - actor: User
+    - shipper: User
+    - shop: Shop
+    - note: String
+    - eventPublisher: OrderEventPublisher
+    + VendorOrderContext(order: Order, actor: User, shipper: User, shop: Shop, note: String, eventPublisher: OrderEventPublisher)
+  }
+}
+
+package "Config" {
+  class VendorOrderPatternConfig {
+    + orderEventPublisher(...): OrderEventPublisher
+  }
+}
+
+package "Persistence / Services" {
+  interface OrderRepository {
+    + findById(orderId: Integer): Optional<Order>
+    + countByShopId(shopId: Integer): Long
+    + countByShopIdAndStatus(shopId: Integer, status: String): Long
+    + countByShipper_IdAndOrderDateBetween(shipperId: Integer, startDate: LocalDateTime, endDate: LocalDateTime): Long
+    + countActiveAssignments(shipperId: Integer): Long
+    + save(order: Order): Order
+  }
+
+  interface OrderHistoryRepository
+
+  interface AuditLogRepository {
+    + save(auditLog: AuditLog): AuditLog
+  }
+
+  interface UserRepository {
+    + findById(userId: Integer): Optional<User>
+    + findByRoles_RoleName(roleName: String): List<User>
+  }
+
+  class NotificationService {
+    + notifyCustomerAboutOrderStatus(userId: Integer, orderId: Integer, newStatus: String)
+    + notifyCustomerAboutOrderAssigned(userId: Integer, orderId: Integer)
+    + notifyShipperAboutAssignment(shipperId: Integer, orderId: Integer, deliveryAddress: String)
+  }
+}
+
+VendorOrderFacade --> OrderRepository
+VendorOrderFacade --> UserRepository
+VendorOrderFacade --> OrderActionCommand
+VendorOrderFacade --> VendorOrderContext
+VendorOrderFacade --> ShipperSelectionStrategyFactory
+VendorOrderFacade --> ShipperSelectionContext
+VendorOrderFacade --> ShipperSelectionType
+
+ConfirmOrderCommand --> OrderStateHandler
+AssignShipperCommand --> OrderStateHandler
+CancelOrderCommand --> OrderStateHandler
+
+OrderStateFactory --> PendingStateHandler
+OrderStateFactory --> ConfirmedStateHandler
+OrderStateFactory --> DeliveringStateHandler
+OrderStateFactory --> CancelledStateHandler
+
+VendorOrderContext --> Order
+VendorOrderContext --> User
+VendorOrderContext --> Shop
+VendorOrderContext --> OrderEventPublisher
+
+ShipperSelectionStrategyFactory --> ShipperSelectionStrategy
+ShipperSelectionContext --> Order
+ShipperSelectionContext --> User
+ManualShipperSelectionStrategy --> ShipperSelectionContext
+LeastBusyShipperSelectionStrategy --> OrderRepository
+RecentlyActiveShipperSelectionStrategy --> OrderRepository
+
+OrderEventPublisher --> OrderEventObserver
+NotificationObserver --> NotificationService
+AuditLogObserver --> AuditLogRepository
+AuditLogObserver --> AuditLog
+
+VendorOrderPatternConfig --> OrderEventPublisher
+VendorOrderPatternConfig --> NotificationObserver
+VendorOrderPatternConfig --> AuditLogObserver
+
+Order "1" --> "0..*" OrderHistory
+Order "1" --> "0..*" AuditLog
+Order "0..1" --> User
+Order --> User
+
+@enduml

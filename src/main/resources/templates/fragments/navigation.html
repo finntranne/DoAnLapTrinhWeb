@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 
 <div th:fragment="pageNavigation">
     <nav class="navbar navbar-expand-lg navbar-dark navbar-theme py-2">
@@ -15,7 +15,7 @@
             <div class="collapse navbar-collapse" id="mainNavbar">
                 <form class="search-bar mx-auto my-2 my-lg-0" th:action="@{/search}" method="GET">
                     <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Tìm kiếm sản phẩm..." 
+                        <input type="text" class="form-control" placeholder="T&#236;m ki&#7871;m s&#7843;n ph&#7849;m..."
                                name="keyword" th:value="${keyword}">
                         <button class="btn btn-light" type="submit">
                             <i class="fa fa-search text-muted"></i>
@@ -28,30 +28,25 @@
                         <a class="nav-link text-white d-flex align-items-center dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fa-solid fa-store fa-2x"></i>
                             <div class="ms-2">
-                                <span class="text small d-block">Cửa hàng</span>
-                                <span class="fw-bold d-block" 
-                                    th:text="${selectedShopName ?: 'Chọn cửa hàng'}">
-                                </span>
+                                <span class="text small d-block">C&#7917;a h&#224;ng</span>
+                                <span class="fw-bold d-block" th:text="${selectedShopName ?: 'Ch&#7885;n c&#7917;a h&#224;ng'}"></span>
                             </div>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end shop-select-dropdown">
-                            <!-- ✅ SHOP: Tất cả cửa hàng -->
                             <li>
-                                <a class="dropdown-item shop-select-item" 
+                                <a class="dropdown-item shop-select-item"
                                    href="#"
-                                   data-shop-id="0" 
-                                   data-shop-name="Tất cả cửa hàng"
-                                   onclick="selectShop(0, 'Tất cả cửa hàng')"> 
-                                   <i class="fa-solid fa-globe me-2"></i>Xem tất cả sản phẩm
+                                   data-shop-id="0"
+                                   data-shop-name="T&#7845;t c&#7843; c&#7917;a h&#224;ng"
+                                   onclick="selectShop(0, 'T&#7845;t c&#7843; c&#7917;a h&#224;ng')">
+                                   <i class="fa-solid fa-globe me-2"></i>Xem t&#7845;t c&#7843; s&#7843;n ph&#7849;m
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            
-                            <!-- ✅ SHOP LOOP: Sửa th:onclick thành data attributes -->
                             <li th:each="shop : ${shops}">
-                                <a class="dropdown-item shop-select-item" 
+                                <a class="dropdown-item shop-select-item"
                                    href="#"
-                                   th:data-shop-id="${shop.shopId}" 
+                                   th:data-shop-id="${shop.shopId}"
                                    th:data-shop-name="${shop.shopName}"
                                    th:text="${shop.shopName}"
                                    onclick="selectShop(this.dataset.shopId, this.dataset.shopName)">
@@ -59,13 +54,13 @@
                             </li>
                         </ul>
                     </li>
-                    
+
                     <li class="nav-item" th:if="${#authorization.expression('!isAuthenticated()')}">
                         <a href="/login" class="nav-link text-white d-flex align-items-center">
                             <i class="fa-solid fa-user fa-2x"></i>
                             <div class="ms-2">
-                                <span class="text small d-block">Tài khoản</span>
-                                <span class="fw-bold d-block">Đăng nhập</span>
+                                <span class="text small d-block">T&#224;i kho&#7843;n</span>
+                                <span class="fw-bold d-block">&#272;&#259;ng nh&#7853;p</span>
                             </div>
                         </a>
                     </li>
@@ -74,38 +69,63 @@
                         <a class="nav-link text-white d-flex align-items-center dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fa-solid fa-user-check fa-2x"></i>
                             <div class="ms-2">
-                                <span class="text small d-block">Xin chào,</span>
+                                <span class="text small d-block">Xin ch&#224;o,</span>
                                 <span class="fw-bold d-block" th:text="${#authentication.name}"></span>
                             </div>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="/user/profile">
-                            <i class="fa-solid fa-address-card me-2"></i>Hồ sơ của tôi
-                        </a></li>
-                        <li><a class="dropdown-item" href="/shop/register">
-                            <i class="fa-solid fa-store me-2"></i>Đăng ký Shop
-                        </a></li>
-                        <li><a class="dropdown-item" href="/user/orders">
-                            <i class="fa-solid fa-receipt me-2"></i>Lịch sử mua hàng
-                        </a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#" id="vendorLogoutBtn">
-									<i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất
-							</a></li>
-                    </ul>
+                            <li><a class="dropdown-item" href="/user/profile"><i class="fa-solid fa-address-card me-2"></i>H&#7891; s&#417; c&#7911;a t&#244;i</a></li>
+                            <li><a class="dropdown-item" href="/shop/register"><i class="fa-solid fa-store me-2"></i>&#272;&#259;ng k&#253; Shop</a></li>
+                            <li><a class="dropdown-item" href="/user/orders"><i class="fa-solid fa-receipt me-2"></i>L&#7883;ch s&#7917; mua h&#224;ng</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" id="vendorLogoutBtn"><i class="fa-solid fa-right-from-bracket me-2"></i>&#272;&#259;ng xu&#7845;t</a></li>
+                        </ul>
                     </li>
-                    
+
                     <li class="nav-item">
                         <a href="/cart" class="sticky-nav-item position-relative">
                             <i class="fa-solid fa-cart-shopping"></i>
                             <div class="nav-text">
-                                <strong>Giỏ hàng</strong>
+                                <strong>Gi&#7887; h&#224;ng</strong>
                             </div>
                             <span class="cart-badge"
                                   th:if="${cartItemCount != null and cartItemCount > 0}"
                                   th:text="${cartItemCount}">
                             </span>
                         </a>
+                    </li>
+
+                    <li class="nav-item dropdown ms-2" th:if="${#authorization.expression('isAuthenticated()')}">
+                        <a class="nav-link text-white position-relative" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fa-solid fa-bell fa-xl"></i>
+                            <span class="cart-badge"
+                                  th:if="${unreadNotificationCount != null and unreadNotificationCount > 0}"
+                                  th:text="${unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}"
+                                  style="top: -4px; right: -10px;">
+                            </span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" style="min-width: 360px;">
+                            <li>
+                                <span class="dropdown-item-text fw-semibold"
+                                      th:text="${unreadNotificationCount == null or unreadNotificationCount == 0 ? 'Kh&#244;ng c&#243; th&#244;ng b&#225;o m&#7899;i' : unreadNotificationCount + ' th&#244;ng b&#225;o m&#7899;i'}">
+                                </span>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li th:if="${unreadNotifications == null or #lists.isEmpty(unreadNotifications)}">
+                                <span class="dropdown-item-text text-muted small">Khi observer t&#7841;o th&#244;ng b&#225;o, m&#7909;c n&#224;y s&#7869; hi&#7875;n th&#7883; &#7903; &#273;&#226;y.</span>
+                            </li>
+                            <li th:each="notify : ${unreadNotifications}">
+                                <a class="dropdown-item py-2"
+                                   th:href="${notify.relatedEntityID != null and #strings.equalsIgnoreCase(notify.type, 'OrderStatus')}
+                                            ? @{/user/orders/{id}(id=${notify.relatedEntityID})}
+                                            : @{/user/orders}">
+                                    <div class="fw-semibold small" th:text="${notify.title}">C&#7853;p nh&#7853;t &#273;&#417;n h&#224;ng</div>
+                                    <div class="text-muted small text-wrap" th:text="${notify.message}">N&#7897;i dung th&#244;ng b&#225;o</div>
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-center fw-semibold" th:href="@{/user/orders}">Xem l&#7883;ch s&#7917; &#273;&#417;n h&#224;ng</a></li>
+                        </ul>
                     </li>
                 </ul>
             </div>
@@ -117,63 +137,58 @@
             <div class="dropdown">
                 <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">
                     <i class="fa-solid fa-bars me-2"></i>
-                    Danh mục sản phẩm
+                    Danh m&#7909;c s&#7843;n ph&#7849;m
                 </button>
                 <ul class="dropdown-menu" th:if="${categories != null}">
                     <li th:each="category : ${categories}">
-                        <a class="dropdown-item" 
-                           th:href="@{/categories/{id}(id=${category.categoryID})}" 
-                           th:text="${category.categoryName}"></a>
+                        <a class="dropdown-item" th:href="@{/categories/{id}(id=${category.categoryID})}" th:text="${category.categoryName}"></a>
                     </li>
                 </ul>
             </div>
 
             <ul class="nav main-nav-links ms-4">
                 <li class="nav-item dropdown me-4 d-flex align-items-center">
-					<div class="dropdown" sec:authorize="isAuthenticated()"> <button class="btn dropdown-toggle" type="button"
-							data-bs-toggle="dropdown">
-							<i class="fa-solid fa-message me-2"></i>Chat với Shop
-						</button>
-						<ul class="dropdown-menu" th:if="${shops != null}">
-							<li th:each="shop : ${shops}"><a
-								class="dropdown-item"
-								th:href="@{'/chat'(customerId=${#authentication.principal.id}, shopId=${shop.shopId})}"
-               					th:text="${shop.shopName}"></a></li>
-						</ul>
-					</div>
-                    
-                    <div th:unless="${#authorization.expression('isAuthenticated()')}">
-                         <button class="btn btn-secondary disabled" type="button">
-                            <i class="fa-solid fa-message me-2"></i>Chat (Đăng nhập để sử dụng)
+                    <div class="dropdown" sec:authorize="isAuthenticated()">
+                        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fa-solid fa-message me-2"></i>Chat v&#7899;i Shop
                         </button>
+                        <ul class="dropdown-menu" th:if="${shops != null}">
+                            <li th:each="shop : ${shops}">
+                                <a class="dropdown-item"
+                                   th:href="@{'/chat'(customerId=${#authentication.principal.id}, shopId=${shop.shopId})}"
+                                   th:text="${shop.shopName}"></a>
+                            </li>
+                        </ul>
                     </div>
 
-				</li>
+                    <div th:unless="${#authorization.expression('isAuthenticated()')}">
+                        <button class="btn btn-secondary disabled" type="button">
+                            <i class="fa-solid fa-message me-2"></i>Chat (&#272;&#259;ng nh&#7853;p &#273;&#7875; s&#7917; d&#7909;ng)
+                        </button>
+                    </div>
+                </li>
             </ul>
         </div>
     </nav>
 
-    <!-- STICKY NAV -->
     <nav class="sticky-nav" id="stickyNav">
         <div class="container">
             <div class="sticky-nav-left">
                 <div class="dropdown">
                     <button class="btn-category dropdown-toggle" type="button" data-bs-toggle="dropdown">
                         <i class="fa-solid fa-bars me-2"></i>
-                        <span>Danh mục sản phẩm</span>
+                        <span>Danh m&#7909;c s&#7843;n ph&#7849;m</span>
                     </button>
                     <ul class="dropdown-menu" th:if="${categories != null}">
                         <li th:each="category : ${categories}">
-                            <a class="dropdown-item" 
-                           th:href="@{/categories/{id}(id=${category.categoryID})}" 
-                           th:text="${category.categoryName}"></a>
+                            <a class="dropdown-item" th:href="@{/categories/{id}(id=${category.categoryID})}" th:text="${category.categoryName}"></a>
                         </li>
                     </ul>
                 </div>
-                
+
                 <form class="sticky-search-bar" th:action="@{/search}" method="GET">
                     <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Tìm kiếm sản phẩm..."
+                        <input type="text" class="form-control" placeholder="T&#236;m ki&#7871;m s&#7843;n ph&#7849;m..."
                                name="keyword" th:value="${keyword}">
                         <button class="btn-search" type="submit">
                             <i class="fa fa-search"></i>
@@ -181,34 +196,31 @@
                     </div>
                 </form>
             </div>
-            
+
             <div class="sticky-nav-right">
                 <div class="dropdown">
                     <a class="sticky-nav-item dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                         <i class="fa-solid fa-store"></i>
                         <div class="nav-text">
-                            <span class="small">Cửa hàng</span>
-                            <strong th:text="${selectedShopName ?: 'Chọn cửa hàng'}"></strong>
+                            <span class="small">C&#7917;a h&#224;ng</span>
+                            <strong th:text="${selectedShopName ?: 'Ch&#7885;n c&#7917;a h&#224;ng'}"></strong>
                         </div>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end shop-select-dropdown">
-                        <!-- ✅ SHOP: Tất cả cửa hàng -->
                         <li>
-                            <a class="dropdown-item shop-select-item" 
+                            <a class="dropdown-item shop-select-item"
                                href="#"
-                               data-shop-id="0" 
-                               data-shop-name="Tất cả cửa hàng"
-                               onclick="selectShop(0, 'Tất cả cửa hàng')">
-                                <i class="fa-solid fa-globe me-2"></i>Xem tất cả sản phẩm
+                               data-shop-id="0"
+                               data-shop-name="T&#7845;t c&#7843; c&#7917;a h&#224;ng"
+                               onclick="selectShop(0, 'T&#7845;t c&#7843; c&#7917;a h&#224;ng')">
+                                <i class="fa-solid fa-globe me-2"></i>Xem t&#7845;t c&#7843; s&#7843;n ph&#7849;m
                             </a>
                         </li>
                         <li><hr class="dropdown-divider"></li>
-                        
-                        <!-- ✅ SHOP LOOP: Sửa th:onclick thành data attributes -->
                         <li th:each="shop : ${shops}">
-                            <a class="dropdown-item shop-select-item" 
+                            <a class="dropdown-item shop-select-item"
                                href="#"
-                               th:data-shop-id="${shop.shopId}" 
+                               th:data-shop-id="${shop.shopId}"
                                th:data-shop-name="${shop.shopName}"
                                th:text="${shop.shopName}"
                                onclick="selectShop(this.dataset.shopId, this.dataset.shopName)">
@@ -216,50 +228,76 @@
                         </li>
                     </ul>
                 </div>
-                
+
                 <a href="/login" class="sticky-nav-item" th:if="${#authorization.expression('!isAuthenticated()')}">
                     <i class="fa-solid fa-user"></i>
                     <div class="nav-text">
-                        <span class="small">Tài khoản</span>
-                        <strong>Đăng nhập</strong>
+                        <span class="small">T&#224;i kho&#7843;n</span>
+                        <strong>&#272;&#259;ng nh&#7853;p</strong>
                     </div>
                 </a>
-                
+
                 <div class="dropdown" th:if="${#authorization.expression('isAuthenticated()')}">
                     <a class="sticky-nav-item dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                         <i class="fa-solid fa-user-check"></i>
                         <div class="nav-text">
-                            <span class="small">Xin chào,</span>
+                            <span class="small">Xin ch&#224;o,</span>
                             <strong th:text="${#authentication.name}">User</strong>
                         </div>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="/user/profile">
-                            <i class="fa-solid fa-address-card me-2"></i>Hồ sơ của tôi
-                        </a></li>
-                        <li><a class="dropdown-item" href="/shop/register">
-                            <i class="fa-solid fa-store me-2"></i>Đăng ký Shop
-                        </a></li>
-                        <li><a class="dropdown-item" href="/user/orders">
-                            <i class="fa-solid fa-receipt me-2"></i>Lịch sử mua hàng
-                        </a></li>
+                        <li><a class="dropdown-item" href="/user/profile"><i class="fa-solid fa-address-card me-2"></i>H&#7891; s&#417; c&#7911;a t&#244;i</a></li>
+                        <li><a class="dropdown-item" href="/shop/register"><i class="fa-solid fa-store me-2"></i>&#272;&#259;ng k&#253; Shop</a></li>
+                        <li><a class="dropdown-item" href="/user/orders"><i class="fa-solid fa-receipt me-2"></i>L&#7883;ch s&#7917; mua h&#224;ng</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#" id="vendorLogoutBtn">
-									<i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất
-							</a></li>
+                        <li><a class="dropdown-item" href="#" id="vendorLogoutBtn"><i class="fa-solid fa-right-from-bracket me-2"></i>&#272;&#259;ng xu&#7845;t</a></li>
                     </ul>
                 </div>
-                
+
                 <a href="/cart" class="sticky-nav-item position-relative">
                     <i class="fa-solid fa-cart-shopping"></i>
                     <div class="nav-text">
-                        <strong>Giỏ hàng</strong>
+                        <strong>Gi&#7887; h&#224;ng</strong>
                     </div>
                     <span class="cart-badge"
                           th:if="${cartItemCount != null and cartItemCount > 0}"
                           th:text="${cartItemCount}">
                     </span>
                 </a>
+
+                <div class="dropdown" th:if="${#authorization.expression('isAuthenticated()')}">
+                    <a class="sticky-nav-item dropdown-toggle position-relative" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fa-solid fa-bell"></i>
+                        <div class="nav-text">
+                            <span class="small">Th&#244;ng b&#225;o</span>
+                            <strong th:text="${unreadNotificationCount != null and unreadNotificationCount > 0 ? unreadNotificationCount + ' m&#7899;i' : 'Kh&#244;ng m&#7899;i'}"></strong>
+                        </div>
+                        <span class="cart-badge"
+                              th:if="${unreadNotificationCount != null and unreadNotificationCount > 0}"
+                              th:text="${unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}">
+                        </span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" style="min-width: 360px;">
+                        <li>
+                            <span class="dropdown-item-text fw-semibold"
+                                  th:text="${unreadNotificationCount == null or unreadNotificationCount == 0 ? 'Kh&#244;ng c&#243; th&#244;ng b&#225;o m&#7899;i' : unreadNotificationCount + ' th&#244;ng b&#225;o m&#7899;i'}">
+                            </span>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li th:if="${unreadNotifications == null or #lists.isEmpty(unreadNotifications)}">
+                            <span class="dropdown-item-text text-muted small">Th&#244;ng b&#225;o v&#7873; &#273;&#417;n h&#224;ng s&#7869; xu&#7845;t hi&#7879;n &#7903; &#273;&#226;y.</span>
+                        </li>
+                        <li th:each="notify : ${unreadNotifications}">
+                            <a class="dropdown-item py-2"
+                               th:href="${notify.relatedEntityID != null and #strings.equalsIgnoreCase(notify.type, 'OrderStatus')}
+                                        ? @{/user/orders/{id}(id=${notify.relatedEntityID})}
+                                        : @{/user/orders}">
+                                <div class="fw-semibold small" th:text="${notify.title}">C&#7853;p nh&#7853;t &#273;&#417;n h&#224;ng</div>
+                                <div class="text-muted small text-wrap" th:text="${notify.message}">N&#7897;i dung th&#244;ng b&#225;o</div>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
     </nav>

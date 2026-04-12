@@ -28,34 +28,42 @@
 					<table class="table  table-hover align-middle">
 						<thead class="table-success">
 							<tr>
-								<th scope="col">ApprovalID</th>
-								<th scope="col">Tên topping</th>
+								<th scope="col">ID</th>
 								<th scope="col">Yêu cầu</th>
 								<th scope="col">Ngày yêu cầu</th>
-								<th scope="col">Shop</th>
+								<th scope="col">Người yêu cầu</th>
+								<th scope="col">Trạng thái</th>
 								<th scope="col">Thao tác</th>
 							</tr>
 						</thead>
 						<tbody>
 							<tr th:each="tp : ${toppings}">
-						
-								<td th:text="${tp.approvalId}"></td>
-
-								<td th:text="${tp.topping.toppingName}"></td>
-
-								<td th:text="${tp.actionType}"></td>
-
-								<td
-									th:text="${#temporals.format(tp.requestedAt, 'HH:mm dd/MM/yyyy')}"></td>
-
-								<td th:text="${tp.shop.shopName}"></td>
-
-								<td><a
-									th:href="@{/admin/toppings/pending/detail/{id}(id=${tp.approvalId})}"
-									class="btn btn-outline-info btn-sm "> <i class="bi bi-eye"></i>
-								</a></td>
-
-
+							    <td th:text="${tp.id}"></td>
+							
+								<td th:switch="${tp.actionType.name()}">
+								    <span th:case="'CREATE'" class="badge bg-info">Thêm mới</span>
+								    <span th:case="'UPDATE'" class="badge bg-primary">Cập nhật</span>
+								    <span th:case="'DELETE'" class="badge bg-danger">Xóa</span>
+								    <span th:case="*" class="badge bg-dark" th:text="${tp.actionType}"></span>
+								</td>
+							
+							    <td th:text="${#temporals.format(tp.requestedAt, 'HH:mm dd/MM/yyyy')}"></td>
+							
+							    <td th:text="${tp.requestedBy.shopName}"></td>
+							    
+							    <td th:switch="${tp.status.name()}">
+								    <span th:case="'PENDING'" class="badge bg-warning text-dark">Chờ duyệt</span>
+								    <span th:case="'APPROVED'" class="badge bg-success">Đã duyệt</span>
+								    <span th:case="'REJECTED'" class="badge bg-danger">Từ chối</span>
+								    <span th:case="*" class="badge bg-secondary" th:text="${tp.status}"></span>
+								</td>
+							
+							    <td>
+							        <a th:href="@{/admin/toppings/pending/detail/{id}(id=${tp.id})}"
+							           class="btn btn-outline-info btn-sm"> 
+							           <i class="bi bi-eye"></i>
+							        </a>
+							    </td>
 							</tr>
 						</tbody>
 					</table>

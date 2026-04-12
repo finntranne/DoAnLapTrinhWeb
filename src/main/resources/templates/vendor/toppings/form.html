@@ -105,9 +105,11 @@
 							</div>
 
 							<div class="image-preview-container text-center">
-								<img id="imagePreview"
-									th:src="${topping.imageURL != null and topping.imageURL != '' ? topping.imageURL : '/images/placeholder.png'}"
-									alt="Image Preview" class="image-preview">
+							    <img id="imagePreview"
+							        th:src="${topping.imageURL != null and topping.imageURL != '' ? topping.imageURL : '/images/placeholder.png'}"
+							        alt="Image Preview" class="image-preview">
+							    
+							    <input type="hidden" name="existingImageUrl" th:value="${topping.imageURL}">
 							</div>
 
 						</div>
