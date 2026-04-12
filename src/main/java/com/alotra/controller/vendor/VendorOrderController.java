@@ -24,6 +24,7 @@ import com.alotra.repository.order.PaymentRepository;
 import com.alotra.security.MyUserDetails;
 import com.alotra.service.vendor.VendorOrderService;
 import com.alotra.pattern.vendororder.VendorOrderFacade;
+import com.alotra.pattern.vendororder.strategy.ShipperSelectionType;
 import com.alotra.view.order.OrderView;
 
 import lombok.RequiredArgsConstructor;
@@ -121,6 +122,14 @@ public class VendorOrderController {
 			if ("Confirmed".equals(order.getOrderStatus()) || "Delivering".equals(order.getOrderStatus())) {
 				List<ShopEmployeeDTO> availableShippers = vendorService.getAvailableShippers(shopId);
 				model.addAttribute("availableShippers", availableShippers);
+				boolean hasAlternativeShipper = availableShippers.stream().anyMatch(shipper ->
+						order.getShipper() == null || !shipper.getUserId().equals(order.getShipper().getId()));
+				if (hasAlternativeShipper) {
+					model.addAttribute("leastBusyShipperId",
+							vendorOrderFacade.recommendShipper(shopId, id, ShipperSelectionType.LEAST_BUSY).getId());
+					model.addAttribute("recentlyActiveShipperId",
+							vendorOrderFacade.recommendShipper(shopId, id, ShipperSelectionType.RECENTLY_ACTIVE).getId());
+				}
 			}
 			return "vendor/orders/detail";
 
@@ -162,13 +171,16 @@ public class VendorOrderController {
 
 	@PostMapping("/orders/{id}/assign-shipper")
 	public String assignShipper(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
-			@RequestParam Integer shipperId, RedirectAttributes redirectAttributes) {
+			@RequestParam(required = false) Integer shipperId,
+			@RequestParam(defaultValue = "MANUAL") String selectionType,
+			RedirectAttributes redirectAttributes) {
 
 		try {
 			Integer shopId = getShopIdOrThrow(userDetails);
 			Integer userId = getUserIdOrThrow(userDetails);
 
-			vendorOrderFacade.assignShipper(shopId, id, shipperId, userId, "Gan shipper");
+			vendorOrderFacade.assignShipper(shopId, id, shipperId, userId, "Gan shipper",
+					parseSelectionType(selectionType));
 
 			redirectAttributes.addFlashAttribute("success", "Đã gán shipper cho đơn hàng thành công");
 
@@ -189,7 +201,8 @@ public class VendorOrderController {
 	 */
 	@PostMapping("/orders/{id}/reassign-shipper")
 	public String reassignShipper(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
-			@RequestParam Integer newShipperId, @RequestParam(required = false) String reason,
+			@RequestParam(required = false) Integer newShipperId, @RequestParam(required = false) String reason,
+			@RequestParam(defaultValue = "MANUAL") String selectionType,
 			RedirectAttributes redirectAttributes) {
 
 		try {
@@ -198,7 +211,8 @@ public class VendorOrderController {
 
 			String finalReason = (reason != null && !reason.isEmpty()) ? reason : "Thay đổi shipper";
 
-			vendorOrderFacade.assignShipper(shopId, id, newShipperId, userId, finalReason);
+			vendorOrderFacade.assignShipper(shopId, id, newShipperId, userId, finalReason,
+					parseSelectionType(selectionType));
 
 			redirectAttributes.addFlashAttribute("success", "Đã thay đổi shipper thành công");
 
@@ -212,6 +226,14 @@ public class VendorOrderController {
 		}
 
 		return "redirect:/vendor/orders/" + id;
+	}
+
+	private ShipperSelectionType parseSelectionType(String selectionType) {
+		try {
+			return ShipperSelectionType.valueOf(selectionType.toUpperCase());
+		} catch (IllegalArgumentException ex) {
+			throw new IllegalStateException("Unsupported shipper selection type: " + selectionType);
+		}
 	}
 
 }

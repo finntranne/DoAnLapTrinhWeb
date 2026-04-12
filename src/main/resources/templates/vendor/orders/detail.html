@@ -154,6 +154,20 @@
 							th:if="${availableShippers != null and !availableShippers.isEmpty()}"
 							th:action="@{/vendor/orders/{id}/assign-shipper(id=${order.orderID})}"
 							method="post">
+							<div class="alert alert-light border">
+								<div class="fw-semibold mb-2">Cách chọn shipper</div>
+								<select class="form-select" id="assignSelectionType"
+									name="selectionType"
+									onchange="toggleShipperSelection(this, 'shipperId')">
+									<option value="MANUAL">Chọn thủ công</option>
+									<option value="LEAST_BUSY">Tự chọn: ít bận nhất</option>
+									<option value="RECENTLY_ACTIVE">Tự chọn: hoạt động gần đây</option>
+								</select>
+								<small class="text-muted d-block mt-2">
+									Ít bận nhất: ưu tiên shipper có ít đơn Confirmed/Delivering và ít đơn trong ngày.
+									Hoạt động gần đây: ưu tiên shipper có lần đăng nhập mới hơn.
+								</small>
+							</div>
 							<div class="mb-3">
 								<label for="shipperId" class="form-label"> Chọn shipper
 									<span class="text-danger">*</span>
@@ -162,9 +176,16 @@
 									<option value="">-- Chọn shipper --</option>
 									<option th:each="shipper : ${availableShippers}"
 										th:value="${shipper.userId}"
+										th:selected="${shipper.userId == leastBusyShipperId}"
 										th:text="${shipper.fullName + ' - ' + shipper.phoneNumber}">
 									</option>
 								</select>
+								<small class="text-muted d-block mt-2">
+									Gợi ý hệ thống:
+									<span th:if="${leastBusyShipperId != null}">ít bận nhất = ID <span th:text="${leastBusyShipperId}"></span></span>
+									<span th:if="${leastBusyShipperId != null and recentlyActiveShipperId != null}">, </span>
+									<span th:if="${recentlyActiveShipperId != null}">hoạt động gần đây = ID <span th:text="${recentlyActiveShipperId}"></span></span>
+								</small>
 							</div>
 							<button type="submit" class="btn btn-info">
 								<i class="bi bi-check"></i> Gán shipper
@@ -250,6 +271,17 @@
 									</div>
 
 									<div class="mb-3">
+										<label for="reassignSelectionType" class="form-label"> Cách chọn shipper </label>
+										<select class="form-select" id="reassignSelectionType"
+											name="selectionType"
+											onchange="toggleShipperSelection(this, 'newShipperId')">
+											<option value="MANUAL">Chọn thủ công</option>
+											<option value="LEAST_BUSY">Tự chọn: ít bận nhất</option>
+											<option value="RECENTLY_ACTIVE">Tự chọn: hoạt động gần đây</option>
+										</select>
+									</div>
+
+									<div class="mb-3">
 										<label for="newShipperId" class="form-label"> Chọn
 											shipper mới <span class="text-danger">*</span>
 										</label> <select class="form-select" id="newShipperId"
@@ -291,6 +323,21 @@
 
 				<!-- Script xác nhận thay đổi shipper -->
 				<script th:inline="javascript">
+					function toggleShipperSelection(selectionElement, shipperFieldId) {
+						var shipperField = document.getElementById(shipperFieldId);
+						if (!shipperField) {
+							return;
+						}
+
+						var manualSelection = selectionElement.value === 'MANUAL';
+						shipperField.disabled = !manualSelection;
+						shipperField.required = manualSelection;
+
+						if (!manualSelection) {
+							shipperField.value = '';
+						}
+					}
+
 					function confirmReassign() {
 						var orderStatus = /*[[${order.orderStatus}]]*/'Delivering';
 
