@@ -37,12 +37,12 @@ import lombok.ToString;
 @AllArgsConstructor
 @ToString(exclude = {"shop", "category", "variants", "images", "availableToppings"})
 @EqualsAndHashCode(exclude = {"shop", "category", "variants", "images", "availableToppings"})
-public class ProductDraft {
+public class ProductDraft implements DraftEntity {
 
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ProductDraftID")
-    private Integer productDraftID;
+    private Integer ProductDraftID;
 	
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "ProductID", nullable = true)
@@ -81,4 +81,9 @@ public class ProductDraft {
 	    inverseJoinColumns = @JoinColumn(name = "ToppingID")
 	)
 	private Set<Topping> availableToppings = new HashSet<>();
+	
+	@Override
+    public Integer getId() {
+        return ProductDraftID;
+    }
 }

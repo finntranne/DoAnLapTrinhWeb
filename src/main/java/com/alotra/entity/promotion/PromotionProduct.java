@@ -29,11 +29,11 @@ public class PromotionProduct {
 	private Promotion promotion;
 
 	@ManyToOne(fetch = FetchType.LAZY) // Giữ LAZY fetch
-	@MapsId("productID") // Ánh xạ tới thuộc tính trong Id class, khớp Id class
+	@MapsId("productID") 
 	@JoinColumn(name = "ProductID") // Khớp DB
 	private Product product;
 
 	@Column(name = "DiscountPercentage", nullable = false)
 	private Integer discountPercentage = 0;
-	// Bỏ các trường id (surrogate key) và discountPercentage từ HEAD
+	
 }

@@ -25,6 +25,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.alotra.entity.ApprovalRequest;
+import com.alotra.entity.draft.PromotionDraft;
+import com.alotra.entity.draft.ToppingDraft;
 //
 //import com.alotra.entity.product.ProductApproval;
 import com.alotra.entity.product.Topping;
@@ -33,9 +37,13 @@ import com.alotra.entity.promotion.PromotionApproval;
 import com.alotra.entity.promotion.PromotionProduct;
 import com.alotra.entity.shop.Shop;
 import com.alotra.entity.user.User;
+import com.alotra.enums.TargetType;
+import com.alotra.repository.approval_request.ApprovalRequestRepository;
+import com.alotra.repository.approval_request.PromotionDraftRepository;
 import com.alotra.repository.product.ProductRepository;
 import com.alotra.repository.shop.ShopRepository;
 import com.alotra.repository.user.UserRepository;
+import com.alotra.service.approval_request.approval.ApprovalAdminService;
 //import com.alotra.service.product.ProductApprovalService;
 import com.alotra.service.product.ProductService;
 import com.alotra.service.promotion.PromotionApprovalService;
@@ -57,6 +65,12 @@ public class AdminPromotionController {
 	
 	@Autowired
 	PromotionProductService promotionProductService;
+	
+	@Autowired
+	ApprovalRequestRepository approvalRequestRepository;
+	
+	@Autowired
+	PromotionDraftRepository promotionDraftRepository;
 	
 	@Autowired
     ShopRepository shopRepository;
@@ -208,8 +222,8 @@ public class AdminPromotionController {
 
 		int actualPage = Math.max(1, page);
 		Pageable pageable = PageRequest.of(actualPage - 1, size, Sort.by("requestedAt").descending());
-		Page<PromotionApproval> approvalPage = promotionApprovalService.findByStatus("PENDING", pageable);
-		System.out.print(approvalPage);
+		
+		Page<ApprovalRequest> approvalPage = approvalRequestRepository.findByTargetType(TargetType.PROMOTION, pageable);
 
 		int totalPages = approvalPage.getTotalPages();
 
@@ -223,36 +237,44 @@ public class AdminPromotionController {
 	}
 	
 	@GetMapping("/pending/detail/{id}")
-	public String showPendingApprovalDetail(@PathVariable("id") Integer approvalId, ModelMap model) {
+	public String showPendingApprovalDetail(@PathVariable("id") Integer id, ModelMap model, RedirectAttributes redirectAttributes) {
 
-		Optional<PromotionApproval> approvalOpt = promotionApprovalService.findById(approvalId);
+		try {
 
-		if (approvalOpt.isEmpty()) {
-			model.addAttribute("errorMessage", "Không tìm thấy yêu cầu phê duyệt có ID: " + approvalId);
-			return "error/404";
+			ApprovalRequest approvalRequest = approvalRequestRepository.findById(id)
+					.orElseThrow(() -> new IllegalArgumentException("Không tìm thấy ApprovalRequest"));
+			
+			PromotionDraft promotionDraft = promotionDraftRepository.findById(approvalRequest.getTargetId())
+					.orElseThrow(() -> new IllegalArgumentException("Không tìm thấy PromotionDraft"));
+			
+			model.addAttribute("approval", approvalRequest);
+
+			model.addAttribute("promotion", promotionDraft);
+			model.addAttribute("action", approvalRequest.getActionType().toString());
+
+			model.addAttribute("activeMenu", "promotions");
+
+			return "admin/promotions/approval-detail";
+
+		} catch (Exception e) {
+			log.error("Error loading promotion for edit", e);
+			redirectAttributes.addFlashAttribute("error", e.getMessage());
+			return "redirect:/admin/promtions";
 		}
-
-		
-
-		PromotionApproval approval = approvalOpt.get();
-
-		model.addAttribute("approval", approval);
-		
-
-		model.addAttribute("activeMenu", "promotions");
-		return "admin/promotions/approval-detail";
 	}
+	
+	@Autowired
+	private ApprovalAdminService approvalAdminService;
 	
 	@PostMapping("/approve/{id}")
 	public String approveProduct(@PathVariable("id") Integer approvalId, RedirectAttributes redirectAttributes,
 			Authentication authentication) {
-
-
-		Integer reviewedByUserId = 1;
 		
 
 		try {
-			promotionApprovalService.approveProductChange(approvalId, reviewedByUserId);
+			ApprovalRequest approvalRequest = approvalRequestRepository.findById(approvalId)
+	    			.orElseThrow(() -> new IllegalArgumentException("Không tìm thấy ApprovalRequest"));
+			approvalAdminService.approve(approvalRequest);
 			redirectAttributes.addFlashAttribute("success", "Phê duyệt yêu cầu #" + approvalId + " thành công!");
 		} catch (RuntimeException e) {
 			redirectAttributes.addFlashAttribute("error", "Phê duyệt thất bại. Chi tiết: " + e.getMessage());
@@ -268,10 +290,10 @@ public class AdminPromotionController {
 	                            RedirectAttributes redirectAttributes,
 	                            Authentication authentication) {
 
-	    Integer reviewedByUserId = 1; // Lấy ID người dùng từ Authentication nếu muốn
-
 	    try {
-	        promotionApprovalService.rejectProductChange(approvalId, reviewedByUserId, rejectionReason);
+	    	ApprovalRequest approvalRequest = approvalRequestRepository.findById(approvalId)
+	    			.orElseThrow(() -> new IllegalArgumentException("Không tìm thấy ApprovalRequest"));
+	    	approvalAdminService.reject(approvalRequest, rejectionReason);
 	        redirectAttributes.addFlashAttribute("success", "Từ chối yêu cầu #" + approvalId + " thành công!");
 	    } catch (RuntimeException e) {
 	        redirectAttributes.addFlashAttribute("error", "Từ chối thất bại. Chi tiết: " + e.getMessage());

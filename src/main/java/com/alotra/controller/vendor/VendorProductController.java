@@ -3,6 +3,7 @@ package com.alotra.controller.vendor;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -25,12 +26,12 @@ import com.alotra.dto.product.ProductRequestDTO;
 import com.alotra.dto.product.ProductStatisticsDTO;
 import com.alotra.dto.product.ProductVariantDTO;
 import com.alotra.entity.product.Product;
+import com.alotra.entity.product.ProductImage;
 import com.alotra.entity.product.Topping;
+import com.alotra.enums.TargetType;
 import com.alotra.repository.product.ToppingRepository;
 import com.alotra.repository.promotion.PromotionRepository;
 import com.alotra.security.MyUserDetails;
-import com.alotra.service.approval_request.request.ApprovalCommand;
-import com.alotra.service.approval_request.request.CreateProductRequestCommand;
 import com.alotra.service.approval_request.request.VendorApprovalRequestService;
 import com.alotra.service.vendor.VendorProductService;
 
@@ -190,7 +191,7 @@ public class VendorProductController {
 				return "redirect:/vendor/products/create";
 			}
 
-			vendorApprovalRequestService.submitCreateProductRequest(request, userId);
+			vendorApprovalRequestService.createDraft(request, TargetType.PRODUCT, userId);
 
 			redirectAttributes.addFlashAttribute("success",
 					"Yêu cầu tạo sản phẩm đã được gửi. Vui lòng chờ admin phê duyệt.");
@@ -250,19 +251,24 @@ public class VendorProductController {
 
 	@PostMapping("/products/edit/{id}")
 	public String updateProduct(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
-			@Valid @ModelAttribute("product") ProductRequestDTO request, BindingResult result, Model model,
+			@Valid @ModelAttribute("product") ProductRequestDTO request, 
+			@RequestParam(value = "existingImageUrls", required = false) List<String> existingImageUrls,
+			BindingResult result, Model model,
 			RedirectAttributes redirectAttributes) {
+		
+		Integer shopId = getShopIdOrThrow(userDetails);
+		Product product = vendorProductService.getProductDetail(shopId, id);
 
 		if (result.hasErrors()) {
 			log.error("Validation errors: {}", result.getAllErrors());
 			try {
-				Integer shopId = getShopIdOrThrow(userDetails);
-				Product product = vendorProductService.getProductDetail(shopId, id);
+				
 				model.addAttribute("categories", vendorProductService.getAllCategories());
 				model.addAttribute("sizes", vendorProductService.getAllSizesSimple());
 				model.addAttribute("existingImages", product.getImages());
 				model.addAttribute("action", "edit");
 				model.addAttribute("productId", id);
+				
 			} catch (Exception e) {
 				log.error("Error loading form data", e);
 			}
@@ -270,7 +276,6 @@ public class VendorProductController {
 		}
 
 		try {
-			Integer shopId = getShopIdOrThrow(userDetails);
 			Integer userId = getUserIdOrThrow(userDetails);
 
 			request.setShopId(shopId);
@@ -294,8 +299,10 @@ public class VendorProductController {
 			}
 
 			request.setProductId(id);
+			request.setExistingImageUrls(existingImageUrls);
+			log.info(request.toString());
 			
-			vendorApprovalRequestService.submitUpdateProductRequest(request, userId);
+			vendorApprovalRequestService.updateDraft(request, TargetType.PRODUCT, userId);
 			
 			redirectAttributes.addFlashAttribute("success",
 					"Yêu cầu cập nhật sản phẩm đã được gửi. Vui lòng chờ admin phê duyệt.");
@@ -331,7 +338,7 @@ public class VendorProductController {
 			request.setShopId(shopId);
 			request.setProductId(id);
 			
-			vendorApprovalRequestService.submitDeleteProductRequest(request, userId);
+			vendorApprovalRequestService.deleteDraft(id, TargetType.PRODUCT, userId);
 
 			redirectAttributes.addFlashAttribute("success",
 					"Yêu cầu xóa sản phẩm đã được gửi. Vui lòng chờ admin phê duyệt.");

@@ -7,9 +7,12 @@ import org.springframework.stereotype.Repository;
 
 import com.alotra.entity.ApprovalRequest;
 import com.alotra.enums.ApprovalStatus;
+import com.alotra.enums.TargetType;
 
 @Repository
 public interface ApprovalRequestRepository extends JpaRepository<ApprovalRequest, Integer>{
 
 	Page<ApprovalRequest> findByStatus(ApprovalStatus status, Pageable pageable);
+	
+	Page<ApprovalRequest> findByTargetType(TargetType targetType, Pageable pageable);
 }

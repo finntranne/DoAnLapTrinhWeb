@@ -16,7 +16,7 @@ import com.alotra.entity.promotion.Promotion;
 @Repository
 public interface PromotionRepository extends JpaRepository<Promotion, Integer> {
     
-    List<Promotion> findByCreatedByShopID_ShopIdOrderByCreatedAtDesc(Integer shopId);
+    //List<Promotion> findByCreatedByShopID_ShopIdOrderByCreatedAtDesc(Integer shopId);
     
     @Query("SELECT p FROM Promotion p " +
            "WHERE p.createdByShopID.shopId = :shopId " +

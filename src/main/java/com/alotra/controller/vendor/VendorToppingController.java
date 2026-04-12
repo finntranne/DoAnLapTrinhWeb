@@ -1,5 +1,9 @@
 package com.alotra.controller.vendor;
 
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -14,12 +18,16 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.alotra.dto.topping.ToppingRequestDTO;
 import com.alotra.dto.topping.ToppingStatisticsDTO;
 import com.alotra.entity.product.Topping;
+import com.alotra.enums.TargetType;
 import com.alotra.security.MyUserDetails;
+import com.alotra.service.approval_request.request.VendorApprovalRequestService;
+import com.alotra.service.cloudinary.CloudinaryService;
 import com.alotra.service.vendor.VendorToppingService;
 
 import jakarta.validation.Valid;
@@ -33,6 +41,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class VendorToppingController {
 	private final VendorToppingService vendorToppingService;
+	
+	@Autowired
+	private CloudinaryService cloudinaryService;
 
 	// ==================== HELPER METHOD ====================
 
@@ -102,18 +113,35 @@ public class VendorToppingController {
 			return "redirect:/shop/register";
 		}
 	}
+	
+	@Autowired
+	private VendorApprovalRequestService vendorApprovalRequestService;
 
 	@PostMapping("/toppings/create")
 	public String createTopping(@AuthenticationPrincipal MyUserDetails userDetails,
 			@Valid @ModelAttribute("topping") ToppingRequestDTO request, BindingResult result,
-			RedirectAttributes redirectAttributes) {
+			RedirectAttributes redirectAttributes, @RequestParam("imageFile") MultipartFile imageFile) {
 		if (result.hasErrors()) {
 			return "vendor/toppings/form";
 		}
 		try {
 			Integer shopId = getShopIdOrThrow(userDetails);
 			Integer userId = getUserIdOrThrow(userDetails);
-			vendorToppingService.requestToppingCreation(shopId, request, userId);
+			
+			request.setShopId(shopId);
+			
+			String imageUrl = null;
+			if (!imageFile.isEmpty()) {
+				Map<String, String> uploadResult =
+	                      cloudinaryService.uploadImageAndReturnDetails(imageFile, "products", userId);
+
+	              imageUrl = uploadResult.get("secure_url");
+		    }
+			
+			request.setImageURL(imageUrl);			
+			
+			vendorApprovalRequestService.createDraft(request, TargetType.TOPPING, userId);
+			
 			redirectAttributes.addFlashAttribute("success", "Yêu cầu tạo topping đã được gửi.");
 			return "redirect:/vendor/toppings";
 		} catch (IllegalStateException e) {
@@ -149,9 +177,10 @@ public class VendorToppingController {
 	}
 
 	@PostMapping("/toppings/edit/{id}")
-	public String updateTopping(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
+	public String updateTopping(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable("id") Integer id,
 			@Valid @ModelAttribute("topping") ToppingRequestDTO request, BindingResult result,
-			RedirectAttributes redirectAttributes) {
+			RedirectAttributes redirectAttributes, @RequestParam("imageFile") MultipartFile imageFile,
+			@RequestParam(value = "existingImageUrl", required = false) String existingImageUrl) {
 		if (result.hasErrors()) {
 			return "vendor/toppings/form";
 		}
@@ -159,7 +188,14 @@ public class VendorToppingController {
 			Integer shopId = getShopIdOrThrow(userDetails);
 			Integer userId = getUserIdOrThrow(userDetails);
 			request.setToppingId(id);
-			vendorToppingService.requestToppingUpdate(shopId, request, userId);
+			request.setShopId(shopId);
+			
+			request.setExistingImageUrl(existingImageUrl);
+			
+			request.setImageFile(imageFile);
+			
+			vendorApprovalRequestService.updateDraft(request, TargetType.TOPPING, userId);
+			
 			redirectAttributes.addFlashAttribute("success", "Yêu cầu cập nhật topping đã được gửi.");
 			return "redirect:/vendor/toppings";
 		} catch (IllegalStateException e) {
@@ -183,7 +219,9 @@ public class VendorToppingController {
 		try {
 			Integer shopId = getShopIdOrThrow(userDetails);
 			Integer userId = getUserIdOrThrow(userDetails);
-			vendorToppingService.requestToppingDeletion(shopId, id, userId);
+			
+			vendorApprovalRequestService.deleteDraft(id, TargetType.TOPPING, userId);
+			
 			redirectAttributes.addFlashAttribute("success", "Yêu cầu xóa topping đã được gửi.");
 		} catch (IllegalStateException e) {
 			redirectAttributes.addFlashAttribute("error", e.getMessage());
