@@ -45,6 +45,7 @@ import com.alotra.entity.order.Order;
 import com.alotra.entity.order.OrderHistory;
 import com.alotra.entity.order.OrderItem;
 import com.alotra.entity.order.Payment;
+import com.alotra.dto.order.PaymentResult;
 import com.alotra.entity.promotion.Promotion;
 import com.alotra.entity.shop.Shop;
 import com.alotra.entity.user.User;
@@ -59,8 +60,8 @@ import com.alotra.repository.order.OrderRepository;
 import com.alotra.repository.order.PaymentRepository;
 import com.alotra.repository.promotion.PromotionRepository;
 import com.alotra.service.cart.CartService;
-import com.alotra.service.checkout.VNPayService;
 import com.alotra.service.notification.NotificationService;
+import com.alotra.service.order.PaymentService;
 import com.alotra.service.product.CategoryService;
 import com.alotra.service.shop.StoreService;
 import com.alotra.service.user.UserService;
@@ -106,7 +107,7 @@ public class OrderController {
     @Autowired
     private UserService userService;
     @Autowired
-    private VNPayService vnPayService;
+    private PaymentService paymentService;
     @Autowired
     private StoreService storeService;
     @Autowired
@@ -392,19 +393,29 @@ public class OrderController {
             session.removeAttribute("currentCouponCode");
             session.removeAttribute("currentDiscountAmount");
 
+            // Xử lý thanh toán sử dụng PaymentService (Strategy Pattern)
+            com.alotra.dto.order.PaymentResult paymentResult = paymentService.processPayment(order.getOrderID());
+            
             if (paymentMethodEnum == PaymentMethod.VNPAY) {
-                String paymentUrl = vnPayService.createPaymentUrl(order, request);
-                return new RedirectView(paymentUrl);
+                if (paymentResult.isSuccess() && paymentResult.getPaymentUrl() != null) {
+                    return new RedirectView(paymentResult.getPaymentUrl());
+                }
             }
 
             if (paymentMethodEnum == PaymentMethod.BANK_TRANSFER) {
-                BigDecimal amount = OrderPricingUtils.calculateOrderTotal(order);
-                String description = VIETQR_ADD_INFO + order.getOrderID();
+                if (paymentResult.isSuccess() && paymentResult.getQrCode() != null) {
+                    redirectAttributes.addFlashAttribute("orderId", order.getOrderID());
+                    redirectAttributes.addFlashAttribute("qrUrl", paymentResult.getQrCode());
+                    redirectAttributes.addFlashAttribute("amount", OrderPricingUtils.calculateOrderTotal(order));
+                    redirectAttributes.addFlashAttribute("description", VIETQR_ADD_INFO + order.getOrderID());
+                    return "redirect:/vietqr-confirmation";
+                }
+            }
+
+            if (paymentMethodEnum == PaymentMethod.COD) {
+                // COD - Thanh toán khi nhận hàng
                 redirectAttributes.addFlashAttribute("orderId", order.getOrderID());
-                redirectAttributes.addFlashAttribute("qrUrl", buildVietQrUrl(order.getOrderID(), amount, description));
-                redirectAttributes.addFlashAttribute("amount", amount);
-                redirectAttributes.addFlashAttribute("description", description);
-                return "redirect:/vietqr-confirmation";
+                return "redirect:/order-success";
             }
 
             redirectAttributes.addFlashAttribute("orderId", order.getOrderID());
@@ -561,8 +572,6 @@ public class OrderController {
             case "CASH", "COD" -> PaymentMethod.COD;
             case "VNPAY" -> PaymentMethod.VNPAY;
             case "VIETQR", "BANK_TRANSFER" -> PaymentMethod.BANK_TRANSFER;
-            case "MOMO" -> PaymentMethod.MOMO;
-            case "ZALOPAY" -> PaymentMethod.ZALOPAY;
             default -> throw new IllegalArgumentException("Phuong thuc thanh toan khong hop le.");
         };
     }

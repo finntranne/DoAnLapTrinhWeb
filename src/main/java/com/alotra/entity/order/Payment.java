@@ -16,6 +16,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -51,4 +52,10 @@ public class Payment {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "OrderID", nullable = false, unique = true)
     private Order order;
+    
+    @Column(name = "payment_url", length = 2000)
+    private String paymentUrl; // URL thanh toán online (VNPay, MOMO) - Tối đa 2000 ký tự
+    
+    @Column(name = "qr_code", length = 2000)
+    private String qrCode; // QR code thanh toán (VietQR) - Tối đa 2000 ký tự
 }
