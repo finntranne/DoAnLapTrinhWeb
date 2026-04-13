@@ -28,20 +28,23 @@ public class ToppingDraftBuilder implements DraftBuilder<ToppingDraft, ToppingRe
 	
 	@Override
 	public ToppingDraft build(ToppingRequestDTO request, Integer userId) {
+		// Validate shopId
+		if (request.getShopId() == null) {
+			throw new IllegalArgumentException("ShopId không được phép NULL. Vui lòng đăng ký shop trước.");
+		}
+		
 		Shop shop = shopRepository.findById(request.getShopId())
-	              .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy shop"));
-			
+	              .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy shop với ID: " + request.getShopId()));
+		
 		Topping topping = null;
 	    if (request.getToppingId() != null) {
 	        topping = toppingRepository.findById(request.getToppingId()).orElse(null);
 	    }
+	    
 		ToppingDraft draft = new ToppingDraft();
 		draft.setShop(shop);
 		draft.setToppingName(request.getToppingName());
 		draft.setPrice(request.getAdditionalPrice());
-		draft.setShop(shop);
-		draft.setStatus((byte) 1);
-		draft.setTopping(topping);
 		
 		String finalImageUrl = handleToppingImage(request, userId);
 	    draft.setImageURL(finalImageUrl);

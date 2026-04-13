@@ -3,11 +3,13 @@ package com.alotra.config;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.servlet.HandlerInterceptor;
+import java.nio.file.Paths;
 
 @Configuration
 public class MvcConfig implements WebMvcConfigurer {
@@ -21,6 +23,18 @@ public class MvcConfig implements WebMvcConfigurer {
 
 		// Dashboard
 		registry.addViewController("/dashboard").setViewName("dashboard");
+	}
+
+	@Override
+	public void addResourceHandlers(ResourceHandlerRegistry registry) {
+		// ✅ Expose local uploads folder para sa /uploads/** requests
+		String uploadDir = Paths.get("uploads").toAbsolutePath().toString();
+		registry.addResourceHandler("/uploads/**")
+				.addResourceLocations("file:///" + uploadDir + "/");
+		
+		// Log para sa debugging
+		org.slf4j.LoggerFactory.getLogger(this.getClass())
+				.info("Resource handler configured for /uploads/** -> {}", uploadDir);
 	}
 
 	@Override

@@ -154,7 +154,8 @@ public class AdminToppingController {
             }
 
             toppingFromForm.setToppingID(id);
-
+            // ✅ GIỮ SHOP TỪ EXISTING TOPPING
+            toppingFromForm.setShop(existingTopping.getShop());
 
             toppingService.save(toppingFromForm); 
 

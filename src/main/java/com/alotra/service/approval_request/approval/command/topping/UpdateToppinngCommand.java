@@ -25,9 +25,12 @@ public class UpdateToppinngCommand implements ApprovalCommand{
 	@Override
 	public void execute(ApprovalRequest request) {
 		ToppingDraft draft = toppingDraftRepository.findById(request.getTargetId())
-                .orElseThrow();
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy ToppingDraft với ID: " + request.getTargetId()));
 
 		Topping topping = draft.getTopping();
+		if (topping == null) {
+			throw new IllegalArgumentException("Không tìm thấy Topping gốc để cập nhật. Draft ToppingID: " + draft.getId());
+		}
 		
 		mapper.updateEntity(topping, draft);
 		

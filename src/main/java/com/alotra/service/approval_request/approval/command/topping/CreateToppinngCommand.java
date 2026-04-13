@@ -25,8 +25,12 @@ public class CreateToppinngCommand implements ApprovalCommand{
 	@Override
 	public void execute(ApprovalRequest request) {
 		ToppingDraft draft = toppingDraftRepository.findById(request.getTargetId())
-                .orElseThrow();
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy ToppingDraft với ID: " + request.getTargetId()));
 
+		if (draft.getShop() == null) {
+			throw new IllegalArgumentException("Draft topping không có Shop được gán. Shop ID không được NULL.");
+		}
+		
 		Topping topping = mapper.toEntity(draft);
 		toppingRepository.save(topping);
 	}

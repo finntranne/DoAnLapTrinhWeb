@@ -42,7 +42,7 @@ public class ToppingDraft implements DraftEntity{
 	@JoinColumn(name = "ToppingID", nullable = true)
 	private Topping topping;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+@ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "ShopID") 
     private Shop shop;
 
