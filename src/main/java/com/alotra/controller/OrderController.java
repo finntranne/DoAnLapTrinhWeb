@@ -4,18 +4,15 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -40,27 +37,17 @@ import org.springframework.web.servlet.view.RedirectView;
 
 import com.alotra.entity.cart.Cart;
 import com.alotra.entity.cart.CartItem;
-import com.alotra.entity.location.Address;
 import com.alotra.entity.order.Order;
-import com.alotra.entity.order.OrderHistory;
-import com.alotra.entity.order.OrderItem;
 import com.alotra.entity.order.Payment;
-import com.alotra.entity.promotion.Promotion;
-import com.alotra.entity.shop.Shop;
 import com.alotra.entity.user.User;
 import com.alotra.enums.PaymentMethod;
-import com.alotra.enums.PaymentStatus;
-import com.alotra.repository.cart.CartItemRepository;
 import com.alotra.repository.cart.CartRepository;
 import com.alotra.repository.location.AddressRepository;
-import com.alotra.repository.order.OrderHistoryRepository;
-import com.alotra.repository.order.OrderItemRepository;
 import com.alotra.repository.order.OrderRepository;
 import com.alotra.repository.order.PaymentRepository;
-import com.alotra.repository.promotion.PromotionRepository;
 import com.alotra.service.cart.CartService;
 import com.alotra.service.checkout.VNPayService;
-import com.alotra.service.notification.NotificationService;
+import com.alotra.service.checkout.CheckoutFacade;
 import com.alotra.service.product.CategoryService;
 import com.alotra.service.shop.StoreService;
 import com.alotra.service.user.UserService;
@@ -87,36 +74,41 @@ public class OrderController {
     private static final String VIETQR_ACCOUNT_NAME = "TRAN HUU THOAI";
     private static final BigDecimal DEFAULT_SHIPPING_FEE = new BigDecimal("20000");
 
-    @Autowired
-    private OrderRepository orderRepository;
-    @Autowired
-    private OrderItemRepository orderItemRepository;
-    @Autowired
-    private PaymentRepository paymentRepository;
-    @Autowired
-    private CartService cartService;
-    @Autowired
-    private CartRepository cartRepository;
-    @Autowired
-    private CartItemRepository cartItemRepository;
-    @Autowired
-    private AddressRepository addressRepository;
-    @Autowired
-    private CategoryService categoryService;
-    @Autowired
-    private UserService userService;
-    @Autowired
-    private VNPayService vnPayService;
-    @Autowired
-    private StoreService storeService;
-    @Autowired
-    private PromotionRepository promotionRepository;
-    @Autowired
-    private OrderHistoryRepository orderHistoryRepository;
-    @Autowired
-    private PdfGeneratorService pdfGeneratorService;
-    @Autowired
-    private NotificationService notificationService;
+    private final OrderRepository orderRepository;
+    private final PaymentRepository paymentRepository;
+    private final CartService cartService;
+    private final CartRepository cartRepository;
+    private final AddressRepository addressRepository;
+    private final CategoryService categoryService;
+    private final UserService userService;
+    private final VNPayService vnPayService;
+    private final StoreService storeService;
+    private final PdfGeneratorService pdfGeneratorService;
+    private final CheckoutFacade checkoutFacade;
+
+    public OrderController(CartRepository cartRepository,
+            CartService cartService,
+            AddressRepository addressRepository,
+            CategoryService categoryService,
+            StoreService storeService,
+            UserService userService,
+            OrderRepository orderRepository,
+            PaymentRepository paymentRepository,
+            PdfGeneratorService pdfGeneratorService,
+            VNPayService vnPayService,
+            CheckoutFacade checkoutFacade) {
+        this.cartRepository = cartRepository;
+        this.cartService = cartService;
+        this.addressRepository = addressRepository;
+        this.categoryService = categoryService;
+        this.storeService = storeService;
+        this.userService = userService;
+        this.orderRepository = orderRepository;
+        this.paymentRepository = paymentRepository;
+        this.pdfGeneratorService = pdfGeneratorService;
+        this.vnPayService = vnPayService;
+        this.checkoutFacade = checkoutFacade;
+    }
 
     private User getCurrentAuthenticatedUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -220,7 +212,7 @@ public class OrderController {
                 checkoutItemVMs.add(vm);
             }
 
-            BigDecimal subtotal = cartService.calculateSubtotal(itemsToCheckout.stream().collect(Collectors.toSet()));
+            BigDecimal subtotal = cartService.calculateSubtotal(new java.util.HashSet<>(itemsToCheckout));
             BigDecimal shippingFee = DEFAULT_SHIPPING_FEE;
             BigDecimal discount = BigDecimal.ZERO;
             BigDecimal grandTotal = subtotal.add(shippingFee);
@@ -254,8 +246,7 @@ public class OrderController {
 
     @PostMapping("/apply-coupon")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> applyCoupon(@RequestParam("couponCode") String couponCode,
-            HttpSession session) {
+    public ResponseEntity<Map<String, Object>> applyCoupon(HttpSession session) {
 
         Map<String, Object> response = new HashMap<>();
         response.put("error",
@@ -303,87 +294,9 @@ public class OrderController {
             }
 
             User user = getCurrentAuthenticatedUser();
-            Cart cart = cartRepository.findByUser_Id(user.getId())
-                    .orElseThrow(() -> new EntityNotFoundException("Khong tim thay gio hang"));
-
-            List<CartItem> itemsToOrder = cart.getItems().stream()
-                    .filter(item -> selectedItemIds.contains(item.getCartItemID()))
-                    .toList();
-
-            if (itemsToOrder.isEmpty()) {
-                redirectAttributes.addFlashAttribute("errorMessage", "Khong co san pham hop le trong gio hang.");
-                return "redirect:/cart";
-            }
-
-            Shop shop = itemsToOrder.get(0).getVariant().getProduct().getShop();
-            boolean mixedShop = itemsToOrder.stream()
-                    .map(item -> item.getVariant().getProduct().getShop().getShopId())
-                    .anyMatch(shopId -> !shopId.equals(shop.getShopId()));
-            if (mixedShop) {
-                redirectAttributes.addFlashAttribute("errorMessage",
-                        "Don hang hien tai chi ho tro thanh toan cac san pham cung mot cua hang.");
-                return "redirect:/checkout";
-            }
-
-            Address chosenAddress = addressRepository.findById(addressId)
-                    .orElseThrow(() -> new EntityNotFoundException("Dia chi giao hang khong hop le."));
-            Address orderAddress = createOrderAddressSnapshot(chosenAddress);
-            orderAddress = addressRepository.save(orderAddress);
-
             PaymentMethod paymentMethodEnum = resolvePaymentMethod(paymentMethod);
-            String initialStatus = "Pending";
 
-            Order order = new Order();
-            order.setUser(user);
-            order.setShop(shop);
-            order.setAddress(orderAddress);
-            order.setOrderDate(LocalDateTime.now());
-            order.setOrderStatus(initialStatus);
-            order.setShippingFee(DEFAULT_SHIPPING_FEE);
-            order.setNotes(notes);
-            order = orderRepository.save(order);
-
-            List<OrderItem> orderItems = new ArrayList<>();
-            for (CartItem cartItem : itemsToOrder) {
-                OrderItem orderItem = new OrderItem();
-                orderItem.setOrder(order);
-                orderItem.setVariant(cartItem.getVariant());
-                orderItem.setQuantity(cartItem.getQuantity());
-                orderItems.add(orderItem);
-            }
-            orderItemRepository.saveAll(orderItems);
-            order.setItems(orderItems);
-
-            Payment payment = new Payment();
-            payment.setOrder(order);
-            payment.setMethod(paymentMethodEnum);
-            payment.setStatus(PaymentStatus.UNPAID);
-            paymentRepository.save(payment);
-
-            OrderHistory history = new OrderHistory();
-            history.setOrder(order);
-            history.setOldStatus(null);
-            history.setNewStatus(initialStatus);
-            history.setChangedByUser(user);
-            history.setTimestamp(LocalDateTime.now());
-            history.setNotes("Don hang duoc tao tu he thong checkout");
-            orderHistoryRepository.save(history);
-
-            if (shop.getUser() != null) {
-                try {
-                    notificationService.notifyVendorAboutNewOrder(shop.getUser().getId(), order.getOrderID(),
-                            user.getFullName());
-                } catch (Exception ex) {
-                    log.warn("Khong gui duoc thong bao cho vendor: {}", ex.getMessage());
-                }
-            }
-
-            for (CartItem item : itemsToOrder) {
-                item.getToppings().clear();
-                cart.removeItem(item);
-                cartItemRepository.delete(item);
-            }
-            cartRepository.save(cart);
+            Order order = checkoutFacade.checkoutOrder(user, selectedItemIds, addressId, notes, paymentMethodEnum);
 
             session.removeAttribute("selectedCheckoutItemIds");
             session.removeAttribute("currentCouponCode");
@@ -398,7 +311,7 @@ public class OrderController {
                 BigDecimal amount = OrderPricingUtils.calculateOrderTotal(order);
                 String description = VIETQR_ADD_INFO + order.getOrderID();
                 redirectAttributes.addFlashAttribute("orderId", order.getOrderID());
-                redirectAttributes.addFlashAttribute("qrUrl", buildVietQrUrl(order.getOrderID(), amount, description));
+                redirectAttributes.addFlashAttribute("qrUrl", buildVietQrUrl(amount, description));
                 redirectAttributes.addFlashAttribute("amount", amount);
                 redirectAttributes.addFlashAttribute("description", description);
                 return "redirect:/vietqr-confirmation";
@@ -564,17 +477,7 @@ public class OrderController {
         };
     }
 
-    private Address createOrderAddressSnapshot(Address source) {
-        Address snapshot = new Address();
-        snapshot.setProvince(source.getProvince());
-        snapshot.setDistrict(source.getDistrict());
-        snapshot.setWard(source.getWard());
-        snapshot.setStreetAddress(source.getStreetAddress());
-        snapshot.setIsDefault(Boolean.FALSE);
-        return snapshot;
-    }
-
-    private String buildVietQrUrl(Integer orderId, BigDecimal amount, String description) {
+    private String buildVietQrUrl(BigDecimal amount, String description) {
         String roundedAmount = amount.setScale(0, RoundingMode.HALF_UP).toPlainString();
         return String.format(
                 "%s%s-%s-%s.jpg?amount=%s&addInfo=%s&accountName=%s",
