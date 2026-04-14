@@ -9,7 +9,10 @@ import org.springframework.stereotype.Component;
 import com.alotra.dto.promotion.PromotionRequestDTO;
 import com.alotra.entity.draft.PromotionDraft;
 import com.alotra.entity.draft.ToppingDraft;
+import com.alotra.entity.product.Topping;
+import com.alotra.entity.promotion.Promotion;
 import com.alotra.entity.shop.Shop;
+import com.alotra.repository.promotion.PromotionRepository;
 import com.alotra.repository.shop.ShopRepository;
 
 @Component
@@ -18,10 +21,18 @@ public class PromotionDraftBuilder implements DraftBuilder<PromotionDraft, Promo
 	@Autowired
 	private ShopRepository shopRepository;
 	
+	@Autowired
+	private PromotionRepository promotionRepository;
+	
 	@Override
 	public PromotionDraft build(PromotionRequestDTO request, Integer userId) {
 		Shop shop = shopRepository.findById(request.getShopId())
 	              .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy shop"));
+		
+		Promotion promotion = null;
+	    if (request.getPromotionId() != null) {
+	        promotion = promotionRepository.findById(request.getPromotionId()).orElse(null);
+	    }
 			
 		PromotionDraft draft = new PromotionDraft();
 		draft.setCreatedByShopID(shop);
@@ -37,6 +48,7 @@ public class PromotionDraftBuilder implements DraftBuilder<PromotionDraft, Promo
 		draft.setMinOrderValue(request.getMinOrderValue());
 		draft.setUsageLimit(request.getUsageLimit());
 		draft.setStatus((byte) 1);
+		draft.setPromotion(promotion);
   
 		return draft;
 	}

@@ -52,40 +52,5 @@ public class ApprovalAdminService {
 	    approvalRequestRepository.save(request);
 	}
 	
-//    
-//
-//    @Autowired
-//    private Map<String, ApprovalState> stateMap;
-//
-//    @Transactional
-//    public void processApprove(Integer requestId) {
-//        ApprovalRequest request = approvalRequestRepository.findById(requestId)
-//                .orElseThrow(() -> new RuntimeException("Request not found"));
-//
-//        ApprovalState state = getHandler(request.getStatus());
-//
-//        state.approve(request);
-//        
-//        approvalRequestRepository.save(request);
-//    }
-//    
-//    @Transactional
-//    public void reject(Integer requestId, String reason) {
-//        ApprovalRequest request = approvalRequestRepository.findById(requestId)
-//                .orElseThrow(() -> new RuntimeException("Request not found"));
-//
-//        ApprovalState state = getHandler(request.getStatus());
-//
-//        state.reject(request, reason);
-//
-//        approvalRequestRepository.save(request);
-//    }
-//
-//    private ApprovalState getHandler(ApprovalStatus status) {
-//        return switch (status) {
-//            case PENDING -> stateMap.get("PENDING_STATE");
-//            case APPROVED -> stateMap.get("APPROVED_STATE");
-//            case REJECTED -> stateMap.get("REJECTED_STATE");
-//        };
-//    }
+
 }

@@ -19,8 +19,12 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.alotra.dto.promotion.PromotionRequestDTO;
 import com.alotra.dto.promotion.PromotionStatisticsDTO;
+import com.alotra.dto.topping.ToppingRequestDTO;
+import com.alotra.entity.product.Topping;
 import com.alotra.entity.promotion.Promotion;
+import com.alotra.enums.ActionType;
 import com.alotra.enums.TargetType;
+import com.alotra.repository.promotion.PromotionRepository;
 import com.alotra.security.MyUserDetails;
 import com.alotra.service.approval_request.request.VendorApprovalRequestService;
 import com.alotra.service.vendor.VendorPromotionService;
@@ -124,7 +128,7 @@ public class VendorPromotionController {
 			
 			request.setShopId(shopId);
 
-			vendorApprovalRequestService.createDraft(request, TargetType.PROMOTION, userId);
+			vendorApprovalRequestService.createDraft(request, TargetType.PROMOTION, ActionType.CREATE, userId);
 
 			redirectAttributes.addFlashAttribute("success",
 					"Yêu cầu tạo khuyến mãi đã được gửi. Vui lòng chờ admin phê duyệt.");
@@ -232,7 +236,7 @@ public class VendorPromotionController {
 			request.setPromotionId(id);
 			request.setShopId(shopId);
 			//vendorPromotionService.requestPromotionUpdate(shopId, request, userId);
-			vendorApprovalRequestService.updateDraft(request, TargetType.PROMOTION, userId);
+			vendorApprovalRequestService.createDraft(request, TargetType.PROMOTION, ActionType.UPDATE, userId);
 			log.info("Service call completed successfully");
 
 			
@@ -281,6 +285,9 @@ public class VendorPromotionController {
 			}
 		}
 	}
+	
+	@Autowired
+	private PromotionRepository promotionRepository;
 
 	@PostMapping("/promotions/delete/{id}")
 	public String deletePromotion(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
@@ -292,8 +299,13 @@ public class VendorPromotionController {
 		try {
 			Integer shopId = getShopIdOrThrow(userDetails);
 			Integer userId = getUserIdOrThrow(userDetails);
+			
+			Promotion promotion = promotionRepository.findById(id)
+	                .orElseThrow(() -> new IllegalStateException("Promotion không tồn tại"));
+			
+			PromotionRequestDTO request = new PromotionRequestDTO();
 
-			vendorApprovalRequestService.deleteDraft(id, TargetType.PROMOTION, userId);
+			vendorApprovalRequestService.createDraft(request, TargetType.PROMOTION, ActionType.DELETE, userId);
 
 			redirectAttributes.addFlashAttribute("success",
 					"Yêu cầu xóa khuyến mãi đã được gửi. Vui lòng chờ admin phê duyệt.");

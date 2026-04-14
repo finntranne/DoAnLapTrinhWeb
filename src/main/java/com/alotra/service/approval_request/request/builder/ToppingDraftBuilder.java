@@ -45,6 +45,7 @@ public class ToppingDraftBuilder implements DraftBuilder<ToppingDraft, ToppingRe
 		draft.setShop(shop);
 		draft.setToppingName(request.getToppingName());
 		draft.setPrice(request.getAdditionalPrice());
+		draft.setTopping(topping);
 		
 		String finalImageUrl = handleToppingImage(request, userId);
 	    draft.setImageURL(finalImageUrl);

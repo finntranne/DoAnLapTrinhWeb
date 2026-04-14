@@ -2,6 +2,9 @@ package com.alotra.service.approval_request.approval.command.product;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
@@ -43,15 +46,28 @@ public class ProductMapper {
             product.getImages().add(img);
         });
 
-        if (product.getVariants() != null) product.getVariants().clear();
-        else product.setVariants(new ArrayList<>());
+        Map<Integer, ProductVariant> existingVariants = product.getVariants().stream()
+                .collect(Collectors.toMap(ProductVariant::getVariantID, v -> v));
+
+        List<ProductVariant> updatedVariants = new ArrayList<>();
 
         draft.getVariants().forEach(varDraft -> {
-            ProductVariant v = new ProductVariant();
+            
+            ProductVariant v = product.getVariants().stream()
+                    .filter(old -> old.getSize().getSizeID().equals(varDraft.getSize().getSizeID()))
+                    .findFirst()
+                    .orElse(new ProductVariant());
+            
             v.setProduct(product);
             v.setSize(varDraft.getSize());
             v.setPrice(varDraft.getPrice());
-            product.getVariants().add(v);
+            
+            updatedVariants.add(v);
         });
+
+        product.getVariants().retainAll(updatedVariants); 
+        product.getVariants().addAll(updatedVariants.stream()
+                .filter(v -> v.getVariantID() == null) 
+                .collect(Collectors.toList()));
     }
 }

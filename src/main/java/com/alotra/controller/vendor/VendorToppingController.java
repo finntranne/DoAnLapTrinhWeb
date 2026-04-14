@@ -24,7 +24,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.alotra.dto.topping.ToppingRequestDTO;
 import com.alotra.dto.topping.ToppingStatisticsDTO;
 import com.alotra.entity.product.Topping;
+import com.alotra.enums.ActionType;
 import com.alotra.enums.TargetType;
+import com.alotra.repository.product.ToppingRepository;
 import com.alotra.security.MyUserDetails;
 import com.alotra.service.approval_request.request.VendorApprovalRequestService;
 import com.alotra.service.cloudinary.CloudinaryService;
@@ -140,7 +142,7 @@ public class VendorToppingController {
 			
 			request.setImageURL(imageUrl);			
 			
-			vendorApprovalRequestService.createDraft(request, TargetType.TOPPING, userId);
+			vendorApprovalRequestService.createDraft(request, TargetType.TOPPING, ActionType.CREATE, userId);
 			
 			redirectAttributes.addFlashAttribute("success", "Yêu cầu tạo topping đã được gửi.");
 			return "redirect:/vendor/toppings";
@@ -194,7 +196,7 @@ public class VendorToppingController {
 			
 			request.setImageFile(imageFile);
 			
-			vendorApprovalRequestService.updateDraft(request, TargetType.TOPPING, userId);
+			vendorApprovalRequestService.createDraft(request, TargetType.TOPPING, ActionType.UPDATE, userId);
 			
 			redirectAttributes.addFlashAttribute("success", "Yêu cầu cập nhật topping đã được gửi.");
 			return "redirect:/vendor/toppings";
@@ -212,6 +214,9 @@ public class VendorToppingController {
 			}
 		}
 	}
+	
+	@Autowired
+	private ToppingRepository toppingRepository;
 
 	@PostMapping("/toppings/delete/{id}")
 	public String deleteTopping(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable Integer id,
@@ -220,7 +225,17 @@ public class VendorToppingController {
 			Integer shopId = getShopIdOrThrow(userDetails);
 			Integer userId = getUserIdOrThrow(userDetails);
 			
-			vendorApprovalRequestService.deleteDraft(id, TargetType.TOPPING, userId);
+			Topping topping = toppingRepository.findById(id)
+	                .orElseThrow(() -> new IllegalStateException("Topping không tồn tại"));
+
+	        ToppingRequestDTO request = new ToppingRequestDTO();
+	        request.setToppingId(topping.getToppingID());
+	        request.setToppingName(topping.getToppingName());
+	        request.setAdditionalPrice(topping.getPrice());
+	        request.setExistingImageUrl(topping.getImageURL());
+	        request.setShopId(shopId);
+			
+			vendorApprovalRequestService.createDraft(request, TargetType.TOPPING, ActionType.DELETE, userId);
 			
 			redirectAttributes.addFlashAttribute("success", "Yêu cầu xóa topping đã được gửi.");
 		} catch (IllegalStateException e) {
