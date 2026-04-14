@@ -1,15 +1,11 @@
 package com.alotra.controller;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -40,27 +36,17 @@ import org.springframework.web.servlet.view.RedirectView;
 
 import com.alotra.entity.cart.Cart;
 import com.alotra.entity.cart.CartItem;
-import com.alotra.entity.location.Address;
 import com.alotra.entity.order.Order;
-import com.alotra.entity.order.OrderHistory;
-import com.alotra.entity.order.OrderItem;
 import com.alotra.entity.order.Payment;
 import com.alotra.dto.order.PaymentResult;
-import com.alotra.entity.promotion.Promotion;
-import com.alotra.entity.shop.Shop;
 import com.alotra.entity.user.User;
 import com.alotra.enums.PaymentMethod;
-import com.alotra.enums.PaymentStatus;
-import com.alotra.repository.cart.CartItemRepository;
 import com.alotra.repository.cart.CartRepository;
 import com.alotra.repository.location.AddressRepository;
-import com.alotra.repository.order.OrderHistoryRepository;
-import com.alotra.repository.order.OrderItemRepository;
 import com.alotra.repository.order.OrderRepository;
 import com.alotra.repository.order.PaymentRepository;
-import com.alotra.repository.promotion.PromotionRepository;
 import com.alotra.service.cart.CartService;
-import com.alotra.service.notification.NotificationService;
+import com.alotra.service.checkout.CheckoutFacade;
 import com.alotra.service.order.PaymentService;
 import com.alotra.service.product.CategoryService;
 import com.alotra.service.shop.StoreService;
@@ -72,7 +58,6 @@ import com.alotra.view.cart.CheckoutCartItemView;
 import com.alotra.view.order.OrderView;
 
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 @Controller
@@ -80,26 +65,17 @@ public class OrderController {
 
     private static final Logger log = LoggerFactory.getLogger(OrderController.class);
 
-    private static final String VIETQR_BANK_ID = "970405";
-    private static final String VIETQR_ACCOUNT_NO = "4303205336551";
-    private static final String VIETQR_API_URL = "https://img.vietqr.io/image/";
-    private static final String VIETQR_TEMPLATE = "compact";
     private static final String VIETQR_ADD_INFO = "Thanh toan don hang #";
-    private static final String VIETQR_ACCOUNT_NAME = "TRAN HUU THOAI";
     private static final BigDecimal DEFAULT_SHIPPING_FEE = new BigDecimal("20000");
 
     @Autowired
     private OrderRepository orderRepository;
-    @Autowired
-    private OrderItemRepository orderItemRepository;
     @Autowired
     private PaymentRepository paymentRepository;
     @Autowired
     private CartService cartService;
     @Autowired
     private CartRepository cartRepository;
-    @Autowired
-    private CartItemRepository cartItemRepository;
     @Autowired
     private AddressRepository addressRepository;
     @Autowired
@@ -111,13 +87,9 @@ public class OrderController {
     @Autowired
     private StoreService storeService;
     @Autowired
-    private PromotionRepository promotionRepository;
-    @Autowired
-    private OrderHistoryRepository orderHistoryRepository;
-    @Autowired
     private PdfGeneratorService pdfGeneratorService;
     @Autowired
-    private NotificationService notificationService;
+    private CheckoutFacade checkoutFacade;
 
     private User getCurrentAuthenticatedUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -221,7 +193,7 @@ public class OrderController {
                 checkoutItemVMs.add(vm);
             }
 
-            BigDecimal subtotal = cartService.calculateSubtotal(itemsToCheckout.stream().collect(Collectors.toSet()));
+            BigDecimal subtotal = cartService.calculateSubtotal(new HashSet<>(itemsToCheckout));
             BigDecimal shippingFee = DEFAULT_SHIPPING_FEE;
             BigDecimal discount = BigDecimal.ZERO;
             BigDecimal grandTotal = subtotal.add(shippingFee);
@@ -255,8 +227,7 @@ public class OrderController {
 
     @PostMapping("/apply-coupon")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> applyCoupon(@RequestParam("couponCode") String couponCode,
-            HttpSession session) {
+    public ResponseEntity<Map<String, Object>> applyCoupon(HttpSession session) {
 
         Map<String, Object> response = new HashMap<>();
         response.put("error",
@@ -278,12 +249,10 @@ public class OrderController {
     }
 
     @PostMapping("/place-order")
-    @Transactional
     public Object placeOrder(@RequestParam(required = false) Integer addressId,
             @RequestParam(required = false) String notes,
             @RequestParam(required = false) String paymentMethod,
             @RequestParam(name = "selectedItemIds") List<Integer> selectedItemIds,
-            HttpServletRequest request,
             HttpSession session,
             RedirectAttributes redirectAttributes) {
 
@@ -304,98 +273,15 @@ public class OrderController {
             }
 
             User user = getCurrentAuthenticatedUser();
-            Cart cart = cartRepository.findByUser_Id(user.getId())
-                    .orElseThrow(() -> new EntityNotFoundException("Khong tim thay gio hang"));
-
-            List<CartItem> itemsToOrder = cart.getItems().stream()
-                    .filter(item -> selectedItemIds.contains(item.getCartItemID()))
-                    .toList();
-
-            if (itemsToOrder.isEmpty()) {
-                redirectAttributes.addFlashAttribute("errorMessage", "Khong co san pham hop le trong gio hang.");
-                return "redirect:/cart";
-            }
-
-            Shop shop = itemsToOrder.get(0).getVariant().getProduct().getShop();
-            boolean mixedShop = itemsToOrder.stream()
-                    .map(item -> item.getVariant().getProduct().getShop().getShopId())
-                    .anyMatch(shopId -> !shopId.equals(shop.getShopId()));
-            if (mixedShop) {
-                redirectAttributes.addFlashAttribute("errorMessage",
-                        "Don hang hien tai chi ho tro thanh toan cac san pham cung mot cua hang.");
-                return "redirect:/checkout";
-            }
-
-            Address chosenAddress = addressRepository.findById(addressId)
-                    .orElseThrow(() -> new EntityNotFoundException("Dia chi giao hang khong hop le."));
-            Address orderAddress = createOrderAddressSnapshot(chosenAddress);
-            orderAddress = addressRepository.save(orderAddress);
-
             PaymentMethod paymentMethodEnum = resolvePaymentMethod(paymentMethod);
-            String initialStatus = "Pending";
-
-            Order order = new Order();
-            order.setUser(user);
-            order.setShop(shop);
-            order.setAddress(orderAddress);
-            order.setOrderDate(LocalDateTime.now());
-            order.setOrderStatus(initialStatus);
-            order.setShippingFee(DEFAULT_SHIPPING_FEE);
-            order.setNotes(notes);
-            order = orderRepository.save(order);
-
-            List<OrderItem> orderItems = new ArrayList<>();
-            for (CartItem cartItem : itemsToOrder) {
-                OrderItem orderItem = new OrderItem();
-                orderItem.setOrder(order);
-                orderItem.setVariant(cartItem.getVariant());
-                orderItem.setQuantity(cartItem.getQuantity());
-                if (cartItem.getToppings() != null && !cartItem.getToppings().isEmpty()) {
-                    orderItem.getToppings().addAll(cartItem.getToppings());
-                }
-                orderItems.add(orderItem);
-            }
-            orderItemRepository.saveAll(orderItems);
-            order.setItems(orderItems);
-
-            Payment payment = new Payment();
-            payment.setOrder(order);
-            payment.setMethod(paymentMethodEnum);
-            payment.setStatus(PaymentStatus.UNPAID);
-            paymentRepository.save(payment);
-
-            OrderHistory history = new OrderHistory();
-            history.setOrder(order);
-            history.setOldStatus(null);
-            history.setNewStatus(initialStatus);
-            history.setChangedByUser(user);
-            history.setTimestamp(LocalDateTime.now());
-            history.setNotes("Don hang duoc tao tu he thong checkout");
-            orderHistoryRepository.save(history);
-
-            if (shop.getUser() != null) {
-                try {
-                    notificationService.notifyVendorAboutNewOrder(shop.getUser().getId(), order.getOrderID(),
-                            user.getFullName());
-                } catch (Exception ex) {
-                    log.warn("Khong gui duoc thong bao cho vendor: {}", ex.getMessage());
-                }
-            }
-
-            for (CartItem item : itemsToOrder) {
-                item.getToppings().clear();
-                cart.removeItem(item);
-                cartItemRepository.delete(item);
-            }
-            cartRepository.save(cart);
+            Order order = checkoutFacade.checkoutOrder(user, selectedItemIds, addressId, notes, paymentMethodEnum);
 
             session.removeAttribute("selectedCheckoutItemIds");
             session.removeAttribute("currentCouponCode");
             session.removeAttribute("currentDiscountAmount");
 
-            // Xử lý thanh toán sử dụng PaymentService (Strategy Pattern)
-            com.alotra.dto.order.PaymentResult paymentResult = paymentService.processPayment(order.getOrderID());
-            
+            PaymentResult paymentResult = paymentService.processPayment(order.getOrderID());
+
             if (paymentMethodEnum == PaymentMethod.VNPAY) {
                 if (paymentResult.isSuccess() && paymentResult.getPaymentUrl() != null) {
                     return new RedirectView(paymentResult.getPaymentUrl());
@@ -413,7 +299,6 @@ public class OrderController {
             }
 
             if (paymentMethodEnum == PaymentMethod.COD) {
-                // COD - Thanh toán khi nhận hàng
                 redirectAttributes.addFlashAttribute("orderId", order.getOrderID());
                 return "redirect:/order-success";
             }
@@ -576,26 +461,4 @@ public class OrderController {
         };
     }
 
-    private Address createOrderAddressSnapshot(Address source) {
-        Address snapshot = new Address();
-        snapshot.setProvince(source.getProvince());
-        snapshot.setDistrict(source.getDistrict());
-        snapshot.setWard(source.getWard());
-        snapshot.setStreetAddress(source.getStreetAddress());
-        snapshot.setIsDefault(Boolean.FALSE);
-        return snapshot;
-    }
-
-    private String buildVietQrUrl(Integer orderId, BigDecimal amount, String description) {
-        String roundedAmount = amount.setScale(0, RoundingMode.HALF_UP).toPlainString();
-        return String.format(
-                "%s%s-%s-%s.jpg?amount=%s&addInfo=%s&accountName=%s",
-                VIETQR_API_URL,
-                VIETQR_BANK_ID,
-                VIETQR_ACCOUNT_NO,
-                VIETQR_TEMPLATE,
-                roundedAmount,
-                URLEncoder.encode(description, StandardCharsets.UTF_8),
-                URLEncoder.encode(VIETQR_ACCOUNT_NAME, StandardCharsets.UTF_8));
-    }
 }
