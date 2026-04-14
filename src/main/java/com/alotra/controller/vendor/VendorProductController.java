@@ -1,5 +1,6 @@
 package com.alotra.controller.vendor;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -28,13 +29,16 @@ import com.alotra.dto.product.ProductVariantDTO;
 import com.alotra.entity.product.Product;
 import com.alotra.entity.product.ProductImage;
 import com.alotra.entity.product.Topping;
+import com.alotra.enums.ActionType;
 import com.alotra.enums.TargetType;
+import com.alotra.repository.product.ProductRepository;
 import com.alotra.repository.product.ToppingRepository;
 import com.alotra.repository.promotion.PromotionRepository;
 import com.alotra.security.MyUserDetails;
 import com.alotra.service.approval_request.request.VendorApprovalRequestService;
 import com.alotra.service.vendor.VendorProductService;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -191,7 +195,7 @@ public class VendorProductController {
 				return "redirect:/vendor/products/create";
 			}
 
-			vendorApprovalRequestService.createDraft(request, TargetType.PRODUCT, userId);
+			vendorApprovalRequestService.createDraft(request, TargetType.PRODUCT, ActionType.CREATE, userId);
 
 			redirectAttributes.addFlashAttribute("success",
 					"Yêu cầu tạo sản phẩm đã được gửi. Vui lòng chờ admin phê duyệt.");
@@ -324,6 +328,9 @@ public class VendorProductController {
 			}
 		}
 	}
+	
+	@Autowired
+	private ProductRepository productRepository;
 
 	@PostMapping("/products/delete/{id}")
 	public String deleteProduct(@AuthenticationPrincipal MyUserDetails userDetails, @PathVariable("id") Integer id,
@@ -332,13 +339,68 @@ public class VendorProductController {
 		try {
 			Integer shopId = getShopIdOrThrow(userDetails);
 			Integer userId = getUserIdOrThrow(userDetails);
+			Product product = productRepository.findById(id)
+				    .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy sản phẩm"));
 
+				
 			ProductRequestDTO request = new ProductRequestDTO();
 			
 			request.setShopId(shopId);
 			request.setProductId(id);
 			
-			vendorApprovalRequestService.deleteDraft(id, TargetType.PRODUCT, userId);
+			request.setProductId(product.getProductID());
+			request.setProductName(product.getProductName());
+			request.setDescription(product.getDescription());
+			request.setShopId(shopId);
+			request.setCategoryId(product.getCategory().getCategoryID());
+			
+			if (product.getImages() != null) {
+			    List<String> imageUrls = product.getImages().stream()
+			            .map(ProductImage::getImageURL) 
+			            .collect(Collectors.toList());
+			    
+			    request.setExistingImageUrls(imageUrls);
+			    
+			    request.setExistingImageUrls(imageUrls);
+
+			    
+			    int primaryIndex = 0; 
+			    List<ProductImage> imgList = new ArrayList<>(product.getImages());
+			    for (int i = 0; i < imgList.size(); i++) {
+			        if (Boolean.TRUE.equals(imgList.get(i).getIsPrimary())) {
+			            primaryIndex = i;
+			            break;
+			        }
+			    }
+			    request.setPrimaryImageIndex(primaryIndex);
+			    
+			}
+			
+			if (product.getVariants() != null) {
+			    List<ProductVariantDTO> variantDTOs = product.getVariants().stream().map(v -> {
+			        ProductVariantDTO vDto = new ProductVariantDTO();
+   
+			        vDto.setVariantId(v.getVariantID());
+			        vDto.setPrice(v.getPrice());
+			        
+			        if (v.getSize() != null) {
+			            vDto.setSizeId(v.getSize().getSizeID());
+			        }
+			        
+			        return vDto;
+			    }).collect(Collectors.toList());
+			    
+			    request.setVariants(variantDTOs);
+			}
+			
+			if (product.getAvailableToppings() != null && !product.getAvailableToppings().isEmpty()) {
+		        Set<Integer> toppingIds = product.getAvailableToppings().stream()
+		                .map(Topping::getToppingID)
+		                .collect(Collectors.toSet()); 
+		        request.setAvailableToppingIds(toppingIds);
+		    }
+			
+			vendorApprovalRequestService.createDraft(request, TargetType.PRODUCT, ActionType.DELETE, userId);
 
 			redirectAttributes.addFlashAttribute("success",
 					"Yêu cầu xóa sản phẩm đã được gửi. Vui lòng chờ admin phê duyệt.");

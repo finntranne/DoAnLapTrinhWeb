@@ -20,6 +20,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.alotra.dto.promotion.PromotionRequestDTO;
 import com.alotra.dto.promotion.PromotionStatisticsDTO;
 import com.alotra.entity.promotion.Promotion;
+import com.alotra.enums.ActionType;
 import com.alotra.enums.TargetType;
 import com.alotra.security.MyUserDetails;
 import com.alotra.service.approval_request.request.VendorApprovalRequestService;
@@ -124,7 +125,7 @@ public class VendorPromotionController {
 			
 			request.setShopId(shopId);
 
-			vendorApprovalRequestService.createDraft(request, TargetType.PROMOTION, userId);
+			vendorApprovalRequestService.createDraft(request, TargetType.PROMOTION, ActionType.CREATE, userId);
 
 			redirectAttributes.addFlashAttribute("success",
 					"Yêu cầu tạo khuyến mãi đã được gửi. Vui lòng chờ admin phê duyệt.");

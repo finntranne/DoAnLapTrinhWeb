@@ -6,13 +6,13 @@ import org.springframework.stereotype.Component;
 import com.alotra.dto.product.ProductRequestDTO;
 import com.alotra.entity.draft.ProductDraft;
 import com.alotra.repository.approval_request.ProductDraftRepository;
-import com.alotra.service.approval_request.request.builder.ProductDraftBuilder;
+import com.alotra.service.approval_request.request.builder.DraftBuilder;
 
 @Component
 public class ProductDraftFactory implements DraftAbstractFactory<ProductDraft>{
 
 	@Autowired
-	private ProductDraftBuilder builder;
+	private DraftBuilder<ProductDraft, ProductRequestDTO> builder;
 	
 	@Autowired
     private ProductDraftRepository productDraftRepository;

@@ -6,13 +6,13 @@ import org.springframework.stereotype.Component;
 import com.alotra.dto.topping.ToppingRequestDTO;
 import com.alotra.entity.draft.ToppingDraft;
 import com.alotra.repository.approval_request.ToppingDraftRepository;
-import com.alotra.service.approval_request.request.builder.ToppingDraftBuilder;
+import com.alotra.service.approval_request.request.builder.DraftBuilder;
 
 @Component
 public class ToppingDraftFactory implements DraftAbstractFactory<ToppingDraft>{
 
 	@Autowired
-	private ToppingDraftBuilder builder;
+	private DraftBuilder<ToppingDraft, ToppingRequestDTO> builder;
 	
 	@Autowired
     private ToppingDraftRepository toppingDraftRepository;

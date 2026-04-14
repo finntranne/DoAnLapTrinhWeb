@@ -22,7 +22,6 @@ import com.alotra.repository.shop.ShopRepository;
 import com.alotra.service.approval_request.request.factory.DraftAbstractFactory;
 import com.alotra.service.approval_request.request.factory.DraftFactoryProvider;
 
-import lombok.RequiredArgsConstructor;
 
 @Service
 public class VendorApprovalRequestService {
@@ -41,9 +40,9 @@ public class VendorApprovalRequestService {
 	}
     
     @Transactional
-    public void createDraft(Object requestDTO, TargetType type, Integer userId) {
+    public void createDraft(Object requestDTO, TargetType targetType, ActionType actionType, Integer userId) {
 
-    	DraftAbstractFactory<? extends DraftEntity> factory = factoryProvider.getFactory(type);
+    	DraftAbstractFactory<? extends DraftEntity> factory = factoryProvider.getFactory(targetType);
     	DraftEntity draft = factory.createDraft(requestDTO, userId);
     	
     	saveDraft(factory, draft);
@@ -52,9 +51,9 @@ public class VendorApprovalRequestService {
 	              .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy shop"));
 
         ApprovalRequest request = new ApprovalRequest();
-        request.setTargetType(type);
+        request.setTargetType(targetType);
         request.setTargetId(draft.getId());
-        request.setActionType(ActionType.CREATE);
+        request.setActionType(actionType);
         request.setStatus(ApprovalStatus.PENDING);
         request.setRequestedBy(shop);
         request.setRequestedAt(LocalDateTime.now());

@@ -24,6 +24,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.alotra.dto.topping.ToppingRequestDTO;
 import com.alotra.dto.topping.ToppingStatisticsDTO;
 import com.alotra.entity.product.Topping;
+import com.alotra.enums.ActionType;
 import com.alotra.enums.TargetType;
 import com.alotra.security.MyUserDetails;
 import com.alotra.service.approval_request.request.VendorApprovalRequestService;
@@ -140,7 +141,7 @@ public class VendorToppingController {
 			
 			request.setImageURL(imageUrl);			
 			
-			vendorApprovalRequestService.createDraft(request, TargetType.TOPPING, userId);
+			vendorApprovalRequestService.createDraft(request, TargetType.TOPPING, ActionType.CREATE, userId);
 			
 			redirectAttributes.addFlashAttribute("success", "Yêu cầu tạo topping đã được gửi.");
 			return "redirect:/vendor/toppings";
